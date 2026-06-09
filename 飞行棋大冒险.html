@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>飞行棋 · 大冒险 v6.6 基地掷骰任务</title>
+    <style>
+        :root {
+            --bg: #f7f1e8; --ink: #25211d; --muted: #776f65; --panel: #fffdf8ee; --line: #ddd0bf;
+            --Y: #ffd84d; --B: #4aa3ff; --R: #ff6666; --G: #55d37d;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100svh;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+            color: var(--ink);
+            background: radial-gradient(circle at 0 0, #fff2a5 0, transparent 360px),
+                radial-gradient(circle at 100% 100%, #d7efff 0, transparent 380px), var(--bg);
+        }
+        button, input, select, textarea { font: inherit; }
+        button {
+            border: 0; border-radius: 14px; padding: .75rem 1rem; background: #27231f; color: #fff;
+            font-weight: 900; cursor: pointer; box-shadow: 0 10px 20px #0002;
+        }
+        button.secondary { background: #f1eadf; color: #29241f; border: 1px solid var(--line); box-shadow: none; }
+        button.warn { background: #b73737; }
+        button:disabled { opacity: .5; cursor: not-allowed; }
+        input, select, textarea {
+            width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: .65rem;
+            background: #fff; color: var(--ink);
+        }
+        textarea { min-height: 60px; resize: vertical; line-height: 1.4; }
+        .app { max-width: 1250px; margin: auto; padding: 14px; }
+        .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .brand { display: flex; gap: 12px; align-items: center; }
+        .logo {
+            width: 48px; height: 48px; border-radius: 18px; display: grid; place-items: center;
+            font-size: 26px; background: conic-gradient(var(--Y), var(--B), var(--R), var(--G), var(--Y));
+            border: 4px solid white; box-shadow: 0 12px 30px #0002;
+        }
+        h1 { margin: 0; font-size: clamp(22px, 4vw, 34px); }
+        small, .hint { color: var(--muted); font-size: 13px; }
+        .card {
+            background: var(--panel); border: 1px solid #e3d7c8; border-radius: 24px;
+            padding: 16px; box-shadow: 0 16px 40px #34210c18; backdrop-filter: blur(8px);
+        }
+        .setup { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(300px, 1fr); gap: 16px; }
+        .game { display: none; }
+        .game-grid { display: grid; grid-template-columns: minmax(320px, 760px) minmax(310px, 430px); gap: 16px; align-items: start; }
+        .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .player-row { display: grid; grid-template-columns: 1fr 105px 40px; gap: 8px; margin-bottom: 8px; }
+        .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: .6rem 0; }
+        .chip {
+            border-radius: 999px; background: #fff; border: 1px solid var(--line);
+            padding: .32rem .6rem; font-size: 13px; font-weight: 900;
+        }
+        details { border: 1px solid var(--line); border-radius: 18px; background: #fff9; padding: .75rem; margin: 10px 0; }
+        summary { cursor: pointer; font-weight: 900; }
+        .task-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+        .task-grid label { color: var(--muted); font-size: 12px; font-weight: 900; }
+
+        .board-wrap { width: min(96vw, 760px); max-width: 100%; margin: auto; }
+        .board {
+            position: relative; width: 100%; aspect-ratio: 1/1; border-radius: 30px;
+            background: #fff7e6; border: 4px solid #2b241d; overflow: hidden;
+            box-shadow: inset 0 0 0 8px #ffffffaa, 0 18px 38px #0002;
+        }
+        .board::before {
+            content: ""; position: absolute; inset: 0;
+            background: linear-gradient(to right, #0000000c 1px, transparent 1px),
+                linear-gradient(to bottom, #0000000c 1px, transparent 1px);
+            background-size: 5% 5%;
+        }
+        .base-panel {
+            position: absolute; width: 24%; height: 24%; border: 3px solid #2226;
+            border-radius: 22px; box-shadow: inset 0 4px 0 #fff7;
+            display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+            gap: 12%; padding: 12%;
+        }
+        .base-panel.G { left: 2%; top: 2%; background: var(--G); }
+        .base-panel.R { right: 2%; top: 2%; background: var(--R); }
+        .base-panel.B { left: 2%; bottom: 2%; background: var(--B); }
+        .base-panel.Y { right: 2%; bottom: 2%; background: var(--Y); }
+        .hole { border-radius: 50%; background: #fffdf8; border: 3px solid #0003; box-shadow: inset 0 4px 10px #0001; }
+        .spot {
+            position: absolute; width: 4.55%; height: 4.55%; min-width: 20px; min-height: 20px;
+            border-radius: 50%; transform: translate(-50%, -50%);
+            display: grid; place-items: center; border: 2px solid #2228;
+            box-shadow: inset 0 2px 0 #fff8, 0 4px 9px #0002;
+            font-size: clamp(8px, 1.35vw, 13px); font-weight: 1000;
+            text-align: center; line-height: 1;
+        }
+        .spot.Y { background: var(--Y); } .spot.B { background: var(--B); } .spot.R { background: var(--R); } .spot.G { background: var(--G); }
+        .spot.start { outline: 4px solid #fff; box-shadow: 0 0 0 3px #222, inset 0 2px 0 #fff8, 0 4px 9px #0002; }
+        .spot.straight { border-radius: 18px; }
+        .center {
+            position: absolute; left: 50%; top: 50%; width: 12%; height: 12%;
+            transform: translate(-50%, -50%); border-radius: 50%; display: grid; place-items: center;
+            background: conic-gradient(var(--R) 0 25%, var(--Y) 0 50%, var(--B) 0 75%, var(--G) 0);
+            border: 4px solid #27231f; box-shadow: 0 10px 22px #0003;
+        }
+        .center span {
+            width: 58%; height: 58%; border-radius: 50%; display: grid; place-items: center;
+            background: white; color: #d71919; font-size: clamp(20px, 5vw, 42px); font-weight: 1000;
+        }
+        .piece-layer { position: absolute; inset: 0; pointer-events: none; z-index: 20; }
+        .piece {
+            position: absolute; width: 4.8%; height: 4.8%; min-width: 22px; min-height: 22px;
+            border-radius: 50%; transform: translate(-50%, -50%);
+            display: grid; place-items: center; color: #1b1714; border: 3px solid #fff;
+            box-shadow: 0 8px 16px #0005; font-size: clamp(10px, 1.5vw, 16px);
+            font-weight: 1000; transition: left .28s ease, top .28s ease, transform .2s ease;
+        }
+        .piece.current { outline: 3px solid #111; animation: pulse .8s infinite alternate; }
+        @keyframes pulse { to { filter: brightness(1.22); } }
+        .side { display: grid; gap: 12px; }
+        .status {
+            display: flex; justify-content: space-between; align-items: center; gap: 8px;
+            background: #fff9; border: 1px solid var(--line); border-radius: 18px; padding: .75rem;
+        }
+        .current-name { font-size: 18px; font-weight: 1000; }
+        .badge { display: inline-block; border-radius: 999px; background: #eee7dc; padding: .35rem .6rem; font-size: 13px; font-weight: 900; }
+        .dice-row { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; margin-top: 12px; }
+        .dice {
+            width: 106px; height: 106px; border-radius: 24px;
+            background: linear-gradient(145deg, #fff, #e8e0d6);
+            display: grid; place-items: center; font-size: 52px; font-weight: 1000;
+            border: 3px solid white;
+            box-shadow: inset -8px -8px 16px #0001, inset 8px 8px 14px #fff, 0 14px 24px #0002;
+        }
+        .dice.shake { animation: shake .48s; }
+        @keyframes shake {
+            20% { transform: rotate(12deg); } 40% { transform: rotate(-13deg); } 70% { transform: rotate(9deg); }
+        }
+        .roll { height: 64px; font-size: 20px; background: linear-gradient(135deg, #27231f, #6653ff); }
+        .players { display: grid; gap: 8px; max-height: 330px; overflow: auto; }
+        .player-card {
+            display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px;
+            background: #fff9; border: 1px solid var(--line); border-radius: 16px; padding: .7rem;
+        }
+        .player-card.current { border-color: #111; box-shadow: 0 0 0 3px #0001; }
+        .player-card.done { background: #effff2; }
+        .pname { font-weight: 1000; }
+        .psub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+        .log {
+            height: 220px; overflow: auto; background: #171514; color: #fff4e5;
+            border-radius: 18px; padding: 12px; font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        }
+        .log p { margin: .15rem 0; }
+        .hot { color: #ffe276; } .good { color: #a6f1b3; } .bad { color: #ffaaa5; } .task { color: #add8ff; }
+        .modal-bg {
+            position: fixed; inset: 0; display: none; place-items: center;
+            background: #0007; z-index: 99; padding: 16px;
+        }
+        .modal {
+            width: min(94vw, 520px); background: #fffdf8; border-radius: 28px;
+            padding: 20px; box-shadow: 0 22px 60px #0005;
+        }
+        .modal h2 { margin: .1rem 0 .4rem; }
+        .modal pre {
+            white-space: pre-wrap; font: inherit; background: #f7f0e5;
+            border: 1px solid var(--line); border-radius: 18px; padding: 14px; line-height: 1.5;
+        }
+        @media(max-width: 860px) {
+            .setup, .game-grid { grid-template-columns: 1fr; }
+            .task-grid { grid-template-columns: 1fr; }
+            .app { padding: 10px; }
+            .card { border-radius: 20px; padding: 12px; }
+            .base-panel { border-radius: 16px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="top">
+        <div class="brand">
+            <div class="logo">✈️</div>
+            <div>
+                <h1>飞行棋 · 大冒险 v6.6</h1>
+                <small>基地掷骰任务｜起飞独立｜直道统一｜导入导出</small>
+            </div>
+        </div>
+        <button class="secondary" id="continueBtn">继续上局</button>
+    </div>
+
+    <section id="setup" class="setup">
+        <div class="card">
+            <h2>一、玩家设置</h2>
+            <p class="hint">2-16 人；每色最多 4 人。每人一枚棋子。</p>
+            <div id="playersBox"></div>
+            <div class="chips" id="colorCounts"></div>
+            <div class="actions">
+                <button class="secondary" id="addPlayerBtn">+ 添加玩家</button>
+                <button id="startBtn">开始游戏</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>二、任务表</h2>
+            <p class="hint">任务表和游戏进度保存在浏览器。每个棋盘格只触发一次。</p>
+            <details>
+                <summary>🛫 起飞点任务（首次起飞时触发）</summary>
+                <textarea id="takeoffTask" data-task="takeoff" style="margin-top:8px;"></textarea>
+            </details>
+            <details open>
+                <summary>🎲 基地掷骰任务（点数2-5，每人每点数仅一次）</summary>
+                <div class="task-grid" id="baseRollTasks"></div>
+            </details>
+            <details>
+                <summary>周围路径 12 格任务（共享）</summary>
+                <div class="task-grid" id="outerTasks"></div>
+            </details>
+            <details>
+                <summary>直道任务（6格，所有颜色共用）</summary>
+                <div class="task-grid" id="straightTasksMerged"></div>
+            </details>
+            <details>
+                <summary>国王卡 A-K</summary>
+                <div class="task-grid" id="kingTasks"></div>
+            </details>
+            <details>
+                <summary>终极惩罚</summary>
+                <textarea id="finalPunish"></textarea>
+            </details>
+            <div class="actions">
+                <button class="secondary" id="saveTasksBtn">💾 保存任务表</button>
+                <button class="secondary" id="exportTasksBtn">📤 导出为文件</button>
+                <button class="secondary" id="importTasksBtn">📥 从文件导入</button>
+                <button class="secondary" id="fillDemoBtn">✨ 填充示例</button>
+                <button class="warn" id="clearBtn">🗑 清空存档</button>
+            </div>
+            <input type="file" id="importFileInput" accept=".json" style="display:none;">
+        </div>
+    </section>
+
+    <section id="game" class="game">
+        <div class="game-grid">
+            <div class="card">
+                <div class="board-wrap">
+                    <div class="board" id="board">
+                        <div class="base-panel G"><div class="hole"></div><div class="hole"></div><div class="hole"></div><div class="hole"></div></div>
+                        <div class="base-panel R"><div class="hole"></div><div class="hole"></div><div class="hole"></div><div class="hole"></div></div>
+                        <div class="base-panel B"><div class="hole"></div><div class="hole"></div><div class="hole"></div><div class="hole"></div></div>
+                        <div class="base-panel Y"><div class="hole"></div><div class="hole"></div><div class="hole"></div><div class="hole"></div></div>
+                        <div class="center"><span>终</span></div>
+                        <div class="piece-layer" id="pieces"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="side">
+                <div class="card">
+                    <div class="status">
+                        <div>
+                            <div class="hint">当前玩家</div>
+                            <div class="current-name" id="currentName">-</div>
+                        </div>
+                        <div>
+                            <span class="badge" id="roundBadge">第 1 轮</span>
+                            <span class="badge" id="lastRoll">最后点数：-</span>
+                        </div>
+                    </div>
+                    <div class="dice-row">
+                        <div class="dice" id="dice">🎲</div>
+                        <button class="roll" id="rollBtn">🎲 掷骰子</button>
+                    </div>
+                    <div class="actions">
+                        <button class="secondary" id="backSetupBtn">返回设置</button>
+                        <button class="warn" id="newGameBtn">重开</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>玩家进度</h3>
+                    <div class="players" id="playersList"></div>
+                </div>
+
+                <div class="card">
+                    <h3>游戏记录</h3>
+                    <div class="log" id="log"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="modal-bg" id="modalBg">
+    <div class="modal">
+        <small id="modalSub">任务</small>
+        <h2 id="modalTitle">任务卡</h2>
+        <pre id="modalBody"></pre>
+        <button id="modalOk">完成，继续</button>
+    </div>
+</div>
+
+<script>
+(() => {
+    const STATE_KEY = "flight_adventure_v66_state";
+    const TASK_KEY = "flight_adventure_v66_tasks";
+
+    const COLORS = {
+        Y: { name: "黄", emoji: "🟡", css: "Y" },
+        B: { name: "蓝", emoji: "🔵", css: "B" },
+        R: { name: "红", emoji: "🔴", css: "R" },
+        G: { name: "绿", emoji: "🟢", css: "G" }
+    };
+
+    const START_INDEX = { R: 6, Y: 18, B: 30, G: 42 };
+    const COLOR_ORDER = ["Y", "B", "R", "G"];
+    const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+
+    const baseSlots = {
+        G: [{ x: 8, y: 8 }, { x: 18, y: 8 }, { x: 8, y: 18 }, { x: 18, y: 18 }],
+        R: [{ x: 82, y: 8 }, { x: 92, y: 8 }, { x: 82, y: 18 }, { x: 92, y: 18 }],
+        B: [{ x: 8, y: 82 }, { x: 18, y: 82 }, { x: 8, y: 92 }, { x: 18, y: 92 }],
+        Y: [{ x: 82, y: 82 }, { x: 92, y: 82 }, { x: 82, y: 92 }, { x: 92, y: 92 }]
+    };
+
+    const outerPath = makeOuterPath();
+    const straightPath = makeStraightPath();
+
+    const defaultTasks = {
+        takeoff: "🛫 起飞！完成一个简单动作：举手高呼“起飞啦”！",
+        baseRoll: {
+            "2": "掷出2点：做2个深蹲。",
+            "3": "掷出3点：学3声猫叫。",
+            "4": "掷出4点：原地转4圈。",
+            "5": "掷出5点：与右边玩家击掌5下。"
+        },
+        outer: Array.from({ length: 12 }, (_, i) => `周围路径任务 ${i + 1}：请自定义大冒险内容。`),
+        straight: Array.from({ length: 6 }, (_, i) => `直道第 ${i + 1} 格任务：所有颜色统一`),
+        king: RANKS.map(r => `国王卡 ${r}：请自定义任务。`),
+        final: "最后一名执行终极惩罚：由其他玩家商定。"
+    };
+
+    const demoTasks = {
+        takeoff: "🛫 起飞！大声说“我要飞得更高”！",
+        baseRoll: {
+            "2": "掷出2点：和左手边的人击掌两次。",
+            "3": "掷出3点：模仿三种不同的动物叫声。",
+            "4": "掷出4点：用四种不同的声调说“你好”。",
+            "5": "掷出5点：快速说出五种水果的名字。"
+        },
+        outer: [
+            "说出一个自己的小秘密。","指定一人和你石头剪刀布，输的人做 5 个表情。","模仿一种动物 10 秒。","对右手边的人夸奖 3 句。",
+            "唱一句你最近听过的歌。","用撒娇语气说一句话。","和任意一人对视 10 秒。","讲一个冷笑话。",
+            "做一个夸张自拍表情。","用奇怪口音说话一轮。","指定一人问你一个问题，必须回答。","给大家表演一个你最会的动作。"
+        ],
+        straight: [
+            "直道1·通用：喝一口水。","直道2·通用：说一句土味情话。","直道3·通用：闭眼转3圈。","直道4·通用：与左手边玩家击掌。",
+            "直道5·通用：夸奖下一位玩家。","直道6·通用：全场为你鼓掌！"
+        ],
+        king: RANKS.map(r => `国王卡 ${r}：指定一人完成一个轻松大冒险。`),
+        final: "终极惩罚：最后一名接受全场共同指定的大冒险。"
+    };
+
+    const el = id => document.getElementById(id);
+    const els = {
+        setup: el("setup"), game: el("game"), board: el("board"), pieces: el("pieces"),
+        playersBox: el("playersBox"), colorCounts: el("colorCounts"),
+        outerTasks: el("outerTasks"), straightTasksMerged: el("straightTasksMerged"),
+        kingTasks: el("kingTasks"), finalPunish: el("finalPunish"),
+        takeoffTask: el("takeoffTask"), baseRollTasks: el("baseRollTasks"),
+        addPlayerBtn: el("addPlayerBtn"), startBtn: el("startBtn"),
+        saveTasksBtn: el("saveTasksBtn"), exportTasksBtn: el("exportTasksBtn"),
+        importTasksBtn: el("importTasksBtn"), importFileInput: el("importFileInput"),
+        fillDemoBtn: el("fillDemoBtn"), clearBtn: el("clearBtn"),
+        continueBtn: el("continueBtn"),
+        currentName: el("currentName"), roundBadge: el("roundBadge"),
+        lastRoll: el("lastRoll"), dice: el("dice"), rollBtn: el("rollBtn"),
+        playersList: el("playersList"), log: el("log"),
+        modalBg: el("modalBg"), modalSub: el("modalSub"), modalTitle: el("modalTitle"),
+        modalBody: el("modalBody"), modalOk: el("modalOk"),
+        backSetupBtn: el("backSetupBtn"), newGameBtn: el("newGameBtn")
+    };
+
+    let tasks = loadTasks();
+    let setupPlayers = [
+        { name: "玩家1", color: "R" },
+        { name: "玩家2", color: "Y" }
+    ];
+    let state = null;
+    let rolling = false;
+    let modalQueue = [];
+    let modalOpen = false;
+
+    init();
+
+    function init() {
+        renderBoard();
+        renderSetupPlayers();
+        renderTaskEditors();
+        bind();
+        els.continueBtn.disabled = !localStorage.getItem(STATE_KEY);
+    }
+
+    function bind() {
+        els.addPlayerBtn.onclick = () => {
+            if (setupPlayers.length >= 16) return alert("最多 16 人。");
+            setupPlayers.push({ name: `玩家${setupPlayers.length + 1}`, color: ["R","Y","B","G"][setupPlayers.length % 4] });
+            renderSetupPlayers();
+        };
+        els.startBtn.onclick = startGame;
+        els.saveTasksBtn.onclick = () => { saveTasksFromEditors(); alert("任务表已保存到浏览器。"); };
+        els.exportTasksBtn.onclick = exportTasks;
+        els.importTasksBtn.onclick = () => els.importFileInput.click();
+        els.importFileInput.onchange = importTasks;
+        els.fillDemoBtn.onclick = () => { tasks = JSON.parse(JSON.stringify(demoTasks)); saveTasks(); renderTaskEditors(); alert("已填充示例任务。"); };
+        els.clearBtn.onclick = () => { if (confirm("清空所有存档？")) { localStorage.clear(); location.reload(); } };
+        els.continueBtn.onclick = continueGame;
+        els.rollBtn.onclick = rollDice;
+        els.modalOk.onclick = () => { els.modalBg.style.display = "none"; modalOpen = false; showNextModal(); };
+        els.backSetupBtn.onclick = () => { els.game.style.display = "none"; els.setup.style.display = "grid"; };
+        els.newGameBtn.onclick = () => { if (confirm("重开游戏？")) { localStorage.removeItem(STATE_KEY); state = null; els.game.style.display = "none"; els.setup.style.display = "grid"; els.continueBtn.disabled = true; } };
+    }
+
+    function exportTasks() {
+        saveTasksFromEditors();
+        const blob = new Blob([JSON.stringify(tasks, null, 2)], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `飞行棋任务表_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+
+    function importTasks() {
+        const file = els.importFileInput.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (!data.outer || !data.straight || !data.king || !data.final) throw new Error("缺少必要字段");
+                if (!Array.isArray(data.straight)) data.straight = defaultTasks.straight;
+                if (!data.takeoff) data.takeoff = defaultTasks.takeoff;
+                if (!data.baseRoll) data.baseRoll = defaultTasks.baseRoll;
+                tasks = data;
+                saveTasks();
+                renderTaskEditors();
+                alert("导入成功！");
+            } catch (err) { alert("导入失败：" + err.message); }
+            els.importFileInput.value = "";
+        };
+        reader.readAsText(file);
+    }
+
+    function makeOuterPath() {
+        const L = 14, R = 86, T = 14, B = 86;
+        const step = (R - L) / 12;
+        const p = [];
+        for (let i = 0; i <= 12; i++) p.push({ x: L + i * step, y: T });
+        for (let i = 1; i <= 12; i++) p.push({ x: R, y: T + i * step });
+        for (let i = 1; i <= 12; i++) p.push({ x: R - i * step, y: B });
+        for (let i = 1; i <= 11; i++) p.push({ x: L, y: B - i * step });
+        return p;
+    }
+
+    function makeStraightPath() {
+        const R = [], Y = [], B = [], G = [];
+        const start = 14, center = 50, gap = (center - start) / 7;
+        for (let i = 1; i <= 6; i++) {
+            R.push({ x: 50, y: start + i * gap });
+            Y.push({ x: 86 - i * gap, y: 50 });
+            B.push({ x: 50, y: 86 - i * gap });
+            G.push({ x: start + i * gap, y: 50 });
+        }
+        return { R, Y, B, G };
+    }
+
+    function renderBoard() {
+        els.board.querySelectorAll(".spot").forEach(n => n.remove());
+        outerPath.forEach((pos, i) => {
+            const startColor = Object.keys(START_INDEX).find(c => START_INDEX[c] === i);
+            const color = startColor || COLOR_ORDER[i % 4];
+            const spot = document.createElement("div");
+            spot.className = `spot outer ${color} ${startColor ? "start" : ""}`;
+            spot.style.left = pos.x + "%";
+            spot.style.top = pos.y + "%";
+            spot.innerHTML = startColor ? `▶<br><small>${COLORS[startColor].name}</small>` : i + 1;
+            spot.title = startColor ? `${COLORS[startColor].name}色起飞点` : `外圈第${i+1}格`;
+            els.board.appendChild(spot);
+        });
+        Object.keys(straightPath).forEach(color => {
+            straightPath[color].forEach((pos, i) => {
+                const spot = document.createElement("div");
+                spot.className = `spot straight ${color}`;
+                spot.style.left = pos.x + "%";
+                spot.style.top = pos.y + "%";
+                spot.textContent = i + 1;
+                spot.title = `直道第 ${i + 1} 格（通用）`;
+                els.board.appendChild(spot);
+            });
+        });
+    }
+
+    function renderSetupPlayers() {
+        els.playersBox.innerHTML = "";
+        setupPlayers.forEach((p, i) => {
+            const row = document.createElement("div");
+            row.className = "player-row";
+            row.innerHTML = `
+                <input value="${escapeHtml(p.name)}" placeholder="玩家名">
+                <select>${Object.entries(COLORS).map(([k,v]) => `<option value="${k}">${v.emoji} ${v.name}</option>`).join('')}</select>
+                <button class="secondary">×</button>`;
+            const input = row.querySelector("input"), select = row.querySelector("select"), del = row.querySelector("button");
+            select.value = p.color;
+            input.oninput = e => setupPlayers[i].name = e.target.value;
+            select.onchange = e => { setupPlayers[i].color = e.target.value; renderSetupPlayers(); };
+            del.onclick = () => {
+                if (setupPlayers.length <= 2) return alert("至少 2 人。");
+                setupPlayers.splice(i, 1);
+                renderSetupPlayers();
+            };
+            els.playersBox.appendChild(row);
+        });
+        const counts = countColors(setupPlayers);
+        els.colorCounts.innerHTML = ["R","Y","B","G"].map(c => `<span class="chip">${COLORS[c].emoji}${COLORS[c].name}：${counts[c]}/4</span>`).join("");
+    }
+
+    function renderTaskEditors() {
+        els.takeoffTask.value = tasks.takeoff;
+
+        // 基地掷骰任务 (2-5)
+        els.baseRollTasks.innerHTML = [2,3,4,5].map(n => `
+            <div>
+                <label>掷出 ${n} 点</label>
+                <textarea data-task="baseRoll-${n}">${escapeHtml(tasks.baseRoll[n] || '')}</textarea>
+            </div>
+        `).join("");
+
+        els.outerTasks.innerHTML = tasks.outer.map((t, i) => `
+            <div><label>外圈任务 ${i+1}</label><textarea data-task="outer-${i}">${escapeHtml(t)}</textarea></div>`).join("");
+        els.straightTasksMerged.innerHTML = tasks.straight.map((t, i) => `
+            <div><label>直道第 ${i+1} 格</label><textarea data-task="straight-${i}">${escapeHtml(t)}</textarea></div>`).join("");
+        els.kingTasks.innerHTML = tasks.king.map((t, i) => `
+            <div><label>国王卡 ${RANKS[i]}</label><textarea data-task="king-${i}">${escapeHtml(t)}</textarea></div>`).join("");
+        els.finalPunish.value = tasks.final;
+    }
+
+    function saveTasksFromEditors() {
+        tasks.takeoff = els.takeoffTask.value.trim() || defaultTasks.takeoff;
+        document.querySelectorAll("[data-task]").forEach(node => {
+            const parts = node.dataset.task.split("-");
+            if (parts[0] === "outer") tasks.outer[+parts[1]] = node.value;
+            if (parts[0] === "king") tasks.king[+parts[1]] = node.value;
+            if (parts[0] === "straight") tasks.straight[+parts[1]] = node.value;
+            if (parts[0] === "baseRoll") {
+                tasks.baseRoll[parts[1]] = node.value;
+            }
+        });
+        tasks.final = els.finalPunish.value.trim() || defaultTasks.final;
+        saveTasks();
+    }
+
+    function startGame() {
+        saveTasksFromEditors();
+        if (setupPlayers.length < 2 || setupPlayers.length > 16) return alert("人数必须是 2-16。");
+        if (setupPlayers.some(p => !p.name.trim())) return alert("请填写所有玩家名。");
+        const counts = countColors(setupPlayers);
+        if (Object.values(counts).some(n => n > 4)) return alert("每色最多 4 人。");
+
+        const used = { R:0, Y:0, B:0, G:0 };
+        state = {
+            players: setupPlayers.map(p => {
+                const slot = used[p.color]++;
+                return { id: makeId(), name: p.name.trim(), color: p.color, colorSlot: slot, status: "base", outerIndex: null, outerSteps: 0, straightIndex: 0, finishPlace: null };
+            }),
+            currentIndex: 0, lastRoll: null, round: 1, acted: {}, finishOrder: [], triggered: {}, log: [], gameOver: false
+        };
+        addLog("游戏开始！掷出 6 才能起飞。", "good", false);
+        saveState();
+        showGame();
+    }
+
+    function continueGame() {
+        try {
+            const saved = JSON.parse(localStorage.getItem(STATE_KEY));
+            if (!saved) return alert("没有存档。");
+            state = saved;
+            showGame();
+        } catch { alert("存档损坏。"); }
+    }
+
+    function showGame() { els.setup.style.display = "none"; els.game.style.display = "block"; renderAll(); }
+
+    function rollDice() {
+        if (!state || rolling || modalOpen || state.gameOver) return;
+        const p = currentPlayer();
+        if (!p) return;
+        rolling = true; els.rollBtn.disabled = true; els.dice.classList.add("shake");
+        let tick = 0;
+        const timer = setInterval(() => { els.dice.textContent = 1 + Math.floor(Math.random()*6); tick++; }, 50);
+        setTimeout(() => {
+            clearInterval(timer); els.dice.classList.remove("shake");
+            const value = 1 + Math.floor(Math.random()*6);
+            state.lastRoll = value; els.dice.textContent = value;
+            addLog(`${label(p)} 掷出 ${value}。`, "hot");
+            if (value === 1) drawKing(p, "掷出1点");
+
+            if (p.status === "base") {
+                if (value === 6) {
+                    takeOff(p);
+                    addLog(`${label(p)} 起飞后获得一次额外投掷。`, "good");
+                } else if (value >= 2 && value <= 5) {
+                    // 触发基地掷骰任务（每人每点数只触发一次）
+                    const key = `baseRoll-${p.id}-${value}`;
+                    if (!state.triggered[key]) {
+                        state.triggered[key] = true;
+                        const taskText = tasks.baseRoll[value] || `掷出${value}点任务`;
+                        addLog(`${label(p)} 触发基地掷骰任务（点数${value}）。`, "task");
+                        enqueueModal(`🎲 基地任务 ${value}点`, taskText, `${label(p)} 还在基地`);
+                    } else {
+                        addLog(`${label(p)} 掷出${value}点，该点数任务已完成。`);
+                    }
+                    endTurn(p);
+                } else {
+                    endTurn(p);
+                }
+            } else if (p.status === "outer") {
+                moveOuter(p, value);
+                if (value !== 6 || p.status === "finished") endTurn(p);
+                else addLog(`${label(p)} 掷出6，额外投掷。`, "good");
+            } else if (p.status === "straight") {
+                moveStraight(p, value);
+                if (value !== 6 || p.status === "finished") endTurn(p);
+                else addLog(`${label(p)} 掷出6，额外投掷。`, "good");
+            }
+            rolling = false; renderAll(); saveState();
+        }, 620);
+    }
+
+    function takeOff(p) {
+        p.status = "outer"; p.outerSteps = 0; p.outerIndex = START_INDEX[p.color]; p.straightIndex = 0;
+        addLog(`${label(p)} 起飞进入起飞点。`, "good");
+        const key = `outer-${p.outerIndex}`;
+        if (!state.triggered[key]) {
+            state.triggered[key] = true;
+            addLog(`${label(p)} 触发起飞点任务。`, "task");
+            enqueueModal("🛫 起飞点任务", tasks.takeoff || "起飞任务未设置", `${label(p)} 起飞`);
+        } else {
+            addLog("起飞点任务已触发过。", "task");
+        }
+    }
+
+    function moveOuter(p, steps) {
+        const before = p.outerSteps;
+        p.outerSteps += steps;
+        if (p.outerSteps >= 48) {
+            const remain = p.outerSteps - 48;
+            p.status = "straight"; p.outerIndex = null; p.straightIndex = 0;
+            addLog(`${label(p)} 走完外圈，进入直道。`, "good");
+            if (remain > 0) moveStraight(p, remain, true);
+            return;
+        }
+        p.outerIndex = (START_INDEX[p.color] + p.outerSteps) % 48;
+        addLog(`${label(p)} 落在外圈第 ${p.outerIndex+1} 格。`);
+        triggerOuterTask(p, p.outerIndex);
+    }
+
+    function moveStraight(p, steps, fromOuter = false) {
+        const need = 6 - p.straightIndex;
+        if (steps >= need) {
+            if (need > 0) triggerStraightTask(p, 6);
+            finishPlayer(p);
+            return;
+        }
+        p.straightIndex += steps;
+        if (fromOuter) addLog(`${label(p)} 进入直道第 ${p.straightIndex} 格。`, "good");
+        else addLog(`${label(p)} 直道前进到第 ${p.straightIndex} 格。`);
+        triggerStraightTask(p, p.straightIndex);
+    }
+
+    function finishPlayer(p) {
+        p.status = "finished"; p.finishPlace = state.finishOrder.length + 1; state.finishOrder.push(p.id);
+        addLog(`${label(p)} 到达终点！第 ${p.finishPlace} 名。`, "good");
+        enqueueModal("🎉 到达终点", `${label(p)} 到达中心终点！`, "终点");
+        if (state.finishOrder.length === state.players.length) {
+            state.gameOver = true;
+            addLog("游戏结束！", "bad");
+            enqueueModal("🏁 游戏结束", `最后一名：${label(p)}\n终极惩罚：\n${tasks.final}`, "终极惩罚");
+        }
+    }
+
+    function endTurn(p) {
+        state.acted[p.id] = true;
+        if (state.gameOver) return;
+        if (isRoundComplete()) roundEnd();
+        const next = findNextPlayable((state.players.indexOf(p) + 1) % state.players.length);
+        if (next >= 0) state.currentIndex = next;
+    }
+
+    function isRoundComplete() { return state.players.filter(p => p.status !== "finished").every(p => state.acted[p.id]); }
+    function roundEnd() {
+        if (state.finishOrder.length > 0) {
+            state.players.filter(p => p.status === "finished").forEach(p => drawKing(p, "每轮结束"));
+        }
+        state.round++; state.acted = {};
+    }
+
+    function findNextPlayable(start) {
+        const n = state.players.length;
+        for (let i = 0; i < n; i++) { const idx = (start + i) % n; if (state.players[idx].status !== "finished" && !state.acted[state.players[idx].id]) return idx; }
+        for (let i = 0; i < n; i++) { if (state.players[(start + i) % n].status !== "finished") return (start + i) % n; }
+        return -1;
+    }
+
+    function triggerOuterTask(p, index) {
+        const key = `outer-${index}`;
+        if (state.triggered[key]) return;
+        state.triggered[key] = true;
+        const taskIndex = index % 12;
+        enqueueModal("📍 外圈任务", tasks.outer[taskIndex], `${label(p)} · 外圈第${index+1}格`);
+    }
+
+    function triggerStraightTask(p, index) {
+        if (index < 1 || index > 6) return;
+        const key = `straight-${index}`;
+        if (state.triggered[key]) return;
+        state.triggered[key] = true;
+        enqueueModal("➡️ 直道任务", tasks.straight[index-1], `${label(p)} · 直道第${index}格`);
+    }
+
+    function drawKing(p, reason) {
+        const i = Math.floor(Math.random() * 13);
+        enqueueModal(`👑 国王卡 ${RANKS[i]}`, tasks.king[i], `${label(p)} · ${reason}`);
+    }
+
+    function enqueueModal(title, body, sub) {
+        modalQueue.push({ title, body, sub });
+        if (!modalOpen) showNextModal();
+    }
+
+    function showNextModal() {
+        if (modalQueue.length === 0) { modalOpen = false; renderAll(); return; }
+        const m = modalQueue.shift();
+        modalOpen = true;
+        els.modalTitle.textContent = m.title; els.modalSub.textContent = m.sub || ""; els.modalBody.textContent = m.body || ""; els.modalBg.style.display = "grid";
+    }
+
+    function renderAll() {
+        if (!state) return;
+        const p = currentPlayer();
+        els.currentName.textContent = state.gameOver ? "游戏结束" : (p ? label(p) : "-");
+        els.roundBadge.textContent = `第 ${state.round} 轮`;
+        els.lastRoll.textContent = `最后点数：${state.lastRoll || "-"}`;
+        els.dice.textContent = state.lastRoll || "🎲";
+        els.rollBtn.disabled = rolling || modalOpen || state.gameOver;
+        renderPieces(); renderPlayersList(); renderLog();
+    }
+
+    function renderPieces() {
+        els.pieces.innerHTML = "";
+        const groups = new Map();
+        state.players.forEach(p => {
+            const pos = pieceCoord(p);
+            const key = `${Math.round(pos.x*10)},${Math.round(pos.y*10)}`;
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push({ p, pos });
+        });
+        groups.forEach(group => {
+            group.forEach((item, i) => {
+                const piece = document.createElement("div");
+                piece.className = `piece ${item.p.color} ${currentPlayer()?.id === item.p.id ? "current" : ""}`;
+                piece.textContent = firstChar(item.p.name);
+                piece.style.background = `var(--${item.p.color})`;
+                piece.style.left = item.pos.x + "%";
+                piece.style.top = item.pos.y + "%";
+                const off = overlapOffset(i, group.length);
+                piece.style.transform = `translate(-50%,-50%) translate(${off.x}px,${off.y}px)`;
+                els.pieces.appendChild(piece);
+            });
+        });
+    }
+
+    function pieceCoord(p) {
+        if (p.status === "base") return baseSlots[p.color][p.colorSlot] || baseSlots[p.color][0];
+        if (p.status === "outer") return outerPath[p.outerIndex];
+        if (p.status === "straight") return p.straightIndex <= 0 ? outerPath[START_INDEX[p.color]] : straightPath[p.color][Math.min(5, p.straightIndex - 1)];
+        const finished = state.players.filter(x => x.status === "finished");
+        const idx = Math.max(0, finished.findIndex(x => x.id === p.id));
+        return [{x:47,y:47},{x:53,y:47},{x:47,y:53},{x:53,y:53},{x:50,y:50}][idx % 5];
+    }
+
+    function overlapOffset(i, n) { if (n<=1) return {x:0,y:0}; const angle = Math.PI*2*i/n; return {x:Math.cos(angle)*10, y:Math.sin(angle)*10}; }
+
+    function renderPlayersList() {
+        const cur = currentPlayer();
+        els.playersList.innerHTML = state.players.map(p => `
+            <div class="player-card ${cur?.id === p.id ? "current" : ""} ${p.status==="finished"?"done":""}">
+                <div><div class="pname">${COLORS[p.color].emoji} ${escapeHtml(p.name)} ${p.finishPlace?`<span class="badge">第${p.finishPlace}名</span>`:""}</div><div class="psub">${statusText(p)}</div></div>
+                <b>${progressText(p)}</b>
+            </div>`).join("");
+    }
+
+    function renderLog() {
+        els.log.innerHTML = (state.log || []).map(x => `<p class="${x.type||''}">${escapeHtml(x.text)}</p>`).join("");
+        els.log.scrollTop = els.log.scrollHeight;
+    }
+
+    function addLog(text, type="", persist=true) { if(!state) return; state.log.push({text,type,at:Date.now()}); if(state.log.length>180) state.log = state.log.slice(-180); if(persist) saveState(); }
+
+    function currentPlayer() {
+        if (!state) return null;
+        const p = state.players[state.currentIndex];
+        if (p && p.status !== "finished" && !state.acted[p.id]) return p;
+        const idx = findNextPlayable(state.currentIndex || 0);
+        if (idx >= 0) { state.currentIndex = idx; return state.players[idx]; }
+        return state.players.find(x => x.status !== "finished") || null;
+    }
+
+    function statusText(p) {
+        if (p.status === "base") return "在基地：需要6起飞。";
+        if (p.status === "outer") return `外圈：已走 ${p.outerSteps}/48 步。`;
+        if (p.status === "straight") return `直道：第 ${p.straightIndex}/6 格。`;
+        return "已到达终点。";
+    }
+
+    function progressText(p) { if (p.status==="base") return "基地"; if (p.status==="outer") return `外 ${p.outerSteps}/48`; if (p.status==="straight") return `直 ${p.straightIndex}/6`; return "终点"; }
+    function label(p) { return `${COLORS[p.color].emoji}${p.name}`; }
+    function countColors(arr) { const counts = {R:0,Y:0,B:0,G:0}; arr.forEach(p => counts[p.color]++); return counts; }
+
+    function loadTasks() {
+        try {
+            const raw = JSON.parse(localStorage.getItem(TASK_KEY));
+            if (!raw) return JSON.parse(JSON.stringify(defaultTasks));
+            if (!Array.isArray(raw.straight)) raw.straight = defaultTasks.straight;
+            if (!raw.takeoff) raw.takeoff = defaultTasks.takeoff;
+            if (!raw.baseRoll) raw.baseRoll = defaultTasks.baseRoll;
+            return raw;
+        } catch { return JSON.parse(JSON.stringify(defaultTasks)); }
+    }
+
+    function saveTasks() { localStorage.setItem(TASK_KEY, JSON.stringify(tasks)); }
+    function saveState() { if (state) { localStorage.setItem(STATE_KEY, JSON.stringify(state)); els.continueBtn.disabled = false; } }
+    function makeId() { return Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-4); }
+    function firstChar(s) { return Array.from((s||"?").trim())[0] || "?"; }
+    function escapeHtml(s) { return String(s).replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m])); }
+})();
+</script>
+</body>
+</html>
