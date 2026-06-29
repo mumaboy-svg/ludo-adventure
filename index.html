@@ -68,6 +68,14 @@
         .task-center.active textarea, .setup.active textarea { background: #fffdf8c4; border-color: #ffffffd0; box-shadow: inset 0 1px 0 #fff8; }
         .task-center.active details, .setup.active details { background: #fffdf84a; border-color: #ffffff9c; backdrop-filter: blur(3px); }
         .game { display: none; }
+        .game.active {
+            min-height: calc(100svh - 90px); padding: 18px; border-radius: 30px;
+            background:
+                radial-gradient(circle at 20% 14%, #fff6 0 9%, transparent 21%),
+                radial-gradient(circle at 84% 82%, #ffe07a55 0 10%, transparent 24%),
+                linear-gradient(135deg, #78d9ff 0%, #b7f0ff 45%, #ffe39f 100%);
+            box-shadow: inset 0 0 0 8px #ffffff70, 0 20px 48px #34210c1f;
+        }
         .setup.active, .task-center.active { display: grid; }
         .home-hero {
             min-height: 100svh; display: grid; grid-template-rows: auto auto 1fr;
@@ -124,7 +132,17 @@
         .stat b { display: block; font-size: 20px; }
         .stat span { color: var(--muted); font-size: 12px; font-weight: 800; }
         .page-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
-        .game-grid { display: grid; grid-template-columns: minmax(320px, 760px) minmax(310px, 430px); gap: 16px; align-items: start; }
+        .game-grid { display: grid; grid-template-columns: minmax(360px, 780px) minmax(300px, 390px); gap: 18px; align-items: start; }
+        .game.active .card {
+            background: linear-gradient(180deg, #fffdf8d9, #fff3d0cc);
+            border: 2px solid #ffffffd0; box-shadow: 0 18px 36px #5a3a1826, inset 0 1px 0 #fff;
+            backdrop-filter: blur(6px) saturate(1.08);
+        }
+        .game.active .game-grid > .card:first-child {
+            padding: clamp(10px, 1.8vw, 18px); border-radius: 34px;
+            background: radial-gradient(circle at 50% 42%, #ffffffd9 0 49%, #ffe7a0c9 70%, #f2a83ab8 100%);
+            border-color: #fff8d4; box-shadow: 0 22px 42px #6540142b, inset 0 0 0 8px #ffffff82;
+        }
         .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
         .player-row { display: grid; grid-template-columns: 1fr 105px 40px; gap: 8px; margin-bottom: 8px; }
         .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: .6rem 0; }
@@ -137,7 +155,11 @@
         .task-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
         .task-grid label { color: var(--muted); font-size: 12px; font-weight: 900; }
 
-        .board-wrap { width: min(96vw, 760px); max-width: 100%; margin: auto; }
+        .board-wrap {
+            width: min(96vw, 760px); max-width: 100%; margin: auto; padding: clamp(8px, 1.6vw, 18px);
+            border-radius: 34px; background: linear-gradient(145deg, #fff8d9, #ffc65f);
+            box-shadow: inset 0 0 0 4px #fff7, 0 12px 28px #7a4a1426;
+        }
         .board {
             position: relative; width: 100%; aspect-ratio: 1 / 1; border-radius: 30px;
             background: radial-gradient(circle at 50% 50%, #fff7df 0 18%, transparent 19%),
@@ -147,7 +169,7 @@
         }
         .board.preview-board {
             background: url('./assets/images/ui/board_traditional_preview.png') center / contain no-repeat;
-            border: 0; border-radius: 18px; overflow: visible; box-shadow: 0 18px 38px #0002;
+            border: 0; border-radius: 18px; overflow: visible; box-shadow: 0 18px 38px #0003, 0 0 0 8px #fff8;
         }
         .board.preview-board::before,
         .board.preview-board .base-panel,
@@ -157,7 +179,7 @@
             position: absolute; left: 10px; bottom: 10px; z-index: 40;
             background: #111c; color: #fff; border-radius: 10px; padding: 6px 8px;
             font: 12px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-            pointer-events: none;
+            pointer-events: none; display: none;
         }
         .board::before {
             content: ""; position: absolute; inset: 0;
@@ -217,10 +239,10 @@
         }
         .piece-layer { position: absolute; inset: 0; pointer-events: none; z-index: 20; }
         .piece {
-            position: absolute; width: 8%; height: auto; min-width: 50px; min-height: 34px;
+            position: absolute; width: 8%; height: auto; min-width: 48px; min-height: 34px;
             transform: translate(-50%, -50%);
             display: flex; align-items: center; gap: 4px;
-            filter: drop-shadow(0 4px 8px #0005);
+            filter: drop-shadow(0 5px 7px #0007) drop-shadow(0 1px 0 #fff8);
             transition: left .28s ease, top .28s ease, transform .2s ease;
             white-space: nowrap;
         }
@@ -235,20 +257,32 @@
             line-height: 1.2;
         }
         .piece.current {
-            filter: drop-shadow(0 4px 8px #0005) drop-shadow(0 0 12px #111);
+            filter: drop-shadow(0 5px 7px #0007) drop-shadow(0 0 12px #fff) drop-shadow(0 0 16px currentColor);
             animation: pulse .8s infinite alternate;
         }
-        @keyframes pulse { to { filter: drop-shadow(0 4px 8px #0005) drop-shadow(0 0 18px #111) brightness(1.15); } }
+        @keyframes pulse { to { filter: drop-shadow(0 5px 7px #0007) drop-shadow(0 0 18px #fff) drop-shadow(0 0 22px currentColor) brightness(1.18); } }
         .side { display: grid; gap: 12px; }
+        .side .card { border-radius: 26px; }
+        .side .card h3 { margin-top: 0; color: #473019; text-shadow: 0 2px 0 #fff8; }
         .status {
             display: flex; justify-content: space-between; align-items: center; gap: 8px;
-            background: #fff9; border: 1px solid var(--line); border-radius: 18px; padding: .75rem;
+            background: linear-gradient(135deg, #fff8d6, #ffffffd9);
+            border: 2px solid #ffffffd8; border-radius: 22px; padding: .85rem;
+            box-shadow: inset 0 1px 0 #fff, 0 10px 20px #6b441923;
         }
-        .current-name { font-size: 18px; font-weight: 1000; }
-        .badge { display: inline-block; border-radius: 999px; background: #eee7dc; padding: .35rem .6rem; font-size: 13px; font-weight: 900; }
-        .dice-row { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; margin-top: 12px; }
+        .current-name { font-size: clamp(20px, 2vw, 28px); font-weight: 1000; color: #2d2216; text-shadow: 0 2px 0 #fff; }
+        .hint { color: #7d5a32; font-weight: 1000; }
+        .badge { display: inline-block; border-radius: 999px; background: linear-gradient(180deg, #fff, #ffe8b5); padding: .38rem .62rem; font-size: 13px; font-weight: 1000; border: 1px solid #fff9; box-shadow: 0 5px 12px #5b35141c; }
+        .dice-row {
+            display: grid; grid-template-columns: 118px 1fr; gap: 14px; align-items: center; margin-top: 14px;
+            padding: 12px; border-radius: 24px; background: linear-gradient(135deg, #5d73ff, #8d52ff 55%, #ffb94c);
+            box-shadow: 0 14px 28px #3c2f762e, inset 0 1px 0 #fff8;
+        }
         .dice-container {
             width: 106px; height: 106px; perspective: 600px; cursor: pointer;
+            display: grid; place-items: center; border-radius: 28px;
+            background: radial-gradient(circle at 35% 25%, #fff, #ffe6a0 48%, #ef9f28 100%);
+            box-shadow: inset 0 2px 0 #fff, 0 10px 20px #0003;
         }
         .dice-cube {
             width: 60px; height: 60px; position: relative;
@@ -259,8 +293,8 @@
         }
         .face {
             position: absolute; width: 100%; height: 100%;
-            background: linear-gradient(145deg, #fff, #e8e0d6);
-            border: 2px solid #999;
+            background: linear-gradient(145deg, #fff, #fff1cf);
+            border: 2px solid #8c5d24;
             border-radius: 10px;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -329,19 +363,28 @@
         .dice-cube.show-4 { transform: rotateY(-90deg) rotateX(0deg); }
         .dice-cube.show-5 { transform: rotateX(-90deg) rotateY(0deg); }
         .dice-cube.show-6 { transform: rotateY(180deg) rotateX(0deg); }
-        .roll-btn { height: 64px; font-size: 20px; background: linear-gradient(135deg, #27231f, #6653ff); }
+        .roll-btn {
+            height: 72px; font-size: 22px; border-radius: 22px;
+            background: linear-gradient(180deg, #fff061, #ff982f 68%, #e85c20);
+            color: #5b2408; text-shadow: 0 1px 0 #fff8;
+            box-shadow: 0 12px 0 #a33d17, 0 18px 26px #3b190b4a, inset 0 2px 0 #fff9;
+        }
+        .roll-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 0 #a33d17, 0 20px 28px #3b190b4a, inset 0 2px 0 #fff9; }
+        .roll-btn:active:not(:disabled) { transform: translateY(6px); box-shadow: 0 6px 0 #a33d17, 0 10px 18px #3b190b4a, inset 0 2px 0 #fff9; }
         .players { display: grid; gap: 8px; max-height: 330px; overflow: auto; }
         .player-card {
             display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px;
-            background: #fff9; border: 1px solid var(--line); border-radius: 16px; padding: .7rem;
+            background: linear-gradient(135deg, #ffffffd9, #fff0c5d9); border: 1px solid #ffffffd9; border-radius: 18px; padding: .72rem;
+            box-shadow: 0 8px 16px #6b44161a;
         }
-        .player-card.current { border-color: #111; box-shadow: 0 0 0 3px #0001; }
-        .player-card.done { background: #effff2; }
+        .player-card.current { border-color: #ffdf57; box-shadow: 0 0 0 3px #ffdf5766, 0 10px 22px #6b441626; background: linear-gradient(135deg, #fff7b4, #ffffffd9); }
+        .player-card.done { background: linear-gradient(135deg, #e9ffe9, #ffffffd9); }
         .pname { font-weight: 1000; }
         .psub { font-size: 12px; color: var(--muted); margin-top: 2px; }
         .log {
-            height: 220px; overflow: auto; background: #171514; color: #fff4e5;
-            border-radius: 18px; padding: 12px; font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            height: 220px; overflow: auto; background: linear-gradient(180deg, #2c2019, #17100c); color: #fff4e5;
+            border-radius: 20px; padding: 12px; font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            box-shadow: inset 0 2px 10px #0007, 0 8px 16px #6b44161a;
         }
         .log p { margin: .15rem 0; }
         .hot { color: #ffe276; } .good { color: #a6f1b3; } .bad { color: #ffaaa5; } .task { color: #add8ff; }
@@ -439,6 +482,32 @@
             .task-grid { grid-template-columns: 1fr; }
             .card { border-radius: 20px; padding: 12px; }
             .base-panel { border-radius: 16px; }
+            .game.active { min-height: 100svh; border-radius: 0; padding: 10px; box-shadow: none; }
+            .game-grid { gap: 10px; }
+            .game.active .game-grid > .card:first-child { padding: 8px; border-radius: 24px; }
+            .board-wrap { width: min(100%, 520px); padding: 7px; border-radius: 22px; }
+            .board.preview-board { border-radius: 12px; box-shadow: 0 10px 22px #0003, 0 0 0 4px #fff8; }
+            .side { gap: 10px; }
+            .side .card { border-radius: 20px; }
+            .status { padding: .62rem; border-radius: 18px; align-items: flex-start; }
+            .current-name { font-size: 20px; }
+            .badge { font-size: 11px; padding: .28rem .46rem; }
+            .dice-row { grid-template-columns: 92px 1fr; gap: 10px; padding: 9px; border-radius: 20px; }
+            .dice-container { width: 86px; height: 86px; border-radius: 22px; }
+            .dice-cube { width: 54px; height: 54px; }
+            .face.front  { transform: rotateY(0deg) translateZ(27px); }
+            .face.back   { transform: rotateY(180deg) translateZ(27px); }
+            .face.right  { transform: rotateY(90deg) translateZ(27px); }
+            .face.left   { transform: rotateY(-90deg) translateZ(27px); }
+            .face.top    { transform: rotateX(90deg) translateZ(27px); }
+            .face.bottom { transform: rotateX(-90deg) translateZ(27px); }
+            .roll-btn { height: 58px; font-size: 18px; border-radius: 18px; box-shadow: 0 8px 0 #a33d17, 0 14px 20px #3b190b3d, inset 0 2px 0 #fff9; }
+            .players { max-height: 185px; }
+            .player-card { padding: .55rem; border-radius: 15px; }
+            .log { height: 140px; border-radius: 16px; }
+            .piece { min-width: 40px; transform-origin: center; }
+            .piece-img { width: 28px; height: 28px; }
+            .piece-name { display: none; }
         }
         @media(max-width: 860px) and (max-height: 720px) {
             .home-hero { gap: 5px; padding-bottom: 8px; }
@@ -553,7 +622,7 @@
                 <button class="secondary" id="exportTasksBtn">📤 导出任务</button>
                 <button class="secondary" id="fillDemoBtn">✨ 示例任务</button>
                 <button class="secondary" id="checkTasksBtn">任务检查</button>
-                <button class="warn" id="clearBtn">🗑 清空存档</button>
+                <button class="warn" id="clearBtn">🗑 清空全部数据</button>
             </div>
             <input type="file" id="importFileInput" accept=".json" style="display:none;">
         </div>
@@ -661,6 +730,7 @@
                     </div>
                     <div class="actions">
                         <button class="secondary" id="backSetupBtn">返回设置</button>
+                        <button class="secondary" id="gameHomeBtn">返回大厅</button>
                         <button class="warn" id="newGameBtn">重开</button>
                     </div>
                 </div>
@@ -863,7 +933,7 @@
         playersList: el("playersList"), log: el("log"), coordTip: el("coordTip"),
         modalBg: el("modalBg"), modal: document.querySelector("#modalBg .modal"), modalSub: el("modalSub"), modalTitle: el("modalTitle"),
         modalBody: el("modalBody"), modalOk: el("modalOk"),
-        backSetupBtn: el("backSetupBtn"), newGameBtn: el("newGameBtn")
+        backSetupBtn: el("backSetupBtn"), gameHomeBtn: el("gameHomeBtn"), newGameBtn: el("newGameBtn")
     };
 
     let tasks = loadTasks();
@@ -888,18 +958,18 @@
     }
 
     function bind() {
-        els.topHomeBtn.onclick = showHome;
+        els.topHomeBtn.onclick = goHome;
         els.homeContinueBtn.onclick = continueGame;
         els.homeNewGameBtn.onclick = showSetup;
         els.quickStartBtn.onclick = startGame;
         els.homeTaskBtn.onclick = showTaskCenter;
         els.homeSetupBtn.onclick = showSetup;
         els.homeTestBtn.onclick = () => { window.location.href = "./tests/test_planes.html"; };
-        els.setupBackHomeBtn.onclick = showHome;
+        els.setupBackHomeBtn.onclick = goHome;
         els.setupTaskBtn.onclick = showTaskCenter;
         els.setupContinueBtn.onclick = continueGame;
-        els.taskBackHomeBtn.onclick = showHome;
-        els.taskSetupBtn.onclick = showSetup;
+        els.taskBackHomeBtn.onclick = goHome;
+        els.taskSetupBtn.onclick = goSetup;
         els.taskStartBtn.onclick = () => { saveTasksFromEditors(); startGame(); };
         els.checkTasksBtn.onclick = () => alert(taskCheckMessage());
         els.addPlayerBtn.onclick = () => {
@@ -914,10 +984,11 @@
         els.importTasksBtn.onclick = () => els.importFileInput.click();
         els.importFileInput.onchange = importTasks;
         els.fillDemoBtn.onclick = () => { tasks = JSON.parse(JSON.stringify(demoTasks)); saveTasks(); renderTaskEditors(); updateDashboard(); alert("已填充示例任务。"); };
-        els.clearBtn.onclick = () => { if (confirm("清空所有存档？")) { localStorage.clear(); location.reload(); } };
+        els.clearBtn.onclick = () => { if (confirm("确定清空全部数据？这会删除游戏存档和任务表。")) { localStorage.clear(); location.reload(); } };
         els.rollBtn.onclick = rollDice;
         els.modalOk.onclick = () => { els.modalBg.style.display = "none"; modalOpen = false; showNextModal(); };
-        els.backSetupBtn.onclick = showSetup;
+        els.backSetupBtn.onclick = returnToSetupFromGame;
+        els.gameHomeBtn.onclick = goHome;
         els.newGameBtn.onclick = () => { if (confirm("重开游戏？")) { localStorage.removeItem(STATE_KEY); state = null; showSetup(); } };
         els.board.onmousemove = updateCoordTip;
         els.board.onclick = updateCoordTip;
@@ -929,6 +1000,35 @@
         const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
         const y = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
         els.coordTip.textContent = `x: ${x}%, y: ${y}%`;
+    }
+
+    function goHome() {
+        persistBeforeNavigation();
+        showHome();
+    }
+
+    function goSetup() {
+        persistBeforeNavigation();
+        showSetup();
+    }
+
+    function persistBeforeNavigation() {
+        if (els.taskCenter.classList.contains("active")) saveTasksFromEditors();
+        if (state) saveState();
+        closeModalForNavigation();
+    }
+
+    function closeModalForNavigation() {
+        if (!modalOpen && !modalQueue.length) return;
+        els.modalBg.style.display = "none";
+        modalOpen = false;
+        modalQueue = [];
+    }
+
+    function returnToSetupFromGame() {
+        if (state) saveState();
+        const ok = !state || state.gameOver || confirm("当前游戏已自动保存。返回设置后，如果点击“开始游戏”会创建新局并覆盖当前进度，确定返回设置？");
+        if (ok) showSetup();
     }
 
     function showHome() {
