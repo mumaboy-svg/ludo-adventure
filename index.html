@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>飞行棋 · 大冒险 v2.0</title>
+    <style>
+        :root {
+            --bg: #f7f1e8; --ink: #25211d; --muted: #776f65; --panel: #fffdf8ee; --line: #ddd0bf;
+            --Y: #ffd84d; --B: #4aa3ff; --R: #ff6666; --G: #55d37d;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100svh;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+            color: var(--ink);
+            background: radial-gradient(circle at 0 0, #fff2a5 0, transparent 360px),
+                radial-gradient(circle at 100% 100%, #d7efff 0, transparent 380px), var(--bg);
+        }
+        button, input, select, textarea { font: inherit; }
+        button {
+            border: 0; border-radius: 14px; padding: .75rem 1rem; background: #27231f; color: #fff;
+            font-weight: 900; cursor: pointer; box-shadow: 0 10px 20px #0002;
+        }
+        button.secondary { background: #f1eadf; color: #29241f; border: 1px solid var(--line); box-shadow: none; }
+        button.warn { background: #b73737; }
+        button:disabled { opacity: .5; cursor: not-allowed; }
+        input, select, textarea {
+            width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: .65rem;
+            background: #fff; color: var(--ink);
+        }
+        textarea { min-height: 60px; resize: vertical; line-height: 1.4; }
+        .app { max-width: 1250px; margin: auto; padding: 14px; }
+        body.home-mode .app { max-width: none; padding: 0; }
+        body.home-mode .top { display: none; }
+        .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .brand { display: flex; gap: 12px; align-items: center; }
+        .logo {
+            width: 48px; height: 48px; border-radius: 18px; display: grid; place-items: center;
+            font-size: 26px; background: conic-gradient(var(--Y), var(--B), var(--R), var(--G), var(--Y));
+            border: 4px solid white; box-shadow: 0 12px 30px #0002;
+        }
+        h1 { margin: 0; font-size: clamp(22px, 4vw, 34px); }
+        small, .hint { color: var(--muted); font-size: 13px; }
+        .card {
+            background: var(--panel); border: 1px solid #e3d7c8; border-radius: 24px;
+            padding: 16px; box-shadow: 0 16px 40px #34210c18; backdrop-filter: blur(8px);
+        }
+        .home { display: block; }
+        .setup { display: none; grid-template-columns: minmax(300px, 1fr) minmax(300px, 1fr); gap: 16px; }
+        .task-center { display: none; grid-template-columns: minmax(320px, .8fr) minmax(340px, 1.2fr); gap: 16px; }
+        .game { display: none; }
+        .setup.active, .task-center.active { display: grid; }
+        .home-hero {
+            min-height: 100svh; display: grid; grid-template-rows: auto auto 1fr;
+            gap: 12px; padding: clamp(14px, 2vw, 26px); border-radius: 0;
+            background: linear-gradient(#ffffff30, #ffffff30), url('./assets/images/ui/home_bg_desktop.png') center / cover no-repeat;
+            border: 0; box-shadow: inset 0 0 0 8px #ffffff42;
+            position: relative; overflow: hidden;
+        }
+        @media(min-width: 861px) {
+            .home-hero { max-height: none; }
+            .home-titlebar { padding-top: clamp(4px, 1vw, 10px); }
+            .primary-menu { padding: 0 clamp(42px, 9vw, 190px); align-self: start; }
+            .home-bottom { align-self: end; padding: 0 clamp(44px, 10vw, 210px) clamp(8px, 1vw, 16px); }
+        }
+        .home-hero::before {
+            content: ""; position: absolute; inset: 0; pointer-events: none;
+            background: linear-gradient(to right, #0000000b 1px, transparent 1px), linear-gradient(to bottom, #0000000b 1px, transparent 1px);
+            background-size: 42px 42px; mask-image: linear-gradient(to bottom, #000 0, transparent 78%);
+        }
+        .home-titlebar { position: relative; display: grid; justify-items: center; text-align: center; gap: 6px; padding-top: 8px; }
+        .hero-title { font-size: clamp(42px, 8vw, 92px); line-height: .92; letter-spacing: 0; margin: 0; text-shadow: 0 5px 0 #fff, 0 13px 24px #4b2a151f; }
+        .title-logo { width: min(44vw, 460px); height: auto; display: block; filter: drop-shadow(0 14px 20px #3d260d24); }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+        .hero-copy { max-width: 620px; color: #5e554b; font-size: 15px; line-height: 1.5; margin: 0; font-weight: 800; }
+        .version-pill { position: absolute; right: 22px; top: 18px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #ffffffad; background: #ffffffb8; border-radius: 999px; padding: .34rem .62rem; font-size: 12px; font-weight: 1000; box-shadow: 0 8px 16px #0001; }
+        .home-stats { position: absolute; left: 22px; top: 18px; z-index: 2; display: flex; gap: 10px; }
+        .home-stats .stat { min-width: 102px; border: 1px solid #ffffffb8; background: #fffdf8c9; box-shadow: 0 8px 16px #0001; backdrop-filter: blur(8px); }
+        .primary-menu { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-self: center; justify-self: center; width: min(100%, 1160px); }
+        .menu-button {
+            width: 100%; aspect-ratio: 2048 / 683; min-height: 0; text-align: center; border-radius: 24px; padding: 12px 14px;
+            display: grid; grid-template-columns: auto 1fr; justify-items: start; align-items: center; align-content: center; gap: 12px;
+            background: transparent center / 100% 100% no-repeat; border: 0;
+            box-shadow: none;
+        }
+        .menu-button > span:last-child { justify-self: center; text-align: center; min-width: 0; }
+        .menu-button.continue { background: transparent url('./assets/images/ui/button_continue.png') center / 100% 100% no-repeat; }
+        .menu-button.new-game { background: transparent url('./assets/images/ui/button_new_game.png') center / 100% 100% no-repeat; color: var(--ink); }
+        .menu-button.quick-start { background: transparent url('./assets/images/ui/button_quick_start.png') center / 100% 100% no-repeat; color: #173a22; }
+        .menu-button .icon { width: clamp(64px, 7vw, 102px); height: clamp(64px, 7vw, 102px); display: grid; place-items: center; background: transparent; }
+        .menu-button .icon img { width: 100%; height: 100%; object-fit: contain; display: block; filter: drop-shadow(0 5px 7px #0003); }
+        .menu-title { display: block; font-size: clamp(18px, 2.5vw, 28px); font-weight: 1000; text-shadow: 0 2px 3px #0004; white-space: nowrap; }
+        .menu-sub { display: block; color: #ffffffd9; font-size: clamp(11px, 1.1vw, 13px); line-height: 1.2; margin-top: 3px; font-weight: 900; text-shadow: 0 1px 2px #0006; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: min(22vw, 260px); }
+        .menu-button.new-game .menu-title, .menu-button.new-game .menu-sub { color: #7a4a10; text-shadow: 0 1px 0 #fff8; }
+        .menu-button.quick-start .menu-title, .menu-button.quick-start .menu-sub { color: #174d16; text-shadow: 0 1px 0 #ffffff8c; }
+        .home-bottom { position: relative; display: block; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(18px, 4vw, 54px); align-items: end; }
+        .tool-card { min-height: 0; text-align: center; border-radius: 24px; padding: 10px 8px 8px; background: radial-gradient(circle at 50% 38%, #ffffffee 0 38%, #fff7d0bd 58%, transparent 76%); color: var(--ink); border: 0; box-shadow: 0 0 22px #fff9, 0 12px 24px #0002; }
+        .tool-card img { width: clamp(78px, 8vw, 122px); height: clamp(78px, 8vw, 122px); object-fit: contain; display: block; margin: -10px auto -4px; filter: drop-shadow(0 8px 12px #0004) drop-shadow(0 0 16px #fff); transition: transform .16s ease; }
+        .tool-card:hover img { transform: translateY(-4px) scale(1.04); }
+        .tool-card strong { display: block; font-size: clamp(17px, 1.8vw, 23px); margin-bottom: 2px; color: #2b241d; text-shadow: 0 2px 0 #fff, 0 0 10px #fff, 0 5px 8px #0003; }
+        .tool-card span { display: block; color: #4f453b; font-size: 12px; line-height: 1.25; font-weight: 1000; text-shadow: 0 1px 0 #fff, 0 0 8px #fff; }
+        .stat-grid { display: grid; grid-template-columns: repeat(2, 120px); gap: 8px; margin-top: 0; }
+        .stat { border: 1px solid var(--line); border-radius: 16px; background: #fffdf8d9; padding: 8px 10px; }
+        .stat b { display: block; font-size: 20px; }
+        .stat span { color: var(--muted); font-size: 12px; font-weight: 800; }
+        .page-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+        .game-grid { display: grid; grid-template-columns: minmax(320px, 760px) minmax(310px, 430px); gap: 16px; align-items: start; }
+        .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .player-row { display: grid; grid-template-columns: 1fr 105px 40px; gap: 8px; margin-bottom: 8px; }
+        .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: .6rem 0; }
+        .chip {
+            border-radius: 999px; background: #fff; border: 1px solid var(--line);
+            padding: .32rem .6rem; font-size: 13px; font-weight: 900;
+        }
+        details { border: 1px solid var(--line); border-radius: 18px; background: #fff9; padding: .75rem; margin: 10px 0; }
+        summary { cursor: pointer; font-weight: 900; }
+        .task-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+        .task-grid label { color: var(--muted); font-size: 12px; font-weight: 900; }
+
+        .board-wrap { width: min(96vw, 760px); max-width: 100%; margin: auto; }
+        .board {
+            position: relative; width: 100%; aspect-ratio: 1/1; border-radius: 30px;
+            background: radial-gradient(circle at 50% 50%, #fff7df 0 18%, transparent 19%),
+                linear-gradient(135deg, #fff8e7, #f7edda);
+            border: 5px solid #2b241d; overflow: hidden;
+            box-shadow: inset 0 0 0 8px #ffffffb5, inset 0 0 0 18px #ecd9b8, 0 18px 38px #0002;
+        }
+        .board::before {
+            content: ""; position: absolute; inset: 0;
+            background:
+                linear-gradient(45deg, transparent 47%, #ffffff8a 48% 52%, transparent 53%),
+                linear-gradient(-45deg, transparent 47%, #ffffff8a 48% 52%, transparent 53%);
+            background-size: 16% 16%; opacity: .25;
+        }
+        .base-panel {
+            position: absolute; width: 24%; height: 24%; border: 4px solid #fff8;
+            border-radius: 26px; box-shadow: inset 0 5px 0 #fff8, inset 0 -7px 14px #0002, 0 10px 18px #0002;
+            display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+            gap: 12%; padding: 12%;
+        }
+        .base-panel.G { left: 3%; top: 3%; background: linear-gradient(145deg, #8df0a5, var(--G)); }
+        .base-panel.R { right: 3%; top: 3%; background: linear-gradient(145deg, #ff9f9a, var(--R)); }
+        .base-panel.B { left: 3%; bottom: 3%; background: linear-gradient(145deg, #8ed2ff, var(--B)); }
+        .base-panel.Y { right: 3%; bottom: 3%; background: linear-gradient(145deg, #fff28d, var(--Y)); }
+        .base-panel::before { content: "机场"; position: absolute; inset: auto 10% 7%; color: #ffffffd9; font-size: clamp(10px, 1.8vw, 18px); font-weight: 1000; text-align: center; text-shadow: 0 2px 3px #0005; }
+        .hole { border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #fff7dc 70%); border: 3px solid #0003; box-shadow: inset 0 4px 10px #0001, 0 4px 8px #0002; }
+        .spot {
+            position: absolute; width: 4.9%; height: 4.9%; min-width: 20px; min-height: 20px;
+            border-radius: 13px; transform: translate(-50%, -50%);
+            display: grid; place-items: center; border: 2px solid #2229;
+            box-shadow: inset 0 2px 0 #fff9, inset 0 -3px 6px #0001, 0 4px 9px #0002;
+            font-size: clamp(8px, 1.35vw, 13px); font-weight: 1000;
+            text-align: center; line-height: 1;
+        }
+        .spot.Y { background: linear-gradient(145deg, #fff7a8, var(--Y)); } .spot.B { background: linear-gradient(145deg, #a9dcff, var(--B)); } .spot.R { background: linear-gradient(145deg, #ffaaaa, var(--R)); } .spot.G { background: linear-gradient(145deg, #a4f4b8, var(--G)); }
+        .spot.start { outline: 4px solid #fff; box-shadow: 0 0 0 3px #222, inset 0 2px 0 #fff8, 0 4px 9px #0002; }
+        .spot.task-mark::after { content: "?"; position: absolute; right: -5px; top: -7px; width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; background: #fff; border: 2px solid #2228; font-size: 10px; }
+        .spot.straight { border-radius: 9px; width: 5.3%; height: 5.3%; }
+        .center {
+            position: absolute; left: 50%; top: 50%; width: 15%; height: 15%;
+            transform: translate(-50%, -50%) rotate(45deg); border-radius: 26px; display: grid; place-items: center;
+            background: conic-gradient(var(--R) 0 25%, var(--Y) 0 50%, var(--B) 0 75%, var(--G) 0);
+            border: 4px solid #27231f; box-shadow: 0 10px 22px #0003;
+        }
+        .center span {
+            width: 58%; height: 58%; border-radius: 50%; display: grid; place-items: center; transform: rotate(-45deg);
+            background: white; color: #d71919; font-size: clamp(20px, 5vw, 42px); font-weight: 1000;
+        }
+        .piece-layer { position: absolute; inset: 0; pointer-events: none; z-index: 20; }
+        .piece {
+            position: absolute; width: 8%; height: auto; min-width: 50px; min-height: 34px;
+            transform: translate(-50%, -50%);
+            display: flex; align-items: center; gap: 4px;
+            filter: drop-shadow(0 4px 8px #0005);
+            transition: left .28s ease, top .28s ease, transform .2s ease;
+            white-space: nowrap;
+        }
+        .piece-img {
+            width: 34px; height: 34px; flex-shrink: 0;
+        }
+        .piece-name {
+            font-size: 11px; font-weight: 900; color: #fff;
+            background: rgba(0,0,0,0.65); border: 1px solid rgba(255,255,255,0.4);
+            padding: 2px 6px; border-radius: 8px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+            line-height: 1.2;
+        }
+        .piece.current {
+            filter: drop-shadow(0 4px 8px #0005) drop-shadow(0 0 12px #111);
+            animation: pulse .8s infinite alternate;
+        }
+        @keyframes pulse { to { filter: drop-shadow(0 4px 8px #0005) drop-shadow(0 0 18px #111) brightness(1.15); } }
+        .side { display: grid; gap: 12px; }
+        .status {
+            display: flex; justify-content: space-between; align-items: center; gap: 8px;
+            background: #fff9; border: 1px solid var(--line); border-radius: 18px; padding: .75rem;
+        }
+        .current-name { font-size: 18px; font-weight: 1000; }
+        .badge { display: inline-block; border-radius: 999px; background: #eee7dc; padding: .35rem .6rem; font-size: 13px; font-weight: 900; }
+        .dice-row { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; margin-top: 12px; }
+        .dice-container {
+            width: 106px; height: 106px; perspective: 600px; cursor: pointer;
+        }
+        .dice-cube {
+            width: 60px; height: 60px; position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(-15deg) rotateY(15deg);
+            margin: auto;
+            transition: transform 0.7s ease-out;
+        }
+        .face {
+            position: absolute; width: 100%; height: 100%;
+            background: linear-gradient(145deg, #fff, #e8e0d6);
+            border: 2px solid #999;
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            padding: 6px;
+            backface-visibility: hidden;
+            box-shadow: inset -4px -4px 8px #0001, inset 4px 4px 8px #fff;
+        }
+        .pip {
+            width: 12px; height: 12px;
+            background: #2b241d;
+            border-radius: 50%;
+            align-self: center;
+            justify-self: center;
+            box-shadow: inset -1px -1px 2px #0005;
+        }
+        /* 点数1: 中间 */
+        .face-1 .pip { grid-column: 2; grid-row: 2; }
+        /* 点数2: 左上和右下 */
+        .face-2 .pip:nth-child(1) { grid-column: 1; grid-row: 1; }
+        .face-2 .pip:nth-child(2) { grid-column: 3; grid-row: 3; }
+        /* 点数3: 对角线 */
+        .face-3 .pip:nth-child(1) { grid-column: 1; grid-row: 1; }
+        .face-3 .pip:nth-child(2) { grid-column: 2; grid-row: 2; }
+        .face-3 .pip:nth-child(3) { grid-column: 3; grid-row: 3; }
+        /* 点数4: 四角 */
+        .face-4 .pip:nth-child(1) { grid-column: 1; grid-row: 1; }
+        .face-4 .pip:nth-child(2) { grid-column: 3; grid-row: 1; }
+        .face-4 .pip:nth-child(3) { grid-column: 1; grid-row: 3; }
+        .face-4 .pip:nth-child(4) { grid-column: 3; grid-row: 3; }
+        /* 点数5: 四角+中间 */
+        .face-5 .pip:nth-child(1) { grid-column: 1; grid-row: 1; }
+        .face-5 .pip:nth-child(2) { grid-column: 3; grid-row: 1; }
+        .face-5 .pip:nth-child(3) { grid-column: 2; grid-row: 2; }
+        .face-5 .pip:nth-child(4) { grid-column: 1; grid-row: 3; }
+        .face-5 .pip:nth-child(5) { grid-column: 3; grid-row: 3; }
+        /* 点数6: 左右两列 */
+        .face-6 .pip:nth-child(1) { grid-column: 1; grid-row: 1; }
+        .face-6 .pip:nth-child(2) { grid-column: 3; grid-row: 1; }
+        .face-6 .pip:nth-child(3) { grid-column: 1; grid-row: 2; }
+        .face-6 .pip:nth-child(4) { grid-column: 3; grid-row: 2; }
+        .face-6 .pip:nth-child(5) { grid-column: 1; grid-row: 3; }
+        .face-6 .pip:nth-child(6) { grid-column: 3; grid-row: 3; }
+        /* 3D 面位置 */
+        .face.front  { transform: rotateY(0deg) translateZ(30px); }
+        .face.back   { transform: rotateY(180deg) translateZ(30px); }
+        .face.right  { transform: rotateY(90deg) translateZ(30px); }
+        .face.left   { transform: rotateY(-90deg) translateZ(30px); }
+        .face.top    { transform: rotateX(90deg) translateZ(30px); }
+        .face.bottom { transform: rotateX(-90deg) translateZ(30px); }
+        /* 翻滚动画 */
+        @keyframes tumble {
+            0%   { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+            25%  { transform: rotateX(120deg) rotateY(-45deg) rotateZ(200deg); }
+            50%  { transform: rotateX(-90deg) rotateY(180deg) rotateZ(-60deg); }
+            75%  { transform: rotateX(200deg) rotateY(45deg) rotateZ(-180deg); }
+            100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
+        }
+        .dice-cube.rolling {
+            animation: tumble 0.7s ease-out forwards;
+        }
+        /* 显示特定点数的类 */
+        .dice-cube.show-1 { transform: rotateY(0deg) rotateX(0deg); }
+        .dice-cube.show-2 { transform: rotateX(90deg) rotateY(0deg); }
+        .dice-cube.show-3 { transform: rotateY(90deg) rotateX(0deg); }
+        .dice-cube.show-4 { transform: rotateY(-90deg) rotateX(0deg); }
+        .dice-cube.show-5 { transform: rotateX(-90deg) rotateY(0deg); }
+        .dice-cube.show-6 { transform: rotateY(180deg) rotateX(0deg); }
+        .roll-btn { height: 64px; font-size: 20px; background: linear-gradient(135deg, #27231f, #6653ff); }
+        .players { display: grid; gap: 8px; max-height: 330px; overflow: auto; }
+        .player-card {
+            display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px;
+            background: #fff9; border: 1px solid var(--line); border-radius: 16px; padding: .7rem;
+        }
+        .player-card.current { border-color: #111; box-shadow: 0 0 0 3px #0001; }
+        .player-card.done { background: #effff2; }
+        .pname { font-weight: 1000; }
+        .psub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+        .log {
+            height: 220px; overflow: auto; background: #171514; color: #fff4e5;
+            border-radius: 18px; padding: 12px; font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        }
+        .log p { margin: .15rem 0; }
+        .hot { color: #ffe276; } .good { color: #a6f1b3; } .bad { color: #ffaaa5; } .task { color: #add8ff; }
+        .modal-bg {
+            position: fixed; inset: 0; display: none; place-items: center;
+            background: #0007; z-index: 99; padding: 16px;
+        }
+        .modal {
+            width: min(94vw, 520px); background: #fffdf8; border-radius: 28px;
+            padding: 20px; box-shadow: 0 22px 60px #0005;
+        }
+        .modal h2 { margin: .1rem 0 .4rem; }
+        .modal pre {
+            white-space: pre-wrap; font: inherit; background: #f7f0e5;
+            border: 1px solid var(--line); border-radius: 18px; padding: 14px; line-height: 1.5;
+        }
+        @media(max-width: 860px) {
+            .home-hero, .setup, .task-center, .game-grid { grid-template-columns: 1fr; }
+            .top { display: none; }
+            .app { padding: 0; }
+            .home-hero {
+                min-height: 100svh; height: 100svh; border-radius: 0; border: 0; padding: 10px 12px 12px;
+                grid-template-rows: auto auto 1fr; gap: 8px;
+                background: linear-gradient(#ffffff26, #ffffff26), url('./assets/images/ui/home_bg_mobile.png') center / cover no-repeat;
+                box-shadow: none;
+            }
+            .home-titlebar { padding-top: 30px; align-self: start; gap: 2px; }
+            .home-stats { position: absolute; left: 8px; top: 8px; right: auto; justify-content: flex-start; gap: 6px; }
+            .home-stats .stat { min-width: 58px; max-width: 78px; padding: 4px 6px; text-align: center; border-radius: 12px; }
+            .home-stats .stat b { font-size: 14px; line-height: 1; }
+            .home-stats .stat span { font-size: 9px; line-height: 1.1; }
+            .version-pill { right: 8px; top: 8px; font-size: 10px; padding: .24rem .42rem; border-width: 1px; box-shadow: none; }
+            .hero-title { font-size: clamp(42px, 14vw, 62px); line-height: .96; max-width: 340px; }
+            .title-logo { width: min(72vw, 260px); }
+            .hero-copy { font-size: 12px; line-height: 1.15; }
+            .primary-menu { grid-template-columns: 1fr; width: min(88vw, 350px); gap: 7px; justify-self: center; align-self: start; }
+            .menu-button {
+                aspect-ratio: 2048 / 683; min-height: 0; border-radius: 22px; grid-template-columns: 52px 1fr 8px; grid-template-rows: auto;
+                text-align: center; justify-items: center; padding: 2.8% 7%; background-size: 100% 100%;
+            }
+            .menu-button .icon { width: clamp(38px, 11vw, 50px); height: clamp(38px, 11vw, 50px); justify-self: start; }
+            .menu-button > span:last-child { justify-self: center; text-align: center; width: 100%; }
+            .menu-title { font-size: clamp(18px, 5.8vw, 22px); line-height: 1; }
+            .menu-sub { display: none; }
+            .home-bottom { grid-template-columns: 1fr; align-items: end; align-self: end; padding-bottom: 0; }
+            .dashboard-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+            .tool-card { min-height: 0; border-radius: 17px; padding: 0 4px; box-shadow: none; background: radial-gradient(circle at 50% 40%, #ffffffd9 0 35%, #fff5b8a8 58%, transparent 76%); }
+            .tool-card img { width: clamp(44px, 13vw, 56px); height: clamp(44px, 13vw, 56px); margin-bottom: -2px; }
+            .tool-card strong { font-size: clamp(12px, 3.6vw, 14px); line-height: 1.1; }
+            .tool-card span { display: none; }
+            .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .home-bottom .stat-grid { order: -1; }
+            .home-bottom .stat { padding: 8px; text-align: center; }
+            .home-bottom .stat b { font-size: 18px; }
+            .home-bottom .stat span { font-size: 11px; }
+            .task-grid { grid-template-columns: 1fr; }
+            .card { border-radius: 20px; padding: 12px; }
+            .base-panel { border-radius: 16px; }
+        }
+        @media(max-width: 860px) and (max-height: 720px) {
+            .home-hero { gap: 5px; padding-bottom: 8px; }
+            .home-titlebar { padding-top: 24px; }
+            .title-logo { width: min(64vw, 220px); }
+            .hero-copy { display: none; }
+            .primary-menu { width: min(84vw, 320px); gap: 5px; }
+            .menu-button { grid-template-columns: 44px 1fr 6px; }
+            .menu-button .icon { width: 40px; height: 40px; }
+            .menu-title { font-size: 18px; }
+            .tool-card img { width: 42px; height: 42px; }
+            .tool-card strong { font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="top">
+        <div class="brand">
+            <div class="logo">✈️</div>
+            <div>
+                <h1>飞行棋 · 大冒险 v2.0</h1>
+                <small>游戏大厅｜任务中心｜基地掷骰任务｜导入导出</small>
+            </div>
+        </div>
+        <button class="secondary" id="topHomeBtn">返回大厅</button>
+    </div>
+
+    <section id="home" class="home">
+        <div class="home-hero">
+            <div class="home-stats">
+                <div class="stat"><b id="taskCountTotal">-</b><span>当前任务数量</span></div>
+                <div class="stat"><b id="playerCountTotal">2</b><span>默认玩家数量</span></div>
+            </div>
+            <div class="home-titlebar">
+                <div class="version-pill">v2.0 · 本地存档 · 任务挑战</div>
+                <h2 class="hero-title sr-only">飞行棋 大冒险</h2>
+                <img class="title-logo" src="./assets/images/ui/title_logo.png" alt="飞行棋 大冒险">
+                <p class="hero-copy">多人飞行棋 + 随机任务挑战</p>
+            </div>
+            <div class="primary-menu">
+                <button class="menu-button continue" id="homeContinueBtn">
+                    <span class="icon"><img src="./assets/images/ui/icon_continue.png" alt=""></span>
+                    <span><span class="menu-title">继续上局</span><span class="menu-sub" id="saveSummary">正在检查存档</span></span>
+                </button>
+                <button class="menu-button new-game" id="homeNewGameBtn">
+                    <span class="icon"><img src="./assets/images/ui/icon_new_game.png" alt=""></span>
+                    <span><span class="menu-title">新游戏</span><span class="menu-sub">配置玩家</span></span>
+                </button>
+                <button class="menu-button quick-start" id="quickStartBtn">
+                    <span class="icon"><img src="./assets/images/ui/icon_quick_start.png" alt=""></span>
+                    <span><span class="menu-title">直接开局</span><span class="menu-sub">当前配置</span></span>
+                </button>
+            </div>
+            <div class="home-bottom">
+                <div class="dashboard-grid">
+                    <button class="tool-card" id="homeTaskBtn"><img src="./assets/images/ui/icon_tasks.png" alt=""><strong>任务中心</strong><span>读取、编辑、导出任务</span></button>
+                    <button class="tool-card" id="homeSetupBtn"><img src="./assets/images/ui/icon_settings.png" alt=""><strong>设置</strong><span>玩家、颜色和开局配置</span></button>
+                    <button class="tool-card" id="homeTestBtn"><img src="./assets/images/ui/icon_piece_test.png" alt=""><strong>棋子测试</strong><span>查看飞机显示效果</span></button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="setup" class="setup">
+        <div class="card">
+            <div class="page-head">
+                <div>
+                    <h2>新游戏设置</h2>
+                    <p class="hint">2-16 人；每色最多 4 人。每人一枚棋子。</p>
+                </div>
+                <button class="secondary" id="setupBackHomeBtn">返回大厅</button>
+            </div>
+            <div id="playersBox"></div>
+            <div class="chips" id="colorCounts"></div>
+            <div class="actions">
+                <button class="secondary" id="addPlayerBtn">+ 添加玩家</button>
+                <button id="startBtn">开始游戏</button>
+                <button class="secondary" id="setupTaskBtn">任务中心</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>开始前检查</h2>
+            <p class="hint">开始游戏前建议确认任务库数量，避免进入棋盘后任务为空。</p>
+            <div class="stat-grid">
+                <div class="stat"><b id="setupTaskTotal">-</b><span>任务总数</span></div>
+                <div class="stat"><b id="setupSaveState">-</b><span>存档状态</span></div>
+            </div>
+            <div class="actions">
+                <button class="secondary" id="setupContinueBtn">继续上局</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="taskCenter" class="task-center">
+        <div class="card">
+            <div class="page-head">
+                <div>
+                    <h2>任务中心</h2>
+                    <p class="hint">任务表保存在浏览器。建议先读取或检查任务，再开始游戏。</p>
+                </div>
+                <button class="secondary" id="taskBackHomeBtn">返回大厅</button>
+            </div>
+            <div class="stat-grid">
+                <div class="stat"><b id="taskCenterTotal">-</b><span>任务总数</span></div>
+                <div class="stat"><b id="taskCenterStatus">-</b><span>任务状态</span></div>
+            </div>
+            <div class="actions">
+                <button id="importTasksBtn">📥 读取任务</button>
+                <button class="secondary" id="saveTasksBtn">💾 保存任务</button>
+                <button class="secondary" id="exportTasksBtn">📤 导出任务</button>
+                <button class="secondary" id="fillDemoBtn">✨ 示例任务</button>
+                <button class="secondary" id="checkTasksBtn">任务检查</button>
+                <button class="warn" id="clearBtn">🗑 清空存档</button>
+            </div>
+            <input type="file" id="importFileInput" accept=".json" style="display:none;">
+        </div>
+
+        <div class="card">
+            <h2>任务编辑</h2>
+            <details>
+                <summary>🛫 起飞点任务（首次起飞时触发）</summary>
+                <textarea id="takeoffTask" data-task="takeoff" style="margin-top:8px;"></textarea>
+            </details>
+            <details open>
+                <summary>🎲 基地掷骰任务（点数2-5，每人每点数仅一次）</summary>
+                <div class="task-grid" id="baseRollTasks"></div>
+            </details>
+            <details>
+                <summary>周围路径 12 格任务（共享）</summary>
+                <div class="task-grid" id="outerTasks"></div>
+            </details>
+            <details>
+                <summary>直道任务（6格，所有颜色共用）</summary>
+                <div class="task-grid" id="straightTasksMerged"></div>
+            </details>
+            <details>
+                <summary>国王卡 A-K</summary>
+                <div class="task-grid" id="kingTasks"></div>
+            </details>
+            <details>
+                <summary>终极惩罚</summary>
+                <textarea id="finalPunish"></textarea>
+            </details>
+            <div class="actions">
+                <button id="taskStartBtn">保存并开始游戏</button>
+                <button class="secondary" id="taskSetupBtn">玩家设置</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="game" class="game">
+        <div class="game-grid">
+            <div class="card">
+                <div class="board-wrap">
+                    <div class="board" id="board">
+                        <div class="base-panel G"><div class="hole"></div><div class="hole"></div><div class="hole"></div><div class="hole"></div></div>
+                        <div class="base-panel R"><div class="hole"></div><div class="hole"></div><div class="hole"></div><div class="hole"></div></div>
+                        <div class="base-panel B"><div class="hole"></div><div class="hole"></div><div class="hole"></div><div class="hole"></div></div>
+                        <div class="base-panel Y"><div class="hole"></div><div class="hole"></div><div class="hole"></div><div class="hole"></div></div>
+                        <div class="center"><span>终</span></div>
+                        <div class="piece-layer" id="pieces"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="side">
+                <div class="card">
+                    <div class="status">
+                        <div>
+                            <div class="hint">当前玩家</div>
+                            <div class="current-name" id="currentName">-</div>
+                        </div>
+                        <div>
+                            <span class="badge" id="roundBadge">第 1 轮</span>
+                            <span class="badge" id="lastRoll">最后点数：-</span>
+                        </div>
+                    </div>
+                    <div class="dice-row">
+                        <div class="dice-container" id="diceContainer">
+                            <div class="dice-cube" id="diceCube">
+                                <div class="face front face-1">
+                                    <div class="pip"></div>
+                                </div>
+                                <div class="face back face-6">
+                                    <div class="pip"></div>
+                                    <div class="pip"></div>
+                                    <div class="pip"></div>
+                                    <div class="pip"></div>
+                                    <div class="pip"></div>
+                                    <div class="pip"></div>
+                                </div>
+                                <div class="face right face-3">
+                                    <div class="pip"></div>
+                                    <div class="pip"></div>
+                                    <div class="pip"></div>
+                                </div>
+                                <div class="face left face-4">
+                                    <div class="pip"></div>
+                                    <div class="pip"></div>
+                                    <div class="pip"></div>
+                                    <div class="pip"></div>
+                                </div>
+                                <div class="face top face-2">
+                                    <div class="pip"></div>
+                                    <div class="pip"></div>
+                                </div>
+                                <div class="face bottom face-5">
+                                    <div class="pip"></div>
+                                    <div class="pip"></div>
+                                    <div class="pip"></div>
+                                    <div class="pip"></div>
+                                    <div class="pip"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="roll-btn" id="rollBtn">🎲 掷骰子</button>
+                    </div>
+                    <div class="actions">
+                        <button class="secondary" id="backSetupBtn">返回设置</button>
+                        <button class="warn" id="newGameBtn">重开</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>玩家进度</h3>
+                    <div class="players" id="playersList"></div>
+                </div>
+
+                <div class="card">
+                    <h3>游戏记录</h3>
+                    <div class="log" id="log"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="modal-bg" id="modalBg">
+    <div class="modal">
+        <small id="modalSub">任务</small>
+        <h2 id="modalTitle">任务卡</h2>
+        <pre id="modalBody"></pre>
+        <button id="modalOk">完成，继续</button>
+    </div>
+</div>
+
+<script>
+(() => {
+    const STATE_KEY = "flight_adventure_v66_state";
+    const TASK_KEY = "flight_adventure_v66_tasks";
+
+    // ========== 音效系统 (Web Audio API) ==========
+    let audioCtx = null;
+    let diceRollAudio = null;
+
+    function getAudioContext() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        return audioCtx;
+    }
+
+    function playDiceRollSound() {
+        try {
+            // 使用MP3文件播放真实骰子滚动音效
+            if (!diceRollAudio) {
+                diceRollAudio = new Audio('./assets/audio/dice_roll.mp3');
+                diceRollAudio.volume = 0.5;
+                diceRollAudio.load(); // 预加载音频
+            }
+            diceRollAudio.currentTime = 0; // 重置到开始
+            diceRollAudio.play().catch(e => console.log('音效播放失败:', e));
+        } catch(e) {
+            console.log('音效播放失败:', e);
+            // 降级到白噪音
+            fallbackDiceRollSound();
+        }
+    }
+
+    // 降级方案：白噪音（当MP3无法播放时使用）
+    function fallbackDiceRollSound() {
+        try {
+            const ctx = getAudioContext();
+            const bufferSize = ctx.sampleRate * 0.3;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
+            }
+            const source = ctx.createBufferSource();
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass'; filter.frequency.value = 800; filter.Q.value = 0.5;
+            source.buffer = buffer; source.connect(filter); filter.connect(ctx.destination);
+            source.start();
+        } catch(e) { console.log('降级音效也失败'); }
+    }
+
+    function playDiceResultSound(value) {
+        try {
+            const ctx = getAudioContext();
+            const oscillator = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            oscillator.connect(gainNode); gainNode.connect(ctx.destination);
+            const frequencies = { 1: 261.63, 2: 293.66, 3: 329.63, 4: 349.23, 5: 392.00, 6: 440.00 };
+            oscillator.frequency.value = frequencies[value] || 330;
+            oscillator.type = 'sine';
+            gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+            oscillator.start(ctx.currentTime); oscillator.stop(ctx.currentTime + 0.5);
+        } catch(e) { console.log('音效播放失败'); }
+    }
+
+    // ========== 3D骰子动画系统 (基于 ludo-dice-roller) ==========
+    function animateDiceRoll(callback) {
+        const diceCube = document.getElementById('diceCube');
+        if (!diceCube) { if (callback) callback(); return; }
+
+        playDiceRollSound();
+
+        // 添加滚动动画类
+        diceCube.classList.remove('show-1', 'show-2', 'show-3', 'show-4', 'show-5', 'show-6');
+        diceCube.classList.add('rolling');
+
+        const result = Math.floor(Math.random() * 6) + 1;
+
+        setTimeout(() => {
+            diceCube.classList.remove('rolling');
+
+            // 移除所有show类
+            for (let i = 1; i <= 6; i++) {
+                diceCube.classList.remove('show-' + i);
+            }
+
+            // 添加结果类
+            diceCube.classList.add('show-' + result);
+
+            playDiceResultSound(result);
+
+            if (callback) callback(result);
+        }, 700);
+    }
+
+    const COLORS = {
+        Y: { name: "黄", emoji: "🟡", css: "Y" },
+        B: { name: "蓝", emoji: "🔵", css: "B" },
+        R: { name: "红", emoji: "🔴", css: "R" },
+        G: { name: "绿", emoji: "🟢", css: "G" }
+    };
+
+    const START_INDEX = { R: 6, Y: 18, B: 30, G: 42 };
+    const COLOR_ORDER = ["Y", "B", "R", "G"];
+    const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+
+    const baseSlots = {
+        G: [{ x: 8, y: 8 }, { x: 18, y: 8 }, { x: 8, y: 18 }, { x: 18, y: 18 }],
+        R: [{ x: 82, y: 8 }, { x: 92, y: 8 }, { x: 82, y: 18 }, { x: 92, y: 18 }],
+        B: [{ x: 8, y: 82 }, { x: 18, y: 82 }, { x: 8, y: 92 }, { x: 18, y: 92 }],
+        Y: [{ x: 82, y: 82 }, { x: 92, y: 82 }, { x: 82, y: 92 }, { x: 92, y: 92 }]
+    };
+
+    const outerPath = makeOuterPath();
+    const straightPath = makeStraightPath();
+
+    const defaultTasks = {
+        takeoff: "🛫 起飞！完成一个简单动作：举手高呼“起飞啦”！",
+        baseRoll: {
+            "2": "掷出2点：做2个深蹲。",
+            "3": "掷出3点：学3声猫叫。",
+            "4": "掷出4点：原地转4圈。",
+            "5": "掷出5点：与右边玩家击掌5下。"
+        },
+        outer: Array.from({ length: 12 }, (_, i) => `周围路径任务 ${i + 1}：请自定义大冒险内容。`),
+        straight: Array.from({ length: 6 }, (_, i) => `直道第 ${i + 1} 格任务：所有颜色统一`),
+        king: RANKS.map(r => `国王卡 ${r}：请自定义任务。`),
+        final: "最后一名执行终极惩罚：由其他玩家商定。"
+    };
+
+    const demoTasks = {
+        takeoff: "🛫 起飞！大声说“我要飞得更高”！",
+        baseRoll: {
+            "2": "掷出2点：和左手边的人击掌两次。",
+            "3": "掷出3点：模仿三种不同的动物叫声。",
+            "4": "掷出4点：用四种不同的声调说“你好”。",
+            "5": "掷出5点：快速说出五种水果的名字。"
+        },
+        outer: [
+            "说出一个自己的小秘密。","指定一人和你石头剪刀布，输的人做 5 个表情。","模仿一种动物 10 秒。","对右手边的人夸奖 3 句。",
+            "唱一句你最近听过的歌。","用撒娇语气说一句话。","和任意一人对视 10 秒。","讲一个冷笑话。",
+            "做一个夸张自拍表情。","用奇怪口音说话一轮。","指定一人问你一个问题，必须回答。","给大家表演一个你最会的动作。"
+        ],
+        straight: [
+            "直道1·通用：喝一口水。","直道2·通用：说一句土味情话。","直道3·通用：闭眼转3圈。","直道4·通用：与左手边玩家击掌。",
+            "直道5·通用：夸奖下一位玩家。","直道6·通用：全场为你鼓掌！"
+        ],
+        king: RANKS.map(r => `国王卡 ${r}：指定一人完成一个轻松大冒险。`),
+        final: "终极惩罚：最后一名接受全场共同指定的大冒险。"
+    };
+
+    const el = id => document.getElementById(id);
+    const els = {
+        home: el("home"), setup: el("setup"), taskCenter: el("taskCenter"), game: el("game"), board: el("board"), pieces: el("pieces"),
+        playersBox: el("playersBox"), colorCounts: el("colorCounts"),
+        outerTasks: el("outerTasks"), straightTasksMerged: el("straightTasksMerged"),
+        kingTasks: el("kingTasks"), finalPunish: el("finalPunish"),
+        takeoffTask: el("takeoffTask"), baseRollTasks: el("baseRollTasks"),
+        topHomeBtn: el("topHomeBtn"), homeContinueBtn: el("homeContinueBtn"), homeNewGameBtn: el("homeNewGameBtn"),
+        quickStartBtn: el("quickStartBtn"), homeTaskBtn: el("homeTaskBtn"), homeSetupBtn: el("homeSetupBtn"), homeTestBtn: el("homeTestBtn"),
+        saveSummary: el("saveSummary"), taskCountTotal: el("taskCountTotal"), playerCountTotal: el("playerCountTotal"),
+        setupBackHomeBtn: el("setupBackHomeBtn"), setupTaskBtn: el("setupTaskBtn"), setupContinueBtn: el("setupContinueBtn"),
+        setupTaskTotal: el("setupTaskTotal"), setupSaveState: el("setupSaveState"),
+        taskBackHomeBtn: el("taskBackHomeBtn"), checkTasksBtn: el("checkTasksBtn"), taskStartBtn: el("taskStartBtn"), taskSetupBtn: el("taskSetupBtn"),
+        taskCenterTotal: el("taskCenterTotal"), taskCenterStatus: el("taskCenterStatus"),
+        addPlayerBtn: el("addPlayerBtn"), startBtn: el("startBtn"),
+        saveTasksBtn: el("saveTasksBtn"), exportTasksBtn: el("exportTasksBtn"),
+        importTasksBtn: el("importTasksBtn"), importFileInput: el("importFileInput"),
+        fillDemoBtn: el("fillDemoBtn"), clearBtn: el("clearBtn"),
+        currentName: el("currentName"), roundBadge: el("roundBadge"),
+        lastRoll: el("lastRoll"), rollBtn: el("rollBtn"),
+        playersList: el("playersList"), log: el("log"),
+        modalBg: el("modalBg"), modalSub: el("modalSub"), modalTitle: el("modalTitle"),
+        modalBody: el("modalBody"), modalOk: el("modalOk"),
+        backSetupBtn: el("backSetupBtn"), newGameBtn: el("newGameBtn")
+    };
+
+    let tasks = loadTasks();
+    let setupPlayers = [
+        { name: "玩家1", color: "R" },
+        { name: "玩家2", color: "Y" }
+    ];
+    let state = null;
+    let rolling = false;
+    let modalQueue = [];
+    let modalOpen = false;
+
+    init();
+
+    function init() {
+        renderBoard();
+        renderSetupPlayers();
+        renderTaskEditors();
+        bind();
+        updateDashboard();
+        showHome();
+    }
+
+    function bind() {
+        els.topHomeBtn.onclick = showHome;
+        els.homeContinueBtn.onclick = continueGame;
+        els.homeNewGameBtn.onclick = showSetup;
+        els.quickStartBtn.onclick = startGame;
+        els.homeTaskBtn.onclick = showTaskCenter;
+        els.homeSetupBtn.onclick = showSetup;
+        els.homeTestBtn.onclick = () => { window.location.href = "./tests/test_planes.html"; };
+        els.setupBackHomeBtn.onclick = showHome;
+        els.setupTaskBtn.onclick = showTaskCenter;
+        els.setupContinueBtn.onclick = continueGame;
+        els.taskBackHomeBtn.onclick = showHome;
+        els.taskSetupBtn.onclick = showSetup;
+        els.taskStartBtn.onclick = () => { saveTasksFromEditors(); startGame(); };
+        els.checkTasksBtn.onclick = () => alert(taskCheckMessage());
+        els.addPlayerBtn.onclick = () => {
+            if (setupPlayers.length >= 16) return alert("最多 16 人。");
+            setupPlayers.push({ name: `玩家${setupPlayers.length + 1}`, color: ["R","Y","B","G"][setupPlayers.length % 4] });
+            renderSetupPlayers();
+            updateDashboard();
+        };
+        els.startBtn.onclick = startGame;
+        els.saveTasksBtn.onclick = () => { saveTasksFromEditors(); updateDashboard(); alert("任务表已保存到浏览器。"); };
+        els.exportTasksBtn.onclick = exportTasks;
+        els.importTasksBtn.onclick = () => els.importFileInput.click();
+        els.importFileInput.onchange = importTasks;
+        els.fillDemoBtn.onclick = () => { tasks = JSON.parse(JSON.stringify(demoTasks)); saveTasks(); renderTaskEditors(); updateDashboard(); alert("已填充示例任务。"); };
+        els.clearBtn.onclick = () => { if (confirm("清空所有存档？")) { localStorage.clear(); location.reload(); } };
+        els.rollBtn.onclick = rollDice;
+        els.modalOk.onclick = () => { els.modalBg.style.display = "none"; modalOpen = false; showNextModal(); };
+        els.backSetupBtn.onclick = showSetup;
+        els.newGameBtn.onclick = () => { if (confirm("重开游戏？")) { localStorage.removeItem(STATE_KEY); state = null; showSetup(); } };
+    }
+
+    function showHome() {
+        document.body.classList.add("home-mode");
+        updateDashboard();
+        els.home.style.display = "block";
+        els.setup.classList.remove("active");
+        els.taskCenter.classList.remove("active");
+        els.game.style.display = "none";
+    }
+
+    function showSetup() {
+        document.body.classList.remove("home-mode");
+        updateDashboard();
+        els.home.style.display = "none";
+        els.taskCenter.classList.remove("active");
+        els.setup.classList.add("active");
+        els.game.style.display = "none";
+    }
+
+    function showTaskCenter() {
+        document.body.classList.remove("home-mode");
+        renderTaskEditors();
+        updateDashboard();
+        els.home.style.display = "none";
+        els.setup.classList.remove("active");
+        els.taskCenter.classList.add("active");
+        els.game.style.display = "none";
+    }
+
+    function updateDashboard() {
+        const saved = getSavedState();
+        const count = taskCount(tasks);
+        const taskStatus = count >= 36 ? "完整" : "偏少";
+        els.homeContinueBtn.disabled = !saved;
+        els.setupContinueBtn.disabled = !saved;
+        els.saveSummary.textContent = saved ? saveSummary(saved) : "暂无存档，请先新建游戏";
+        els.taskCountTotal.textContent = count;
+        els.playerCountTotal.textContent = setupPlayers.length;
+        els.setupTaskTotal.textContent = count;
+        els.setupSaveState.textContent = saved ? "有" : "无";
+        els.taskCenterTotal.textContent = count;
+        els.taskCenterStatus.textContent = taskStatus;
+    }
+
+    function exportTasks() {
+        saveTasksFromEditors();
+        const blob = new Blob([JSON.stringify(tasks, null, 2)], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `飞行棋任务表_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+
+    function importTasks() {
+        const file = els.importFileInput.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (!data.outer || !data.straight || !data.king || !data.final) throw new Error("缺少必要字段");
+                if (!Array.isArray(data.straight)) data.straight = defaultTasks.straight;
+                if (!data.takeoff) data.takeoff = defaultTasks.takeoff;
+                if (!data.baseRoll) data.baseRoll = defaultTasks.baseRoll;
+                tasks = data;
+                saveTasks();
+                renderTaskEditors();
+                updateDashboard();
+                alert("导入成功！");
+            } catch (err) { alert("导入失败：" + err.message); }
+            els.importFileInput.value = "";
+        };
+        reader.readAsText(file);
+    }
+
+    function makeOuterPath() {
+        const L = 14, R = 86, T = 14, B = 86;
+        const step = (R - L) / 12;
+        const p = [];
+        for (let i = 0; i <= 12; i++) p.push({ x: L + i * step, y: T });
+        for (let i = 1; i <= 12; i++) p.push({ x: R, y: T + i * step });
+        for (let i = 1; i <= 12; i++) p.push({ x: R - i * step, y: B });
+        for (let i = 1; i <= 11; i++) p.push({ x: L, y: B - i * step });
+        return p;
+    }
+
+    function makeStraightPath() {
+        const R = [], Y = [], B = [], G = [];
+        const start = 14, center = 50, gap = (center - start) / 7;
+        for (let i = 1; i <= 6; i++) {
+            R.push({ x: 50, y: start + i * gap });
+            Y.push({ x: 86 - i * gap, y: 50 });
+            B.push({ x: 50, y: 86 - i * gap });
+            G.push({ x: start + i * gap, y: 50 });
+        }
+        return { R, Y, B, G };
+    }
+
+    function renderBoard() {
+        els.board.querySelectorAll(".spot").forEach(n => n.remove());
+        outerPath.forEach((pos, i) => {
+            const startColor = Object.keys(START_INDEX).find(c => START_INDEX[c] === i);
+            const color = startColor || COLOR_ORDER[i % 4];
+            const spot = document.createElement("div");
+            spot.className = `spot outer ${color} ${startColor ? "start" : ""}`;
+            spot.style.left = pos.x + "%";
+            spot.style.top = pos.y + "%";
+            spot.innerHTML = startColor ? `▶<br><small>${COLORS[startColor].name}</small>` : i + 1;
+            spot.title = startColor ? `${COLORS[startColor].name}色起飞点` : `外圈第${i+1}格`;
+            els.board.appendChild(spot);
+        });
+        Object.keys(straightPath).forEach(color => {
+            straightPath[color].forEach((pos, i) => {
+                const spot = document.createElement("div");
+                spot.className = `spot straight ${color}`;
+                spot.style.left = pos.x + "%";
+                spot.style.top = pos.y + "%";
+                spot.textContent = i + 1;
+                spot.title = `直道第 ${i + 1} 格（通用）`;
+                els.board.appendChild(spot);
+            });
+        });
+    }
+
+    function renderSetupPlayers() {
+        els.playersBox.innerHTML = "";
+        setupPlayers.forEach((p, i) => {
+            const row = document.createElement("div");
+            row.className = "player-row";
+            row.innerHTML = `
+                <input value="${escapeHtml(p.name)}" placeholder="玩家名">
+                <select>${Object.entries(COLORS).map(([k,v]) => `<option value="${k}">${v.emoji} ${v.name}</option>`).join('')}</select>
+                <button class="secondary">×</button>`;
+            const input = row.querySelector("input"), select = row.querySelector("select"), del = row.querySelector("button");
+            select.value = p.color;
+            input.oninput = e => setupPlayers[i].name = e.target.value;
+            input.onchange = updateDashboard;
+            select.onchange = e => { setupPlayers[i].color = e.target.value; renderSetupPlayers(); updateDashboard(); };
+            del.onclick = () => {
+                if (setupPlayers.length <= 2) return alert("至少 2 人。");
+                setupPlayers.splice(i, 1);
+                renderSetupPlayers();
+                updateDashboard();
+            };
+            els.playersBox.appendChild(row);
+        });
+        const counts = countColors(setupPlayers);
+        els.colorCounts.innerHTML = ["R","Y","B","G"].map(c => `<span class="chip">${COLORS[c].emoji}${COLORS[c].name}：${counts[c]}/4</span>`).join("");
+    }
+
+    function renderTaskEditors() {
+        els.takeoffTask.value = tasks.takeoff;
+
+        // 基地掷骰任务 (2-5)
+        els.baseRollTasks.innerHTML = [2,3,4,5].map(n => `
+            <div>
+                <label>掷出 ${n} 点</label>
+                <textarea data-task="baseRoll-${n}">${escapeHtml(tasks.baseRoll[n] || '')}</textarea>
+            </div>
+        `).join("");
+
+        els.outerTasks.innerHTML = tasks.outer.map((t, i) => `
+            <div><label>外圈任务 ${i+1}</label><textarea data-task="outer-${i}">${escapeHtml(t)}</textarea></div>`).join("");
+        els.straightTasksMerged.innerHTML = tasks.straight.map((t, i) => `
+            <div><label>直道第 ${i+1} 格</label><textarea data-task="straight-${i}">${escapeHtml(t)}</textarea></div>`).join("");
+        els.kingTasks.innerHTML = tasks.king.map((t, i) => `
+            <div><label>国王卡 ${RANKS[i]}</label><textarea data-task="king-${i}">${escapeHtml(t)}</textarea></div>`).join("");
+        els.finalPunish.value = tasks.final;
+    }
+
+    function saveTasksFromEditors() {
+        tasks.takeoff = els.takeoffTask.value.trim() || defaultTasks.takeoff;
+        document.querySelectorAll("[data-task]").forEach(node => {
+            const parts = node.dataset.task.split("-");
+            if (parts[0] === "outer") tasks.outer[+parts[1]] = node.value;
+            if (parts[0] === "king") tasks.king[+parts[1]] = node.value;
+            if (parts[0] === "straight") tasks.straight[+parts[1]] = node.value;
+            if (parts[0] === "baseRoll") {
+                tasks.baseRoll[parts[1]] = node.value;
+            }
+        });
+        tasks.final = els.finalPunish.value.trim() || defaultTasks.final;
+        saveTasks();
+    }
+
+    function startGame() {
+        saveTasksFromEditors();
+        if (setupPlayers.length < 2 || setupPlayers.length > 16) return alert("人数必须是 2-16。");
+        if (setupPlayers.some(p => !p.name.trim())) return alert("请填写所有玩家名。");
+        const counts = countColors(setupPlayers);
+        if (Object.values(counts).some(n => n > 4)) return alert("每色最多 4 人。");
+
+        const used = { R:0, Y:0, B:0, G:0 };
+        state = {
+            players: setupPlayers.map(p => {
+                const slot = used[p.color]++;
+                return { id: makeId(), name: p.name.trim(), color: p.color, colorSlot: slot, status: "base", outerIndex: null, outerSteps: 0, straightIndex: 0, finishPlace: null };
+            }),
+            currentIndex: 0, lastRoll: null, round: 1, acted: {}, finishOrder: [], triggered: {}, log: [], gameOver: false
+        };
+        addLog("游戏开始！掷出 6 才能起飞。", "good", false);
+        saveState();
+        showGame();
+    }
+
+    function continueGame() {
+        try {
+            const saved = JSON.parse(localStorage.getItem(STATE_KEY));
+            if (!saved) return alert("没有存档。");
+            state = saved;
+            showGame();
+        } catch { alert("存档损坏。"); }
+    }
+
+    function showGame() {
+        document.body.classList.remove("home-mode");
+        els.home.style.display = "none";
+        els.setup.classList.remove("active");
+        els.taskCenter.classList.remove("active");
+        els.game.style.display = "block";
+        renderAll();
+    }
+
+    function rollDice() {
+        if (!state || rolling || modalOpen || state.gameOver) return;
+        const p = currentPlayer();
+        if (!p) return;
+        rolling = true; els.rollBtn.disabled = true;
+
+        animateDiceRoll((value) => {
+            state.lastRoll = value;
+            addLog(`${label(p)} 掷出 ${value}。`, "hot");
+            if (value === 1) drawKing(p, "掷出1点");
+
+            if (p.status === "base") {
+                if (value === 6) {
+                    takeOff(p);
+                    addLog(`${label(p)} 起飞后获得一次额外投掷。`, "good");
+                } else if (value >= 2 && value <= 5) {
+                    // 触发基地掷骰任务（每人每点数只触发一次）
+                    const key = `baseRoll-${p.id}-${value}`;
+                    if (!state.triggered[key]) {
+                        state.triggered[key] = true;
+                        const taskText = tasks.baseRoll[value] || `掷出${value}点任务`;
+                        addLog(`${label(p)} 触发基地掷骰任务（点数${value}）。`, "task");
+                        enqueueModal(`🎲 基地任务 ${value}点`, taskText, `${label(p)} 还在基地`);
+                    } else {
+                        addLog(`${label(p)} 掷出${value}点，该点数任务已完成。`);
+                    }
+                    endTurn(p);
+                } else {
+                    endTurn(p);
+                }
+            } else if (p.status === "outer") {
+                moveOuter(p, value);
+                if (value !== 6 || p.status === "finished") endTurn(p);
+                else addLog(`${label(p)} 掷出6，额外投掷。`, "good");
+            } else if (p.status === "straight") {
+                moveStraight(p, value);
+                if (value !== 6 || p.status === "finished") endTurn(p);
+                else addLog(`${label(p)} 掷出6，额外投掷。`, "good");
+            }
+            rolling = false; renderAll(); saveState();
+        });
+    }
+
+    function takeOff(p) {
+        p.status = "outer"; p.outerSteps = 0; p.outerIndex = START_INDEX[p.color]; p.straightIndex = 0;
+        addLog(`${label(p)} 起飞进入起飞点。`, "good");
+        const key = `outer-${p.outerIndex}`;
+        if (!state.triggered[key]) {
+            state.triggered[key] = true;
+            addLog(`${label(p)} 触发起飞点任务。`, "task");
+            enqueueModal("🛫 起飞点任务", tasks.takeoff || "起飞任务未设置", `${label(p)} 起飞`);
+        } else {
+            addLog("起飞点任务已触发过。", "task");
+        }
+    }
+
+    function moveOuter(p, steps) {
+        const before = p.outerSteps;
+        p.outerSteps += steps;
+        if (p.outerSteps >= 48) {
+            const remain = p.outerSteps - 48;
+            p.status = "straight"; p.outerIndex = null; p.straightIndex = 0;
+            addLog(`${label(p)} 走完外圈，进入直道。`, "good");
+            if (remain > 0) moveStraight(p, remain, true);
+            return;
+        }
+        p.outerIndex = (START_INDEX[p.color] + p.outerSteps) % 48;
+        addLog(`${label(p)} 落在外圈第 ${p.outerIndex+1} 格。`);
+        triggerOuterTask(p, p.outerIndex);
+    }
+
+    function moveStraight(p, steps, fromOuter = false) {
+        const need = 6 - p.straightIndex;
+        if (steps >= need) {
+            if (need > 0) triggerStraightTask(p, 6);
+            finishPlayer(p);
+            return;
+        }
+        p.straightIndex += steps;
+        if (fromOuter) addLog(`${label(p)} 进入直道第 ${p.straightIndex} 格。`, "good");
+        else addLog(`${label(p)} 直道前进到第 ${p.straightIndex} 格。`);
+        triggerStraightTask(p, p.straightIndex);
+    }
+
+    function finishPlayer(p) {
+        p.status = "finished"; p.finishPlace = state.finishOrder.length + 1; state.finishOrder.push(p.id);
+        addLog(`${label(p)} 到达终点！第 ${p.finishPlace} 名。`, "good");
+        enqueueModal("🎉 到达终点", `${label(p)} 到达中心终点！`, "终点");
+        if (state.finishOrder.length === state.players.length) {
+            state.gameOver = true;
+            addLog("游戏结束！", "bad");
+            enqueueModal("🏁 游戏结束", `最后一名：${label(p)}\n终极惩罚：\n${tasks.final}`, "终极惩罚");
+        }
+    }
+
+    function endTurn(p) {
+        state.acted[p.id] = true;
+        if (state.gameOver) return;
+        if (isRoundComplete()) roundEnd();
+        const next = findNextPlayable((state.players.indexOf(p) + 1) % state.players.length);
+        if (next >= 0) state.currentIndex = next;
+    }
+
+    function isRoundComplete() { return state.players.filter(p => p.status !== "finished").every(p => state.acted[p.id]); }
+    function roundEnd() {
+        if (state.finishOrder.length > 0) {
+            state.players.filter(p => p.status === "finished").forEach(p => drawKing(p, "每轮结束"));
+        }
+        state.round++; state.acted = {};
+    }
+
+    function findNextPlayable(start) {
+        const n = state.players.length;
+        for (let i = 0; i < n; i++) { const idx = (start + i) % n; if (state.players[idx].status !== "finished" && !state.acted[state.players[idx].id]) return idx; }
+        for (let i = 0; i < n; i++) { if (state.players[(start + i) % n].status !== "finished") return (start + i) % n; }
+        return -1;
+    }
+
+    function triggerOuterTask(p, index) {
+        const key = `outer-${index}`;
+        if (state.triggered[key]) return;
+        state.triggered[key] = true;
+        const taskIndex = index % 12;
+        enqueueModal("📍 外圈任务", tasks.outer[taskIndex], `${label(p)} · 外圈第${index+1}格`);
+    }
+
+    function triggerStraightTask(p, index) {
+        if (index < 1 || index > 6) return;
+        const key = `straight-${index}`;
+        if (state.triggered[key]) return;
+        state.triggered[key] = true;
+        enqueueModal("➡️ 直道任务", tasks.straight[index-1], `${label(p)} · 直道第${index}格`);
+    }
+
+    function drawKing(p, reason) {
+        const i = Math.floor(Math.random() * 13);
+        enqueueModal(`👑 国王卡 ${RANKS[i]}`, tasks.king[i], `${label(p)} · ${reason}`);
+    }
+
+    function enqueueModal(title, body, sub) {
+        modalQueue.push({ title, body, sub });
+        if (!modalOpen) showNextModal();
+    }
+
+    function showNextModal() {
+        if (modalQueue.length === 0) { modalOpen = false; renderAll(); return; }
+        const m = modalQueue.shift();
+        modalOpen = true;
+        els.modalTitle.textContent = m.title; els.modalSub.textContent = m.sub || ""; els.modalBody.textContent = m.body || ""; els.modalBg.style.display = "grid";
+    }
+
+    function renderAll() {
+        if (!state) return;
+        const p = currentPlayer();
+        els.currentName.textContent = state.gameOver ? "游戏结束" : (p ? label(p) : "-");
+        els.roundBadge.textContent = `第 ${state.round} 轮`;
+        els.lastRoll.textContent = `最后点数：${state.lastRoll || "-"}`;
+
+        // 使用 show-X 类显示骰子点数
+        if (state.lastRoll) {
+            const diceCube = document.getElementById('diceCube');
+            if (diceCube) {
+                for (let i = 1; i <= 6; i++) {
+                    diceCube.classList.remove('show-' + i);
+                }
+                diceCube.classList.add('show-' + state.lastRoll);
+            }
+        }
+
+        els.rollBtn.disabled = rolling || modalOpen || state.gameOver;
+        renderPieces(); renderPlayersList(); renderLog();
+    }
+
+    function renderPieces() {
+        els.pieces.innerHTML = "";
+        const groups = new Map();
+        state.players.forEach(p => {
+            const pos = pieceCoord(p);
+            const key = `${Math.round(pos.x*10)},${Math.round(pos.y*10)}`;
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push({ p, pos });
+        });
+        groups.forEach(group => {
+            group.forEach((item, i) => {
+                const piece = document.createElement("div");
+                piece.className = `piece ${currentPlayer()?.id === item.p.id ? "current" : ""}`;
+                piece.style.color = `var(--${item.p.color})`;
+                piece.style.left = item.pos.x + "%";
+                piece.style.top = item.pos.y + "%";
+                const off = overlapOffset(i, group.length);
+                piece.style.transform = `translate(-50%,-50%) translate(${off.x}px,${off.y}px)`;
+                piece.innerHTML = airplaneSVG(item.p);
+                els.pieces.appendChild(piece);
+            });
+        });
+    }
+
+    function pieceCoord(p) {
+        if (p.status === "base") return baseSlots[p.color][p.colorSlot] || baseSlots[p.color][0];
+        if (p.status === "outer") return outerPath[p.outerIndex];
+        if (p.status === "straight") return p.straightIndex <= 0 ? outerPath[START_INDEX[p.color]] : straightPath[p.color][Math.min(5, p.straightIndex - 1)];
+        const finished = state.players.filter(x => x.status === "finished");
+        const idx = Math.max(0, finished.findIndex(x => x.id === p.id));
+        return [{x:47,y:47},{x:53,y:47},{x:47,y:53},{x:53,y:53},{x:50,y:50}][idx % 5];
+    }
+
+    function overlapOffset(i, n) { if (n<=1) return {x:0,y:0}; const angle = Math.PI*2*i/n; return {x:Math.cos(angle)*10, y:Math.sin(angle)*10}; }
+
+    function renderPlayersList() {
+        const cur = currentPlayer();
+        els.playersList.innerHTML = state.players.map(p => `
+            <div class="player-card ${cur?.id === p.id ? "current" : ""} ${p.status==="finished"?"done":""}">
+                <div><div class="pname">${COLORS[p.color].emoji} ${escapeHtml(p.name)} ${p.finishPlace?`<span class="badge">第${p.finishPlace}名</span>`:""}</div><div class="psub">${statusText(p)}</div></div>
+                <b>${progressText(p)}</b>
+            </div>`).join("");
+    }
+
+    function renderLog() {
+        els.log.innerHTML = (state.log || []).map(x => `<p class="${x.type||''}">${escapeHtml(x.text)}</p>`).join("");
+        els.log.scrollTop = els.log.scrollHeight;
+    }
+
+    function addLog(text, type="", persist=true) { if(!state) return; state.log.push({text,type,at:Date.now()}); if(state.log.length>180) state.log = state.log.slice(-180); if(persist) saveState(); }
+
+    function currentPlayer() {
+        if (!state) return null;
+        const p = state.players[state.currentIndex];
+        if (p && p.status !== "finished" && !state.acted[p.id]) return p;
+        const idx = findNextPlayable(state.currentIndex || 0);
+        if (idx >= 0) { state.currentIndex = idx; return state.players[idx]; }
+        return state.players.find(x => x.status !== "finished") || null;
+    }
+
+    function statusText(p) {
+        if (p.status === "base") return "在基地：需要6起飞。";
+        if (p.status === "outer") return `外圈：已走 ${p.outerSteps}/48 步。`;
+        if (p.status === "straight") return `直道：第 ${p.straightIndex}/6 格。`;
+        return "已到达终点。";
+    }
+
+    function progressText(p) { if (p.status==="base") return "基地"; if (p.status==="outer") return `外 ${p.outerSteps}/48`; if (p.status==="straight") return `直 ${p.straightIndex}/6`; return "终点"; }
+    function label(p) { return `${COLORS[p.color].emoji}${p.name}`; }
+    function countColors(arr) { const counts = {R:0,Y:0,B:0,G:0}; arr.forEach(p => counts[p.color]++); return counts; }
+
+    function loadTasks() {
+        try {
+            const raw = JSON.parse(localStorage.getItem(TASK_KEY));
+            if (!raw) return JSON.parse(JSON.stringify(defaultTasks));
+            if (!Array.isArray(raw.straight)) raw.straight = defaultTasks.straight;
+            if (!raw.takeoff) raw.takeoff = defaultTasks.takeoff;
+            if (!raw.baseRoll) raw.baseRoll = defaultTasks.baseRoll;
+            return raw;
+        } catch { return JSON.parse(JSON.stringify(defaultTasks)); }
+    }
+
+    function saveTasks() { localStorage.setItem(TASK_KEY, JSON.stringify(tasks)); }
+    function saveState() { if (state) { localStorage.setItem(STATE_KEY, JSON.stringify(state)); updateDashboard(); } }
+    function getSavedState() {
+        try { return JSON.parse(localStorage.getItem(STATE_KEY)); }
+        catch { return null; }
+    }
+    function saveSummary(saved) {
+        const players = saved.players?.length || 0;
+        const current = saved.players?.[saved.currentIndex]?.name || "-";
+        return `${players} 名玩家 · 第 ${saved.round || 1} 轮 · 当前：${current}`;
+    }
+    function taskCount(source) {
+        if (!source) return 0;
+        return [
+            source.takeoff,
+            source.final,
+            ...(Object.values(source.baseRoll || {})),
+            ...(source.outer || []),
+            ...(source.straight || []),
+            ...(source.king || [])
+        ].filter(t => String(t || "").trim()).length;
+    }
+    function taskCheckMessage() {
+        saveTasksFromEditors();
+        const groups = [
+            ["起飞任务", [tasks.takeoff]],
+            ["基地掷骰任务", [2,3,4,5].map(n => tasks.baseRoll?.[n])],
+            ["外圈任务", tasks.outer || []],
+            ["直道任务", tasks.straight || []],
+            ["国王任务", tasks.king || []],
+            ["终极惩罚", [tasks.final]]
+        ];
+        const lines = groups.map(([name, list]) => {
+            const filled = list.filter(t => String(t || "").trim()).length;
+            return `${name}：${filled}/${list.length}`;
+        });
+        const missing = groups.flatMap(([name, list]) => list.map((t, i) => String(t || "").trim() ? null : `${name} ${i + 1}`).filter(Boolean));
+        updateDashboard();
+        return `任务检查结果\n\n${lines.join("\n")}\n\n${missing.length ? "缺少内容：\n" + missing.join("\n") : "任务内容完整，可以开始游戏。"}`;
+    }
+    function makeId() { return Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-4); }
+    function firstChar(s) { return Array.from((s||"?").trim())[0] || "?"; }
+    function escapeHtml(s) { return String(s).replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m])); }
+
+    function airplaneSVG(p) {
+        const colorMap = { R: 'R', Y: 'Y', B: 'B', G: 'G' };
+        const planeColor = colorMap[p.color] || 'R';
+        const displayName = escapeHtml(p.name.length > 4 ? p.name.substring(0, 4) : p.name);
+        return `
+            <img class="piece-img" src="./assets/images/plane_${planeColor}.png" alt="${COLORS[p.color].name}飞机" />
+            <span class="piece-name">${displayName}</span>
+        `;
+    }
+})();
+</script>
+</body>
+</html>
