@@ -347,42 +347,45 @@
         .hot { color: #ffe276; } .good { color: #a6f1b3; } .bad { color: #ffaaa5; } .task { color: #add8ff; }
         .modal-bg {
             position: fixed; inset: 0; display: none; place-items: center;
-            background: #0007; z-index: 99; padding: 16px;
+            background: #0008; z-index: 99; padding: 16px;
         }
         .modal {
-            width: min(94vw, 520px); min-height: min(82vh, 680px); border-radius: 30px;
-            padding: clamp(122px, 22vw, 168px) 28px 28px;
-            background: #fff6dc url('./assets/images/ui/modal_task_card.png') center / cover no-repeat;
-            box-shadow: 0 24px 70px #0008, 0 0 0 1px #fff9 inset;
+            width: min(92vw, 560px); aspect-ratio: 1 / 1; border-radius: 0;
+            padding: 0;
+            background: url('./assets/images/ui/modal_task_card.png') center / contain no-repeat;
+            box-shadow: none;
             color: #4d2b18; position: relative; overflow: hidden;
         }
         .modal.king-card { background-image: url('./assets/images/ui/modal_king_card.png'); color: #4a260e; }
         .modal::before {
             content: ""; position: absolute; inset: 0; pointer-events: none;
-            background: linear-gradient(180deg, #fff0 0%, #fff0 42%, #fff8 68%, #fffbea 100%);
+            background: none;
         }
         .modal > * { position: relative; z-index: 1; }
-        .modal small {
-            display: inline-flex; align-items: center; min-height: 26px; max-width: 100%;
-            padding: 3px 12px; border-radius: 999px; background: #fff8; color: #7a4b24;
-            font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-            box-shadow: 0 6px 16px #6b3b151f;
+        .modal small, .modal h2 {
+            position: absolute; width: 1px; height: 1px; overflow: hidden;
+            clip: rect(0 0 0 0); white-space: nowrap;
         }
-        .modal h2 { margin: .5rem 0 .55rem; font-size: clamp(24px, 5vw, 34px); text-shadow: 0 2px 0 #fff8; }
         .modal pre {
-            white-space: pre-wrap; font: inherit; font-weight: 800; background: #fffaf0e8;
-            border: 1px solid #fff8; border-radius: 20px; padding: 16px; line-height: 1.55;
-            box-shadow: 0 12px 26px #6b3b151f;
+            position: absolute; left: 23%; right: 23%; top: 39%; bottom: 28%;
+            display: flex; align-items: center; justify-content: center; text-align: center;
+            white-space: pre-wrap; font: inherit; font-size: clamp(17px, 3.9vw, 24px); font-weight: 1000;
+            background: transparent; border: 0; border-radius: 0; padding: 0; line-height: 1.45;
+            color: #4b2a14; text-shadow: 0 2px 0 #fff8, 0 0 10px #fff8;
+            box-shadow: none;
         }
-        .modal button { box-shadow: 0 12px 24px #5c2e1230; }
-        .modal.king-card small { background: #fff3c8d9; color: #8a4e08; }
-        .modal.king-card pre { background: #fff4dce8; }
+        .modal.king-card pre { color: #5a2c07; }
+        .modal button {
+            position: absolute; left: 33%; right: 33%; bottom: 15%;
+            min-height: 42px; padding: .62rem .8rem; font-size: 14px;
+            box-shadow: 0 10px 20px #5c2e1230;
+        }
         @media(max-width: 560px) {
             .modal {
-                width: min(94vw, 390px); min-height: min(78vh, 560px);
-                padding: clamp(96px, 30vw, 128px) 18px 20px; border-radius: 24px;
+                width: min(94vw, 390px); border-radius: 0;
             }
-            .modal pre { padding: 13px; }
+            .modal pre { left: 22%; right: 22%; top: 39%; bottom: 28%; font-size: clamp(15px, 4.7vw, 20px); }
+            .modal button { left: 31%; right: 31%; bottom: 14.5%; min-height: 38px; font-size: 12px; }
         }
         @media(max-width: 860px) {
             .home-hero, .setup, .task-center, .game-grid { grid-template-columns: 1fr; }
