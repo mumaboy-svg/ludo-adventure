@@ -34,6 +34,7 @@
 - 网页版首页背景：`assets/images/ui/home_bg_desktop.png`
 - 手机版首页背景：`assets/images/ui/home_bg_mobile.png`
 - 任务中心背景：`assets/images/ui/task_center_bg_desktop.png`、`task_center_bg_mobile.png`
+- 设置页面背景：`assets/images/ui/settings_bg_desktop.png`、`settings_bg_mobile.png`
 - 主菜单按钮底图：`assets/images/ui/button_continue.png`、`button_new_game.png`、`button_quick_start.png`
 - 主菜单按钮图标：`assets/images/ui/icon_continue.png`、`icon_new_game.png`、`icon_quick_start.png`
 - 额外素材：`assets/images/红色小飞机.png`
