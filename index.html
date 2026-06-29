@@ -48,7 +48,25 @@
         }
         .home { display: block; }
         .setup { display: none; grid-template-columns: minmax(300px, 1fr) minmax(300px, 1fr); gap: 16px; }
+        .setup.active {
+            min-height: calc(100svh - 90px); padding: 18px; border-radius: 28px;
+            background: linear-gradient(#ffffff2b, #ffffff2b), url('./assets/images/ui/settings_bg_desktop.png') center / cover no-repeat;
+            box-shadow: inset 0 0 0 8px #ffffff70, 0 16px 40px #34210c18;
+        }
+        .setup.active .card { background: #fffdf85c; border-color: #ffffff9c; box-shadow: 0 16px 40px #34210c20; backdrop-filter: blur(5px) saturate(1.08); }
         .task-center { display: none; grid-template-columns: minmax(320px, .8fr) minmax(340px, 1.2fr); gap: 16px; }
+        .task-center.active {
+            min-height: calc(100svh - 90px); padding: 18px; border-radius: 28px;
+            background: linear-gradient(#ffffff2b, #ffffff2b), url('./assets/images/ui/task_center_bg_desktop.png') center / cover no-repeat;
+            box-shadow: inset 0 0 0 8px #ffffff70, 0 16px 40px #34210c18;
+        }
+        .task-center.active .card { background: #fffdf85c; border-color: #ffffff9c; box-shadow: 0 16px 40px #34210c20; backdrop-filter: blur(5px) saturate(1.08); }
+        .setup.active .card h2, .task-center.active .card h2,
+        .setup.active .page-head, .task-center.active .page-head { text-shadow: 0 2px 0 #fff9, 0 0 12px #fff; }
+        .setup.active input, .setup.active select,
+        .task-center.active input, .task-center.active select,
+        .task-center.active textarea, .setup.active textarea { background: #fffdf8c4; border-color: #ffffffd0; box-shadow: inset 0 1px 0 #fff8; }
+        .task-center.active details, .setup.active details { background: #fffdf84a; border-color: #ffffff9c; backdrop-filter: blur(3px); }
         .game { display: none; }
         .setup.active, .task-center.active { display: grid; }
         .home-hero {
@@ -121,11 +139,25 @@
 
         .board-wrap { width: min(96vw, 760px); max-width: 100%; margin: auto; }
         .board {
-            position: relative; width: 100%; aspect-ratio: 1/1; border-radius: 30px;
+            position: relative; width: 100%; aspect-ratio: 1 / 1; border-radius: 30px;
             background: radial-gradient(circle at 50% 50%, #fff7df 0 18%, transparent 19%),
                 linear-gradient(135deg, #fff8e7, #f7edda);
             border: 5px solid #2b241d; overflow: hidden;
             box-shadow: inset 0 0 0 8px #ffffffb5, inset 0 0 0 18px #ecd9b8, 0 18px 38px #0002;
+        }
+        .board.preview-board {
+            background: url('./assets/images/ui/board_traditional_preview.png') center / contain no-repeat;
+            border: 0; border-radius: 18px; overflow: visible; box-shadow: 0 18px 38px #0002;
+        }
+        .board.preview-board::before,
+        .board.preview-board .base-panel,
+        .board.preview-board .spot,
+        .board.preview-board .center { display: none; }
+        .coord-tip {
+            position: absolute; left: 10px; bottom: 10px; z-index: 40;
+            background: #111c; color: #fff; border-radius: 10px; padding: 6px 8px;
+            font: 12px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            pointer-events: none;
         }
         .board::before {
             content: ""; position: absolute; inset: 0;
@@ -147,17 +179,32 @@
         .base-panel::before { content: "机场"; position: absolute; inset: auto 10% 7%; color: #ffffffd9; font-size: clamp(10px, 1.8vw, 18px); font-weight: 1000; text-align: center; text-shadow: 0 2px 3px #0005; }
         .hole { border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #fff7dc 70%); border: 3px solid #0003; box-shadow: inset 0 4px 10px #0001, 0 4px 8px #0002; }
         .spot {
-            position: absolute; width: 4.9%; height: 4.9%; min-width: 20px; min-height: 20px;
-            border-radius: 13px; transform: translate(-50%, -50%);
-            display: grid; place-items: center; border: 2px solid #2229;
-            box-shadow: inset 0 2px 0 #fff9, inset 0 -3px 6px #0001, 0 4px 9px #0002;
-            font-size: clamp(8px, 1.35vw, 13px); font-weight: 1000;
+            position: absolute; width: 5.15%; height: 5.15%; min-width: 22px; min-height: 22px;
+            border-radius: 3px; transform: translate(-50%, -50%);
+            display: grid; place-items: center; border: 2.5px solid #1d1a17;
+            box-shadow: inset 0 2px 0 #fff7, 0 3px 0 #0002;
+            font-size: clamp(7px, 1.1vw, 11px); font-weight: 1000;
             text-align: center; line-height: 1;
         }
+        .spot::before {
+            content: ""; position: absolute; left: 50%; top: 50%; width: 58%; height: 58%;
+            transform: translate(-50%, -50%); border-radius: 50%; background: #fffdf8;
+            border: 2px solid #2229; box-shadow: inset 0 2px 4px #0001;
+        }
+        .spot > span { position: relative; z-index: 1; }
         .spot.Y { background: linear-gradient(145deg, #fff7a8, var(--Y)); } .spot.B { background: linear-gradient(145deg, #a9dcff, var(--B)); } .spot.R { background: linear-gradient(145deg, #ffaaaa, var(--R)); } .spot.G { background: linear-gradient(145deg, #a4f4b8, var(--G)); }
         .spot.start { outline: 4px solid #fff; box-shadow: 0 0 0 3px #222, inset 0 2px 0 #fff8, 0 4px 9px #0002; }
-        .spot.task-mark::after { content: "?"; position: absolute; right: -5px; top: -7px; width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; background: #fff; border: 2px solid #2228; font-size: 10px; }
-        .spot.straight { border-radius: 9px; width: 5.3%; height: 5.3%; }
+        .spot.corner { transform: translate(-50%, -50%) rotate(45deg); border-radius: 0; }
+        .spot.corner > span { transform: rotate(-45deg); }
+        .spot.start { z-index: 3; }
+        .spot.entry { outline: 3px solid #fff; box-shadow: 0 0 0 2px #222, 0 0 16px #fff8, inset 0 2px 0 #fff8; }
+        .spot.straight { border-radius: 3px; width: 5.3%; height: 5.3%; }
+        .spot.straight::before { opacity: .5; }
+        .spot.straight::after { content: "➤"; position: absolute; inset: 0; display: grid; place-items: center; color: #ffffffd9; font-size: clamp(11px, 1.8vw, 18px); text-shadow: 0 2px 2px #0005; z-index: 2; }
+        .spot.straight.R::after { transform: rotate(90deg); }
+        .spot.straight.Y::after { transform: rotate(180deg); }
+        .spot.straight.B::after { transform: rotate(-90deg); }
+        .spot.straight.G::after { transform: rotate(0deg); }
         .center {
             position: absolute; left: 50%; top: 50%; width: 15%; height: 15%;
             transform: translate(-50%, -50%) rotate(45deg); border-radius: 26px; display: grid; place-items: center;
@@ -300,16 +347,45 @@
         .hot { color: #ffe276; } .good { color: #a6f1b3; } .bad { color: #ffaaa5; } .task { color: #add8ff; }
         .modal-bg {
             position: fixed; inset: 0; display: none; place-items: center;
-            background: #0007; z-index: 99; padding: 16px;
+            background: #0008; z-index: 99; padding: 16px;
         }
         .modal {
-            width: min(94vw, 520px); background: #fffdf8; border-radius: 28px;
-            padding: 20px; box-shadow: 0 22px 60px #0005;
+            width: min(92vw, 560px); aspect-ratio: 1 / 1; border-radius: 0;
+            padding: 0;
+            background: url('./assets/images/ui/modal_task_card.png') center / contain no-repeat;
+            box-shadow: none;
+            color: #4d2b18; position: relative; overflow: hidden;
         }
-        .modal h2 { margin: .1rem 0 .4rem; }
+        .modal.king-card { background-image: url('./assets/images/ui/modal_king_card.png'); color: #4a260e; }
+        .modal::before {
+            content: ""; position: absolute; inset: 0; pointer-events: none;
+            background: none;
+        }
+        .modal > * { position: relative; z-index: 1; }
+        .modal small, .modal h2 {
+            position: absolute; width: 1px; height: 1px; overflow: hidden;
+            clip: rect(0 0 0 0); white-space: nowrap;
+        }
         .modal pre {
-            white-space: pre-wrap; font: inherit; background: #f7f0e5;
-            border: 1px solid var(--line); border-radius: 18px; padding: 14px; line-height: 1.5;
+            position: absolute; left: 23%; right: 23%; top: 39%; bottom: 28%;
+            display: flex; align-items: center; justify-content: center; text-align: center;
+            white-space: pre-wrap; font: inherit; font-size: clamp(17px, 3.9vw, 24px); font-weight: 1000;
+            background: transparent; border: 0; border-radius: 0; padding: 0; line-height: 1.45;
+            color: #4b2a14; text-shadow: 0 2px 0 #fff8, 0 0 10px #fff8;
+            box-shadow: none;
+        }
+        .modal.king-card pre { color: #5a2c07; }
+        .modal button {
+            position: absolute; left: 33%; right: 33%; bottom: 15%;
+            min-height: 42px; padding: .62rem .8rem; font-size: 14px;
+            box-shadow: 0 10px 20px #5c2e1230;
+        }
+        @media(max-width: 560px) {
+            .modal {
+                width: min(94vw, 390px); border-radius: 0;
+            }
+            .modal pre { left: 22%; right: 22%; top: 39%; bottom: 28%; font-size: clamp(15px, 4.7vw, 20px); }
+            .modal button { left: 31%; right: 31%; bottom: 14.5%; min-height: 38px; font-size: 12px; }
         }
         @media(max-width: 860px) {
             .home-hero, .setup, .task-center, .game-grid { grid-template-columns: 1fr; }
@@ -345,6 +421,16 @@
             .tool-card img { width: clamp(44px, 13vw, 56px); height: clamp(44px, 13vw, 56px); margin-bottom: -2px; }
             .tool-card strong { font-size: clamp(12px, 3.6vw, 14px); line-height: 1.1; }
             .tool-card span { display: none; }
+            .task-center.active {
+                min-height: 100svh; padding: 12px;
+                background: linear-gradient(#ffffff42, #ffffff42), url('./assets/images/ui/task_center_bg_mobile.png') center / cover no-repeat;
+                border-radius: 0;
+            }
+            .setup.active {
+                min-height: 100svh; padding: 12px;
+                background: linear-gradient(#ffffff42, #ffffff42), url('./assets/images/ui/settings_bg_mobile.png') center / cover no-repeat;
+                border-radius: 0;
+            }
             .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .home-bottom .stat-grid { order: -1; }
             .home-bottom .stat { padding: 8px; text-align: center; }
@@ -509,13 +595,14 @@
         <div class="game-grid">
             <div class="card">
                 <div class="board-wrap">
-                    <div class="board" id="board">
+                    <div class="board preview-board" id="board">
                         <div class="base-panel G"><div class="hole"></div><div class="hole"></div><div class="hole"></div><div class="hole"></div></div>
                         <div class="base-panel R"><div class="hole"></div><div class="hole"></div><div class="hole"></div><div class="hole"></div></div>
                         <div class="base-panel B"><div class="hole"></div><div class="hole"></div><div class="hole"></div><div class="hole"></div></div>
                         <div class="base-panel Y"><div class="hole"></div><div class="hole"></div><div class="hole"></div><div class="hole"></div></div>
                         <div class="center"><span>终</span></div>
                         <div class="piece-layer" id="pieces"></div>
+                        <div class="coord-tip" id="coordTip">x: --%, y: --%</div>
                     </div>
                 </div>
             </div>
@@ -704,14 +791,15 @@
     };
 
     const START_INDEX = { R: 6, Y: 18, B: 30, G: 42 };
+    const ENTRY_INDEX = { R: 3, Y: 15, B: 27, G: 39 };
     const COLOR_ORDER = ["Y", "B", "R", "G"];
     const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
     const baseSlots = {
-        G: [{ x: 8, y: 8 }, { x: 18, y: 8 }, { x: 8, y: 18 }, { x: 18, y: 18 }],
-        R: [{ x: 82, y: 8 }, { x: 92, y: 8 }, { x: 82, y: 18 }, { x: 92, y: 18 }],
-        B: [{ x: 8, y: 82 }, { x: 18, y: 82 }, { x: 8, y: 92 }, { x: 18, y: 92 }],
-        Y: [{ x: 82, y: 82 }, { x: 92, y: 82 }, { x: 82, y: 92 }, { x: 92, y: 92 }]
+        G: [{ x: 13.35, y: 12.76 }, { x: 20.71, y: 12.80 }, { x: 13.32, y: 20.51 }, { x: 20.70, y: 20.52 }],
+        R: [{ x: 78.84, y: 12.75 }, { x: 86.24, y: 12.76 }, { x: 78.87, y: 20.52 }, { x: 86.27, y: 20.52 }],
+        B: [{ x: 13.32, y: 80.48 }, { x: 20.65, y: 80.46 }, { x: 13.31, y: 88.31 }, { x: 20.61, y: 88.31 }],
+        Y: [{ x: 78.78, y: 80.36 }, { x: 86.21, y: 80.36 }, { x: 78.80, y: 88.13 }, { x: 86.20, y: 88.02 }]
     };
 
     const outerPath = makeOuterPath();
@@ -772,8 +860,8 @@
         fillDemoBtn: el("fillDemoBtn"), clearBtn: el("clearBtn"),
         currentName: el("currentName"), roundBadge: el("roundBadge"),
         lastRoll: el("lastRoll"), rollBtn: el("rollBtn"),
-        playersList: el("playersList"), log: el("log"),
-        modalBg: el("modalBg"), modalSub: el("modalSub"), modalTitle: el("modalTitle"),
+        playersList: el("playersList"), log: el("log"), coordTip: el("coordTip"),
+        modalBg: el("modalBg"), modal: document.querySelector("#modalBg .modal"), modalSub: el("modalSub"), modalTitle: el("modalTitle"),
         modalBody: el("modalBody"), modalOk: el("modalOk"),
         backSetupBtn: el("backSetupBtn"), newGameBtn: el("newGameBtn")
     };
@@ -831,6 +919,16 @@
         els.modalOk.onclick = () => { els.modalBg.style.display = "none"; modalOpen = false; showNextModal(); };
         els.backSetupBtn.onclick = showSetup;
         els.newGameBtn.onclick = () => { if (confirm("重开游戏？")) { localStorage.removeItem(STATE_KEY); state = null; showSetup(); } };
+        els.board.onmousemove = updateCoordTip;
+        els.board.onclick = updateCoordTip;
+    }
+
+    function updateCoordTip(e) {
+        if (!els.coordTip) return;
+        const rect = els.board.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
+        const y = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
+        els.coordTip.textContent = `x: ${x}%, y: ${y}%`;
     }
 
     function showHome() {
@@ -909,39 +1007,40 @@
     }
 
     function makeOuterPath() {
-        const L = 14, R = 86, T = 14, B = 86;
-        const step = (R - L) / 12;
-        const p = [];
-        for (let i = 0; i <= 12; i++) p.push({ x: L + i * step, y: T });
-        for (let i = 1; i <= 12; i++) p.push({ x: R, y: T + i * step });
-        for (let i = 1; i <= 12; i++) p.push({ x: R - i * step, y: B });
-        for (let i = 1; i <= 11; i++) p.push({ x: L, y: B - i * step });
-        return p;
+        const points = [
+            [34.68, 14.68], [40.06, 12.92], [44.93, 12.92], [50.01, 13.09], [54.97, 12.95], [59.89, 12.97],
+            [65.19, 14.62], [67.35, 20.26], [67.37, 25.29], [69.45, 35.26], [74.89, 33.19], [79.65, 33.22],
+            [84.95, 35.37], [86.39, 40.79], [86.51, 45.86], [86.10, 50.27], [86.52, 55.88], [86.57, 60.68],
+            [84.87, 66.26], [79.62, 68.27], [74.71, 68.17], [65.28, 70.83], [67.37, 76.24], [67.26, 81.30],
+            [65.17, 86.82], [59.87, 88.59], [54.93, 88.51], [49.93, 88.47], [44.84, 88.50], [39.93, 88.57],
+            [34.68, 86.80], [32.47, 81.29], [32.44, 76.07], [30.53, 66.18], [25.12, 68.33], [20.37, 68.20],
+            [14.96, 66.24], [13.34, 60.86], [13.26, 55.90], [13.30, 50.92], [13.31, 45.82], [13.36, 40.81],
+            [14.92, 35.36], [20.37, 33.20], [25.10, 33.18], [32.58, 25.26], [32.59, 20.21], [34.68, 14.68]
+        ];
+        return points.map(([x, y], i) => ({ x, y, corner: i % 6 === 0 }));
     }
 
     function makeStraightPath() {
-        const R = [], Y = [], B = [], G = [];
-        const start = 14, center = 50, gap = (center - start) / 7;
-        for (let i = 1; i <= 6; i++) {
-            R.push({ x: 50, y: start + i * gap });
-            Y.push({ x: 86 - i * gap, y: 50 });
-            B.push({ x: 50, y: 86 - i * gap });
-            G.push({ x: start + i * gap, y: 50 });
-        }
-        return { R, Y, B, G };
+        return {
+            R: [[49.92, 20.21], [49.90, 25.32], [49.92, 30.45], [49.91, 35.50], [49.90, 40.58], [49.94, 46.34]].map(([x, y]) => ({ x, y })),
+            Y: [[79.60, 50.91], [74.69, 50.92], [69.72, 50.89], [64.91, 50.89], [59.97, 50.92], [54.32, 50.87]].map(([x, y]) => ({ x, y })),
+            B: [[49.88, 81.46], [49.87, 76.37], [49.91, 71.31], [49.94, 66.30], [49.94, 61.18], [49.93, 55.43]].map(([x, y]) => ({ x, y })),
+            G: [[20.32, 50.92], [25.20, 50.93], [30.15, 50.90], [34.92, 50.91], [39.85, 50.87], [45.40, 50.85]].map(([x, y]) => ({ x, y }))
+        };
     }
 
     function renderBoard() {
         els.board.querySelectorAll(".spot").forEach(n => n.remove());
         outerPath.forEach((pos, i) => {
             const startColor = Object.keys(START_INDEX).find(c => START_INDEX[c] === i);
+            const entryColor = Object.keys(ENTRY_INDEX).find(c => ENTRY_INDEX[c] === i);
             const color = startColor || COLOR_ORDER[i % 4];
             const spot = document.createElement("div");
-            spot.className = `spot outer ${color} ${startColor ? "start" : ""}`;
+            spot.className = `spot outer ${entryColor || color} ${startColor ? "start" : ""} ${entryColor ? "entry" : ""} ${pos.corner ? "corner" : ""}`;
             spot.style.left = pos.x + "%";
             spot.style.top = pos.y + "%";
-            spot.innerHTML = startColor ? `▶<br><small>${COLORS[startColor].name}</small>` : i + 1;
-            spot.title = startColor ? `${COLORS[startColor].name}色起飞点` : `外圈第${i+1}格`;
+            spot.innerHTML = startColor ? `<span>✈<br><small>${COLORS[startColor].name}</small></span>` : (entryColor ? `<span>↘<br><small>${COLORS[entryColor].name}</small></span>` : `<span>${i + 1}</span>`);
+            spot.title = startColor ? `${COLORS[startColor].name}色起飞点` : (entryColor ? `${COLORS[entryColor].name}色直道入口` : `外圈第${i+1}格`);
             els.board.appendChild(spot);
         });
         Object.keys(straightPath).forEach(color => {
@@ -1115,10 +1214,11 @@
     function moveOuter(p, steps) {
         const before = p.outerSteps;
         p.outerSteps += steps;
-        if (p.outerSteps >= 48) {
-            const remain = p.outerSteps - 48;
+        const entrySteps = stepsToEntry(p.color);
+        if (p.outerSteps >= entrySteps) {
+            const remain = p.outerSteps - entrySteps;
             p.status = "straight"; p.outerIndex = null; p.straightIndex = 0;
-            addLog(`${label(p)} 走完外圈，进入直道。`, "good");
+            addLog(`${label(p)} 到达直道入口，进入直道。`, "good");
             if (remain > 0) moveStraight(p, remain, true);
             return;
         }
@@ -1127,11 +1227,23 @@
         triggerOuterTask(p, p.outerIndex);
     }
 
+    function stepsToEntry(color) {
+        return (ENTRY_INDEX[color] - START_INDEX[color] + 48) % 48;
+    }
+
     function moveStraight(p, steps, fromOuter = false) {
         const need = 6 - p.straightIndex;
-        if (steps >= need) {
+        if (steps === need) {
             if (need > 0) triggerStraightTask(p, 6);
             finishPlayer(p);
+            return;
+        }
+        if (steps > need) {
+            const bounce = steps - need;
+            const target = Math.max(0, 6 - bounce);
+            p.straightIndex = target;
+            addLog(`${label(p)} 点数超过终点，反弹后退到直道第 ${p.straightIndex} 格。`, "bad");
+            triggerStraightTask(p, p.straightIndex);
             return;
         }
         p.straightIndex += steps;
@@ -1204,6 +1316,7 @@
         if (modalQueue.length === 0) { modalOpen = false; renderAll(); return; }
         const m = modalQueue.shift();
         modalOpen = true;
+        els.modal.classList.toggle("king-card", m.title.startsWith("👑"));
         els.modalTitle.textContent = m.title; els.modalSub.textContent = m.sub || ""; els.modalBody.textContent = m.body || ""; els.modalBg.style.display = "grid";
     }
 
@@ -1291,12 +1404,12 @@
 
     function statusText(p) {
         if (p.status === "base") return "在基地：需要6起飞。";
-        if (p.status === "outer") return `外圈：已走 ${p.outerSteps}/48 步。`;
+        if (p.status === "outer") return `外圈：已走 ${p.outerSteps}/${stepsToEntry(p.color)} 步。`;
         if (p.status === "straight") return `直道：第 ${p.straightIndex}/6 格。`;
         return "已到达终点。";
     }
 
-    function progressText(p) { if (p.status==="base") return "基地"; if (p.status==="outer") return `外 ${p.outerSteps}/48`; if (p.status==="straight") return `直 ${p.straightIndex}/6`; return "终点"; }
+    function progressText(p) { if (p.status==="base") return "基地"; if (p.status==="outer") return `外 ${p.outerSteps}/${stepsToEntry(p.color)}`; if (p.status==="straight") return `直 ${p.straightIndex}/6`; return "终点"; }
     function label(p) { return `${COLORS[p.color].emoji}${p.name}`; }
     function countColors(arr) { const counts = {R:0,Y:0,B:0,G:0}; arr.forEach(p => counts[p.color]++); return counts; }
 

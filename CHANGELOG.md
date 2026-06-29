@@ -31,6 +31,8 @@
 - 新增首页 Logo 图片素材 `assets/images/ui/title_logo.png`。
 - 新增网页版首页横版背景图 `assets/images/ui/home_bg_desktop.png`。
 - 新增手机版首页竖版背景图 `assets/images/ui/home_bg_mobile.png`。
+- 新增任务中心桌面版和手机版背景图。
+- 新增设置页面桌面版和手机版背景图。
 - 新增继续上局、新游戏、快速开始三个主菜单按钮底图。
 - 新增继续上局、新游戏、快速开始三个主菜单按钮图标。
 
