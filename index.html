@@ -156,7 +156,6 @@
         }
         .spot.Y { background: linear-gradient(145deg, #fff7a8, var(--Y)); } .spot.B { background: linear-gradient(145deg, #a9dcff, var(--B)); } .spot.R { background: linear-gradient(145deg, #ffaaaa, var(--R)); } .spot.G { background: linear-gradient(145deg, #a4f4b8, var(--G)); }
         .spot.start { outline: 4px solid #fff; box-shadow: 0 0 0 3px #222, inset 0 2px 0 #fff8, 0 4px 9px #0002; }
-        .spot.task-mark::after { content: "?"; position: absolute; right: -5px; top: -7px; width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; background: #fff; border: 2px solid #2228; font-size: 10px; }
         .spot.corner { transform: translate(-50%, -50%) rotate(45deg); border-radius: 10px; }
         .spot.corner > span { transform: rotate(-45deg); }
         .spot.start { z-index: 3; }
@@ -946,8 +945,7 @@
             const entryColor = Object.keys(ENTRY_INDEX).find(c => ENTRY_INDEX[c] === i);
             const color = startColor || COLOR_ORDER[i % 4];
             const spot = document.createElement("div");
-            const taskMark = !startColor && i % 4 === 0;
-            spot.className = `spot outer ${entryColor || color} ${startColor ? "start" : ""} ${entryColor ? "entry" : ""} ${pos.corner ? "corner" : ""} ${taskMark ? "task-mark" : ""}`;
+            spot.className = `spot outer ${entryColor || color} ${startColor ? "start" : ""} ${entryColor ? "entry" : ""} ${pos.corner ? "corner" : ""}`;
             spot.style.left = pos.x + "%";
             spot.style.top = pos.y + "%";
             spot.innerHTML = startColor ? `<span>✈<br><small>${COLORS[startColor].name}</small></span>` : (entryColor ? `<span>↘<br><small>${COLORS[entryColor].name}</small></span>` : `<span>${i + 1}</span>`);
