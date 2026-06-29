@@ -50,14 +50,14 @@
         .setup { display: none; grid-template-columns: minmax(300px, 1fr) minmax(300px, 1fr); gap: 16px; }
         .setup.active {
             min-height: calc(100svh - 90px); padding: 18px; border-radius: 28px;
-            background: linear-gradient(#ffffff2b, #ffffff2b), url('./assets/images/ui/settings_bg_desktop.png') center / cover no-repeat;
+            background: linear-gradient(#ffffff2b, #ffffff2b), url('./assets/images/ui/settings_bg_desktop.webp') center / cover no-repeat;
             box-shadow: inset 0 0 0 8px #ffffff70, 0 16px 40px #34210c18;
         }
         .setup.active .card { background: #fffdf85c; border-color: #ffffff9c; box-shadow: 0 16px 40px #34210c20; backdrop-filter: blur(5px) saturate(1.08); }
         .task-center { display: none; grid-template-columns: minmax(320px, .8fr) minmax(340px, 1.2fr); gap: 16px; }
         .task-center.active {
             min-height: calc(100svh - 90px); padding: 18px; border-radius: 28px;
-            background: linear-gradient(#ffffff2b, #ffffff2b), url('./assets/images/ui/task_center_bg_desktop.png') center / cover no-repeat;
+            background: linear-gradient(#ffffff2b, #ffffff2b), url('./assets/images/ui/task_center_bg_desktop.webp') center / cover no-repeat;
             box-shadow: inset 0 0 0 8px #ffffff70, 0 16px 40px #34210c18;
         }
         .task-center.active .card { background: #fffdf85c; border-color: #ffffff9c; box-shadow: 0 16px 40px #34210c20; backdrop-filter: blur(5px) saturate(1.08); }
@@ -80,7 +80,7 @@
         .home-hero {
             min-height: 100svh; display: grid; grid-template-rows: auto auto 1fr;
             gap: 12px; padding: clamp(14px, 2vw, 26px); border-radius: 0;
-            background: linear-gradient(#ffffff30, #ffffff30), url('./assets/images/ui/home_bg_desktop.png') center / cover no-repeat;
+            background: linear-gradient(#ffffff30, #ffffff30), url('./assets/images/ui/home_bg_desktop.webp') center / cover no-repeat;
             border: 0; box-shadow: inset 0 0 0 8px #ffffff42;
             position: relative; overflow: hidden;
         }
@@ -111,9 +111,9 @@
             box-shadow: none;
         }
         .menu-button > span:last-child { justify-self: center; text-align: center; min-width: 0; }
-        .menu-button.continue { background: transparent url('./assets/images/ui/button_continue.png') center / 100% 100% no-repeat; }
-        .menu-button.new-game { background: transparent url('./assets/images/ui/button_new_game.png') center / 100% 100% no-repeat; color: var(--ink); }
-        .menu-button.quick-start { background: transparent url('./assets/images/ui/button_quick_start.png') center / 100% 100% no-repeat; color: #173a22; }
+        .menu-button.continue { background: transparent url('./assets/images/ui/button_continue.webp') center / 100% 100% no-repeat; }
+        .menu-button.new-game { background: transparent url('./assets/images/ui/button_new_game.webp') center / 100% 100% no-repeat; color: var(--ink); }
+        .menu-button.quick-start { background: transparent url('./assets/images/ui/button_quick_start.webp') center / 100% 100% no-repeat; color: #173a22; }
         .menu-button .icon { width: clamp(64px, 7vw, 102px); height: clamp(64px, 7vw, 102px); display: grid; place-items: center; background: transparent; }
         .menu-button .icon img { width: 100%; height: 100%; object-fit: contain; display: block; filter: drop-shadow(0 5px 7px #0003); }
         .menu-title { display: block; font-size: clamp(18px, 2.5vw, 28px); font-weight: 1000; text-shadow: 0 2px 3px #0004; white-space: nowrap; }
@@ -168,7 +168,7 @@
             box-shadow: inset 0 0 0 8px #ffffffb5, inset 0 0 0 18px #ecd9b8, 0 18px 38px #0002;
         }
         .board.preview-board {
-            background: url('./assets/images/ui/board_traditional_preview.png') center / contain no-repeat;
+            background: url('./assets/images/ui/board_traditional_preview.webp') center / contain no-repeat;
             border: 0; border-radius: 18px; overflow: visible; box-shadow: 0 18px 38px #0003, 0 0 0 8px #fff8;
         }
         .board.preview-board::before,
@@ -395,11 +395,11 @@
         .modal {
             width: min(92vw, 560px); aspect-ratio: 1 / 1; border-radius: 0;
             padding: 0;
-            background: url('./assets/images/ui/modal_task_card.png') center / contain no-repeat;
+            background: url('./assets/images/ui/modal_task_card.webp') center / contain no-repeat;
             box-shadow: none;
             color: #4d2b18; position: relative; overflow: hidden;
         }
-        .modal.king-card { background-image: url('./assets/images/ui/modal_king_card.png'); color: #4a260e; }
+        .modal.king-card { background-image: url('./assets/images/ui/modal_king_card.webp'); color: #4a260e; }
         .modal::before {
             content: ""; position: absolute; inset: 0; pointer-events: none;
             background: none;
@@ -437,7 +437,7 @@
             .home-hero {
                 min-height: 100svh; height: 100svh; border-radius: 0; border: 0; padding: 10px 12px 12px;
                 grid-template-rows: auto auto 1fr; gap: 8px;
-                background: linear-gradient(#ffffff26, #ffffff26), url('./assets/images/ui/home_bg_mobile.png') center / cover no-repeat;
+                background: linear-gradient(#ffffff26, #ffffff26), url('./assets/images/ui/home_bg_mobile.webp') center / cover no-repeat;
                 box-shadow: none;
             }
             .home-titlebar { padding-top: 30px; align-self: start; gap: 2px; }
@@ -466,12 +466,12 @@
             .tool-card span { display: none; }
             .task-center.active {
                 min-height: 100svh; padding: 12px;
-                background: linear-gradient(#ffffff42, #ffffff42), url('./assets/images/ui/task_center_bg_mobile.png') center / cover no-repeat;
+                background: linear-gradient(#ffffff42, #ffffff42), url('./assets/images/ui/task_center_bg_mobile.webp') center / cover no-repeat;
                 border-radius: 0;
             }
             .setup.active {
                 min-height: 100svh; padding: 12px;
-                background: linear-gradient(#ffffff42, #ffffff42), url('./assets/images/ui/settings_bg_mobile.png') center / cover no-repeat;
+                background: linear-gradient(#ffffff42, #ffffff42), url('./assets/images/ui/settings_bg_mobile.webp') center / cover no-repeat;
                 border-radius: 0;
             }
             .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -545,28 +545,28 @@
             <div class="home-titlebar">
                 <div class="version-pill">v2.0 · 本地存档 · 任务挑战</div>
                 <h2 class="hero-title sr-only">飞行棋 大冒险</h2>
-                <img class="title-logo" src="./assets/images/ui/title_logo.png" alt="飞行棋 大冒险">
+                <img class="title-logo" src="./assets/images/ui/title_logo.webp" alt="飞行棋 大冒险">
                 <p class="hero-copy">多人飞行棋 + 随机任务挑战</p>
             </div>
             <div class="primary-menu">
                 <button class="menu-button continue" id="homeContinueBtn">
-                    <span class="icon"><img src="./assets/images/ui/icon_continue.png" alt=""></span>
+                    <span class="icon"><img src="./assets/images/ui/icon_continue.webp" alt=""></span>
                     <span><span class="menu-title">继续上局</span><span class="menu-sub" id="saveSummary">正在检查存档</span></span>
                 </button>
                 <button class="menu-button new-game" id="homeNewGameBtn">
-                    <span class="icon"><img src="./assets/images/ui/icon_new_game.png" alt=""></span>
+                    <span class="icon"><img src="./assets/images/ui/icon_new_game.webp" alt=""></span>
                     <span><span class="menu-title">新游戏</span><span class="menu-sub">配置玩家</span></span>
                 </button>
                 <button class="menu-button quick-start" id="quickStartBtn">
-                    <span class="icon"><img src="./assets/images/ui/icon_quick_start.png" alt=""></span>
+                    <span class="icon"><img src="./assets/images/ui/icon_quick_start.webp" alt=""></span>
                     <span><span class="menu-title">直接开局</span><span class="menu-sub">当前配置</span></span>
                 </button>
             </div>
             <div class="home-bottom">
                 <div class="dashboard-grid">
-                    <button class="tool-card" id="homeTaskBtn"><img src="./assets/images/ui/icon_tasks.png" alt=""><strong>任务中心</strong><span>读取、编辑、导出任务</span></button>
-                    <button class="tool-card" id="homeSetupBtn"><img src="./assets/images/ui/icon_settings.png" alt=""><strong>设置</strong><span>玩家、颜色和开局配置</span></button>
-                    <button class="tool-card" id="homeTestBtn"><img src="./assets/images/ui/icon_piece_test.png" alt=""><strong>棋子测试</strong><span>查看飞机显示效果</span></button>
+                    <button class="tool-card" id="homeTaskBtn"><img src="./assets/images/ui/icon_tasks.webp" alt=""><strong>任务中心</strong><span>读取、编辑、导出任务</span></button>
+                    <button class="tool-card" id="homeSetupBtn"><img src="./assets/images/ui/icon_settings.webp" alt=""><strong>设置</strong><span>玩家、颜色和开局配置</span></button>
+                    <button class="tool-card" id="homeTestBtn"><img src="./assets/images/ui/icon_piece_test.webp" alt=""><strong>棋子测试</strong><span>查看飞机显示效果</span></button>
                 </div>
             </div>
         </div>
@@ -1573,7 +1573,7 @@
         const planeColor = colorMap[p.color] || 'R';
         const displayName = escapeHtml(p.name.length > 4 ? p.name.substring(0, 4) : p.name);
         return `
-            <img class="piece-img" src="./assets/images/plane_${planeColor}.png" alt="${COLORS[p.color].name}飞机" />
+            <img class="piece-img" src="./assets/images/plane_${planeColor}.webp" alt="${COLORS[p.color].name}飞机" />
             <span class="piece-name">${displayName}</span>
         `;
     }
