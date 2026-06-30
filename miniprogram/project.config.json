@@ -21,7 +21,7 @@
     "localPlugins": false,
     "disableUseStrict": false,
     "useCompilerPlugins": false,
-    "condition": true,
+    "condition": false,
     "swc": true,
     "disableSWC": false,
     "babelSetting": {
@@ -32,9 +32,26 @@
   },
   "compileType": "miniprogram",
   "libVersion": "latest",
-  "appid": "touristappid",
+  "appid": "wx03730ae0403a92d3",
   "projectname": "ludo-adventure-miniprogram",
-  "condition": {},
+  "condition": {
+    "miniprogram": {
+      "list": [
+        {
+          "name": "首页",
+          "pathName": "pages/home/home",
+          "query": "",
+          "scene": null
+        },
+        {
+          "name": "游戏页",
+          "pathName": "pages/game/game",
+          "query": "mode=quick",
+          "scene": null
+        }
+      ]
+    }
+  },
   "simulatorPluginLibVersion": {},
   "editorSetting": {}
 }

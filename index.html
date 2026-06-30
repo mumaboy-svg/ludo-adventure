@@ -181,6 +181,20 @@
             font: 12px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
             pointer-events: none; display: none;
         }
+        .board.preview-board .debug-label { display: none; }
+        .board.debug-coords .debug-label { display: grid; }
+        .debug-label {
+            position: absolute; transform: translate(-50%, -50%); z-index: 35;
+            width: 22px; height: 22px; border-radius: 50%;
+            background: #111d; color: #fff; font-size: 11px; font-weight: 1000;
+            place-items: center; pointer-events: none; text-shadow: 0 1px 1px #000;
+            box-shadow: 0 0 0 2px #fff, 0 2px 6px #0008;
+        }
+        .debug-label.problem {
+            width: 30px; height: 30px; background: #ff2b2be6; color: #fff;
+            box-shadow: 0 0 0 3px #fff, 0 0 0 6px #ffe600, 0 4px 10px #0009;
+            font-size: 13px;
+        }
         .board::before {
             content: ""; position: absolute; inset: 0;
             background:
@@ -274,13 +288,13 @@
         .hint { color: #7d5a32; font-weight: 1000; }
         .badge { display: inline-block; border-radius: 999px; background: linear-gradient(180deg, #fff, #ffe8b5); padding: .38rem .62rem; font-size: 13px; font-weight: 1000; border: 1px solid #fff9; box-shadow: 0 5px 12px #5b35141c; }
         .dice-row {
-            display: grid; grid-template-columns: 118px 1fr; gap: 14px; align-items: center; margin-top: 14px;
+            display: grid; grid-template-columns: 118px 1fr; gap: clamp(24px, 3vw, 38px); align-items: center; margin-top: 14px;
             padding: 12px; border-radius: 24px; background: linear-gradient(135deg, #5d73ff, #8d52ff 55%, #ffb94c);
             box-shadow: 0 14px 28px #3c2f762e, inset 0 1px 0 #fff8;
         }
         .dice-container {
-            width: 106px; height: 106px; perspective: 600px; cursor: pointer;
-            display: grid; place-items: center; border-radius: 28px;
+            width: 106px; height: 106px; min-width: 106px; min-height: 106px; flex: 0 0 106px;
+            perspective: 600px; cursor: pointer; display: grid; place-items: center; border-radius: 28px; position: relative;
             background: radial-gradient(circle at 35% 25%, #fff, #ffe6a0 48%, #ef9f28 100%);
             box-shadow: inset 0 2px 0 #fff, 0 10px 20px #0003;
         }
@@ -358,11 +372,20 @@
         }
         /* 显示特定点数的类 */
         .dice-cube.show-1 { transform: rotateY(0deg) rotateX(0deg); }
-        .dice-cube.show-2 { transform: rotateX(90deg) rotateY(0deg); }
-        .dice-cube.show-3 { transform: rotateY(90deg) rotateX(0deg); }
-        .dice-cube.show-4 { transform: rotateY(-90deg) rotateX(0deg); }
-        .dice-cube.show-5 { transform: rotateX(-90deg) rotateY(0deg); }
+        .dice-cube.show-2 { transform: rotateX(-90deg) rotateY(0deg); }
+        .dice-cube.show-3 { transform: rotateY(-90deg) rotateX(0deg); }
+        .dice-cube.show-4 { transform: rotateY(90deg) rotateX(0deg); }
+        .dice-cube.show-5 { transform: rotateX(90deg) rotateY(0deg); }
         .dice-cube.show-6 { transform: rotateY(180deg) rotateX(0deg); }
+        .dice-flat {
+            position: absolute; width: 62px; height: 62px; border-radius: 11px;
+            background: linear-gradient(145deg, #fff, #fff1cf); border: 2px solid #8c5d24;
+            box-shadow: inset -4px -4px 8px #0001, inset 4px 4px 8px #fff, 0 5px 10px #0002;
+            display: none; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 7px; z-index: 2;
+        }
+        .dice-container.final .dice-flat { display: grid; }
+        .dice-container.final .dice-cube { visibility: hidden; }
+        .dice-flat .pip { width: 12px; height: 12px; align-self: center; justify-self: center; }
         .roll-btn {
             height: 72px; font-size: 22px; border-radius: 22px;
             background: linear-gradient(180deg, #fff061, #ff982f 68%, #e85c20);
@@ -492,7 +515,7 @@
             .status { padding: .62rem; border-radius: 18px; align-items: flex-start; }
             .current-name { font-size: 20px; }
             .badge { font-size: 11px; padding: .28rem .46rem; }
-            .dice-row { grid-template-columns: 92px 1fr; gap: 10px; padding: 9px; border-radius: 20px; }
+            .dice-row { grid-template-columns: 92px 1fr; gap: 16px; padding: 9px; border-radius: 20px; }
             .dice-container { width: 86px; height: 86px; border-radius: 22px; }
             .dice-cube { width: 54px; height: 54px; }
             .face.front  { transform: rotateY(0deg) translateZ(27px); }
@@ -725,12 +748,14 @@
                                     <div class="pip"></div>
                                 </div>
                             </div>
+                            <div class="dice-flat" id="diceFlat" aria-hidden="true"></div>
                         </div>
                         <button class="roll-btn" id="rollBtn">🎲 掷骰子</button>
                     </div>
                     <div class="actions">
                         <button class="secondary" id="backSetupBtn">返回设置</button>
                         <button class="secondary" id="gameHomeBtn">返回大厅</button>
+                        <button class="secondary" id="debugCoordsBtn">点位数字</button>
                         <button class="warn" id="newGameBtn">重开</button>
                     </div>
                 </div>
@@ -823,12 +848,34 @@
         } catch(e) { console.log('音效播放失败'); }
     }
 
+    function setFlatDice(value) {
+        const diceFlat = document.getElementById('diceFlat');
+        const diceContainer = document.getElementById('diceContainer');
+        if (!diceFlat || !diceContainer) return;
+        const positions = {
+            1: [5],
+            2: [1, 9],
+            3: [1, 5, 9],
+            4: [1, 3, 7, 9],
+            5: [1, 3, 5, 7, 9],
+            6: [1, 3, 4, 6, 7, 9]
+        };
+        diceFlat.innerHTML = (positions[value] || []).map(pos => `<span class="pip" style="grid-column:${((pos - 1) % 3) + 1};grid-row:${Math.floor((pos - 1) / 3) + 1}"></span>`).join('');
+        diceContainer.classList.add('final');
+    }
+
+    function showRollingDice() {
+        const diceContainer = document.getElementById('diceContainer');
+        if (diceContainer) diceContainer.classList.remove('final');
+    }
+
     // ========== 3D骰子动画系统 (基于 ludo-dice-roller) ==========
     function animateDiceRoll(callback) {
         const diceCube = document.getElementById('diceCube');
         if (!diceCube) { if (callback) callback(); return; }
 
         playDiceRollSound();
+        showRollingDice();
 
         // 添加滚动动画类
         diceCube.classList.remove('show-1', 'show-2', 'show-3', 'show-4', 'show-5', 'show-6');
@@ -838,17 +885,11 @@
 
         setTimeout(() => {
             diceCube.classList.remove('rolling');
-
-            // 移除所有show类
-            for (let i = 1; i <= 6; i++) {
-                diceCube.classList.remove('show-' + i);
-            }
-
-            // 添加结果类
+            for (let i = 1; i <= 6; i++) diceCube.classList.remove('show-' + i);
             diceCube.classList.add('show-' + result);
-
             playDiceResultSound(result);
-
+            diceCube.dataset.finalRoll = String(result);
+            setFlatDice(result);
             if (callback) callback(result);
         }, 700);
     }
@@ -860,16 +901,18 @@
         G: { name: "绿", emoji: "🟢", css: "G" }
     };
 
-    const START_INDEX = { R: 6, Y: 18, B: 30, G: 42 };
-    const ENTRY_INDEX = { R: 3, Y: 15, B: 27, G: 39 };
+    const OUTER_PATH_LENGTH = 52;
+    const ENTRY_STEPS = 49;
+    const START_INDEX = { R: 6, Y: 18, B: 31, G: 43 };
+    const ENTRY_INDEX = { R: 3, Y: 15, B: 28, G: 40 };
     const COLOR_ORDER = ["Y", "B", "R", "G"];
     const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
     const baseSlots = {
         G: [{ x: 13.35, y: 12.76 }, { x: 20.71, y: 12.80 }, { x: 13.32, y: 20.51 }, { x: 20.70, y: 20.52 }],
         R: [{ x: 78.84, y: 12.75 }, { x: 86.24, y: 12.76 }, { x: 78.87, y: 20.52 }, { x: 86.27, y: 20.52 }],
-        B: [{ x: 13.32, y: 80.48 }, { x: 20.65, y: 80.46 }, { x: 13.31, y: 88.31 }, { x: 20.61, y: 88.31 }],
-        Y: [{ x: 78.78, y: 80.36 }, { x: 86.21, y: 80.36 }, { x: 78.80, y: 88.13 }, { x: 86.20, y: 88.02 }]
+        Y: [{ x: 78.78, y: 80.36 }, { x: 86.21, y: 80.36 }, { x: 78.80, y: 88.13 }, { x: 86.20, y: 88.02 }],
+        B: [{ x: 13.32, y: 80.48 }, { x: 20.65, y: 80.46 }, { x: 13.31, y: 88.31 }, { x: 20.61, y: 88.31 }]
     };
 
     const outerPath = makeOuterPath();
@@ -933,7 +976,7 @@
         playersList: el("playersList"), log: el("log"), coordTip: el("coordTip"),
         modalBg: el("modalBg"), modal: document.querySelector("#modalBg .modal"), modalSub: el("modalSub"), modalTitle: el("modalTitle"),
         modalBody: el("modalBody"), modalOk: el("modalOk"),
-        backSetupBtn: el("backSetupBtn"), gameHomeBtn: el("gameHomeBtn"), newGameBtn: el("newGameBtn")
+        backSetupBtn: el("backSetupBtn"), gameHomeBtn: el("gameHomeBtn"), debugCoordsBtn: el("debugCoordsBtn"), newGameBtn: el("newGameBtn")
     };
 
     let tasks = loadTasks();
@@ -989,6 +1032,7 @@
         els.modalOk.onclick = () => { els.modalBg.style.display = "none"; modalOpen = false; showNextModal(); };
         els.backSetupBtn.onclick = returnToSetupFromGame;
         els.gameHomeBtn.onclick = goHome;
+        els.debugCoordsBtn.onclick = toggleDebugCoords;
         els.newGameBtn.onclick = () => { if (confirm("重开游戏？")) { localStorage.removeItem(STATE_KEY); state = null; showSetup(); } };
         els.board.onmousemove = updateCoordTip;
         els.board.onclick = updateCoordTip;
@@ -1108,16 +1152,60 @@
 
     function makeOuterPath() {
         const points = [
-            [34.68, 14.68], [40.06, 12.92], [44.93, 12.92], [50.01, 13.09], [54.97, 12.95], [59.89, 12.97],
-            [65.19, 14.62], [67.35, 20.26], [67.37, 25.29], [69.45, 35.26], [74.89, 33.19], [79.65, 33.22],
-            [84.95, 35.37], [86.39, 40.79], [86.51, 45.86], [86.10, 50.27], [86.52, 55.88], [86.57, 60.68],
-            [84.87, 66.26], [79.62, 68.27], [74.71, 68.17], [65.28, 70.83], [67.37, 76.24], [67.26, 81.30],
-            [65.17, 86.82], [59.87, 88.59], [54.93, 88.51], [49.93, 88.47], [44.84, 88.50], [39.93, 88.57],
-            [34.68, 86.80], [32.47, 81.29], [32.44, 76.07], [30.53, 66.18], [25.12, 68.33], [20.37, 68.20],
-            [14.96, 66.24], [13.34, 60.86], [13.26, 55.90], [13.30, 50.92], [13.31, 45.82], [13.36, 40.81],
-            [14.92, 35.36], [20.37, 33.20], [25.10, 33.18], [32.58, 25.26], [32.59, 20.21], [34.68, 14.68]
+            [34.85, 34.10],
+            [32.56, 25.29],
+            [32.60, 20.20],
+            [34.69, 14.68],
+            [40.07, 12.94],
+            [44.93, 12.94],
+            [50.01, 13.06],
+            [54.98, 12.99],
+            [59.92, 13.00],
+            [65.19, 14.65],
+            [67.35, 20.27],
+            [67.36, 25.31],
+            [66.85, 35.25],
+            [69.30, 35.30],
+            [75.14, 35.85],
+            [79.62, 35.85],
+            [84.97, 35.42],
+            [86.46, 40.78],
+            [86.53, 45.86],
+            [86.19, 50.83],
+            [86.53, 55.96],
+            [86.48, 60.88],
+            [84.89, 66.29],
+            [79.63, 68.39],
+            [74.79, 68.41],
+            [69.45, 68.41],
+            [65.30, 70.86],
+            [67.38, 76.35],
+            [67.31, 81.42],
+            [65.18, 86.86],
+            [59.89, 88.66],
+            [54.95, 88.62],
+            [50.02, 88.69],
+            [44.85, 88.58],
+            [39.95, 88.65],
+            [34.67, 86.84],
+            [32.51, 81.39],
+            [32.50, 76.30],
+            [34.90, 68.85],
+            [30.55, 66.23],
+            [25.13, 68.37],
+            [20.35, 68.37],
+            [14.93, 66.26],
+            [13.34, 60.89],
+            [13.29, 55.95],
+            [13.32, 50.99],
+            [13.32, 45.84],
+            [13.34, 40.80],
+            [14.10, 35.30],
+            [20.36, 33.21],
+            [25.11, 33.20],
+            [30.60, 35.47]
         ];
-        return points.map(([x, y], i) => ({ x, y, corner: i % 6 === 0 }));
+        return points.map(([x, y], i) => ({ x, y, corner: i % 13 === 0 }));
     }
 
     function makeStraightPath() {
@@ -1246,13 +1334,61 @@
         } catch { alert("存档损坏。"); }
     }
 
+    let debugCoords = false;
+
     function showGame() {
         document.body.classList.remove("home-mode");
         els.home.style.display = "none";
         els.setup.classList.remove("active");
         els.taskCenter.classList.remove("active");
         els.game.style.display = "block";
+        if (els.modalBg) {
+            els.modalBg.style.display = "none";
+            modalOpen = false;
+            modalQueue = [];
+        }
         renderAll();
+    }
+
+    function toggleDebugCoords() {
+        debugCoords = !debugCoords;
+        els.board.classList.toggle('debug-coords', debugCoords);
+        renderBoardDebugLabels();
+    }
+
+    function renderBoardDebugLabels() {
+        els.board.querySelectorAll('.debug-label').forEach(n => n.remove());
+        if (!debugCoords) return;
+        const problemPoints = new Set([1, 11, 12, 13, 38, 40, 49, 52]);
+        outerPath.forEach((pos, i) => {
+            const pointNo = i + 1;
+            const n = document.createElement('div');
+            n.className = `debug-label ${problemPoints.has(pointNo) ? 'problem' : ''}`;
+            n.style.left = pos.x + '%';
+            n.style.top = pos.y + '%';
+            n.textContent = pointNo;
+            els.board.appendChild(n);
+        });
+        Object.keys(straightPath).forEach(color => {
+            straightPath[color].forEach((pos, i) => {
+                const n = document.createElement('div');
+                n.className = 'debug-label';
+                n.style.left = pos.x + '%';
+                n.style.top = pos.y + '%';
+                n.textContent = `${color}${i + 1}`;
+                els.board.appendChild(n);
+            });
+        });
+        Object.entries(baseSlots).forEach(([color, slots]) => {
+            slots.forEach((pos, i) => {
+                const n = document.createElement('div');
+                n.className = 'debug-label';
+                n.style.left = pos.x + '%';
+                n.style.top = pos.y + '%';
+                n.textContent = `${color}B${i + 1}`;
+                els.board.appendChild(n);
+            });
+        });
     }
 
     function rollDice() {
@@ -1322,13 +1458,13 @@
             if (remain > 0) moveStraight(p, remain, true);
             return;
         }
-        p.outerIndex = (START_INDEX[p.color] + p.outerSteps) % 48;
+        p.outerIndex = (START_INDEX[p.color] + p.outerSteps) % OUTER_PATH_LENGTH;
         addLog(`${label(p)} 落在外圈第 ${p.outerIndex+1} 格。`);
         triggerOuterTask(p, p.outerIndex);
     }
 
     function stepsToEntry(color) {
-        return (ENTRY_INDEX[color] - START_INDEX[color] + 48) % 48;
+        return ENTRY_STEPS;
     }
 
     function moveStraight(p, steps, fromOuter = false) {
@@ -1431,14 +1567,15 @@
         if (state.lastRoll) {
             const diceCube = document.getElementById('diceCube');
             if (diceCube) {
-                for (let i = 1; i <= 6; i++) {
-                    diceCube.classList.remove('show-' + i);
-                }
+                for (let i = 1; i <= 6; i++) diceCube.classList.remove('show-' + i);
                 diceCube.classList.add('show-' + state.lastRoll);
+                diceCube.dataset.finalRoll = String(state.lastRoll);
+                setFlatDice(state.lastRoll);
             }
         }
 
         els.rollBtn.disabled = rolling || modalOpen || state.gameOver;
+        if (debugCoords) renderBoardDebugLabels();
         renderPieces(); renderPlayersList(); renderLog();
     }
 
