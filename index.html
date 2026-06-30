@@ -274,16 +274,41 @@
             filter: drop-shadow(0 5px 7px #0007) drop-shadow(0 0 12px #fff) drop-shadow(0 0 16px currentColor);
             animation: pulse .8s infinite alternate;
         }
+        .piece.current::before {
+            content: ""; position: absolute; left: 17px; top: 17px; z-index: -1;
+            width: 48px; height: 48px; border-radius: 50%; transform: translate(-50%, -50%);
+            background: radial-gradient(circle, #fff 0 26%, currentColor 45%, transparent 68%);
+            opacity: .72; animation: pieceRing 1.05s ease-in-out infinite alternate;
+        }
+        .piece.current .piece-img { animation: pieceFloat .72s ease-in-out infinite alternate; }
         @keyframes pulse { to { filter: drop-shadow(0 5px 7px #0007) drop-shadow(0 0 18px #fff) drop-shadow(0 0 22px currentColor) brightness(1.18); } }
+        @keyframes pieceRing { to { width: 62px; height: 62px; opacity: .34; } }
+        @keyframes pieceFloat { to { transform: translateY(-3px) scale(1.05); } }
         .side { display: grid; gap: 12px; }
         .side .card { border-radius: 26px; }
         .side .card h3 { margin-top: 0; color: #473019; text-shadow: 0 2px 0 #fff8; }
         .status {
+            --hud-color: #ffcf4a;
+            position: relative; overflow: hidden;
             display: flex; justify-content: space-between; align-items: center; gap: 8px;
             background: linear-gradient(135deg, #fff8d6, #ffffffd9);
             border: 2px solid #ffffffd8; border-radius: 22px; padding: .85rem;
-            box-shadow: inset 0 1px 0 #fff, 0 10px 20px #6b441923;
+            box-shadow: inset 0 1px 0 #fff, 0 10px 20px #6b441923, 0 0 0 3px color-mix(in srgb, var(--hud-color) 22%, transparent);
         }
+        .status::before {
+            content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 8px;
+            background: var(--hud-color); box-shadow: 0 0 22px var(--hud-color);
+        }
+        .status::after {
+            content: ""; position: absolute; right: -14%; top: -70%; width: 52%; height: 180%;
+            background: radial-gradient(circle, color-mix(in srgb, var(--hud-color) 42%, transparent) 0 34%, transparent 66%);
+            pointer-events: none;
+        }
+        .status.color-R { --hud-color: var(--R); }
+        .status.color-Y { --hud-color: var(--Y); }
+        .status.color-B { --hud-color: var(--B); }
+        .status.color-G { --hud-color: var(--G); }
+        .status > * { position: relative; z-index: 1; }
         .current-name { font-size: clamp(20px, 2vw, 28px); font-weight: 1000; color: #2d2216; text-shadow: 0 2px 0 #fff; }
         .hint { color: #7d5a32; font-weight: 1000; }
         .badge { display: inline-block; border-radius: 999px; background: linear-gradient(180deg, #fff, #ffe8b5); padding: .38rem .62rem; font-size: 13px; font-weight: 1000; border: 1px solid #fff9; box-shadow: 0 5px 12px #5b35141c; }
@@ -396,14 +421,29 @@
         .roll-btn:active:not(:disabled) { transform: translateY(6px); box-shadow: 0 6px 0 #a33d17, 0 10px 18px #3b190b4a, inset 0 2px 0 #fff9; }
         .players { display: grid; gap: 8px; max-height: 330px; overflow: auto; }
         .player-card {
-            display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px;
+            --player-color: #ffcf4a;
+            display: grid; grid-template-columns: 46px 1fr auto; align-items: center; gap: 10px;
             background: linear-gradient(135deg, #ffffffd9, #fff0c5d9); border: 1px solid #ffffffd9; border-radius: 18px; padding: .72rem;
-            box-shadow: 0 8px 16px #6b44161a;
+            box-shadow: 0 8px 16px #6b44161a; position: relative; overflow: hidden;
         }
-        .player-card.current { border-color: #ffdf57; box-shadow: 0 0 0 3px #ffdf5766, 0 10px 22px #6b441626; background: linear-gradient(135deg, #fff7b4, #ffffffd9); }
+        .player-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 6px; background: var(--player-color); box-shadow: 0 0 18px var(--player-color); }
+        .player-card.current { border-color: var(--player-color); box-shadow: 0 0 0 3px color-mix(in srgb, var(--player-color) 38%, transparent), 0 10px 22px #6b441626; background: linear-gradient(135deg, #fff7b4, #ffffffd9); }
         .player-card.done { background: linear-gradient(135deg, #e9ffe9, #ffffffd9); }
+        .player-avatar {
+            width: 42px; height: 42px; border-radius: 16px; display: grid; place-items: center;
+            background: radial-gradient(circle at 35% 25%, #fff, var(--player-color));
+            box-shadow: inset 0 2px 0 #fff9, 0 8px 14px #0002;
+        }
+        .player-avatar img { width: 32px; height: 32px; object-fit: contain; filter: drop-shadow(0 4px 4px #0004); }
+        .player-info { min-width: 0; }
         .pname { font-weight: 1000; }
         .psub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+        .player-progress {
+            height: 8px; border-radius: 999px; background: #ffffffa8; overflow: hidden;
+            margin-top: 7px; box-shadow: inset 0 1px 3px #0002;
+        }
+        .player-progress i { display: block; height: 100%; width: var(--progress, 0%); border-radius: inherit; background: linear-gradient(90deg, var(--player-color), #fff06a); box-shadow: 0 0 10px var(--player-color); }
+        .progress-pill { justify-self: end; border-radius: 999px; padding: .38rem .58rem; font-size: 12px; font-weight: 1000; background: #fff8; color: #4b3219; box-shadow: inset 0 1px 0 #fff, 0 5px 10px #0001; }
         .log {
             height: 220px; overflow: auto; background: linear-gradient(180deg, #2c2019, #17100c); color: #fff4e5;
             border-radius: 20px; padding: 12px; font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -530,7 +570,13 @@
             .log { height: 140px; border-radius: 16px; }
             .piece { min-width: 40px; transform-origin: center; }
             .piece-img { width: 28px; height: 28px; }
+            .piece.current::before { left: 14px; top: 14px; width: 40px; height: 40px; }
             .piece-name { display: none; }
+            .player-card { grid-template-columns: 40px 1fr auto; gap: 8px; }
+            .player-avatar { width: 36px; height: 36px; border-radius: 13px; }
+            .player-avatar img { width: 28px; height: 28px; }
+            .psub { font-size: 11px; }
+            .progress-pill { font-size: 11px; padding: .3rem .44rem; }
         }
         @media(max-width: 860px) and (max-height: 720px) {
             .home-hero { gap: 5px; padding-bottom: 8px; }
@@ -903,8 +949,8 @@
 
     const OUTER_PATH_LENGTH = 52;
     const ENTRY_STEPS = 49;
-    const START_INDEX = { R: 6, Y: 18, B: 31, G: 43 };
-    const ENTRY_INDEX = { R: 3, Y: 15, B: 28, G: 40 };
+    const START_INDEX = { R: 9, Y: 22, B: 35, G: 48 };
+    const ENTRY_INDEX = { R: 6, Y: 19, B: 32, G: 45 };
     const COLOR_ORDER = ["Y", "B", "R", "G"];
     const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
@@ -1464,7 +1510,7 @@
     }
 
     function stepsToEntry(color) {
-        return ENTRY_STEPS;
+        return (ENTRY_INDEX[color] - START_INDEX[color] + OUTER_PATH_LENGTH) % OUTER_PATH_LENGTH;
     }
 
     function moveStraight(p, steps, fromOuter = false) {
@@ -1559,6 +1605,8 @@
     function renderAll() {
         if (!state) return;
         const p = currentPlayer();
+        els.currentName.closest(".status")?.classList.remove("color-R", "color-Y", "color-B", "color-G");
+        if (p && !state.gameOver) els.currentName.closest(".status")?.classList.add(`color-${p.color}`);
         els.currentName.textContent = state.gameOver ? "游戏结束" : (p ? label(p) : "-");
         els.roundBadge.textContent = `第 ${state.round} 轮`;
         els.lastRoll.textContent = `最后点数：${state.lastRoll || "-"}`;
@@ -1617,9 +1665,10 @@
     function renderPlayersList() {
         const cur = currentPlayer();
         els.playersList.innerHTML = state.players.map(p => `
-            <div class="player-card ${cur?.id === p.id ? "current" : ""} ${p.status==="finished"?"done":""}">
-                <div><div class="pname">${COLORS[p.color].emoji} ${escapeHtml(p.name)} ${p.finishPlace?`<span class="badge">第${p.finishPlace}名</span>`:""}</div><div class="psub">${statusText(p)}</div></div>
-                <b>${progressText(p)}</b>
+            <div class="player-card ${cur?.id === p.id ? "current" : ""} ${p.status==="finished"?"done":""}" style="--player-color: var(--${p.color}); --progress: ${playerProgressPercent(p)}%;">
+                <div class="player-avatar"><img src="./assets/images/plane_${p.color}.webp" alt="${COLORS[p.color].name}飞机"></div>
+                <div class="player-info"><div class="pname">${COLORS[p.color].emoji} ${escapeHtml(p.name)} ${p.finishPlace?`<span class="badge">第${p.finishPlace}名</span>`:""}</div><div class="psub">${statusText(p)}</div><div class="player-progress"><i></i></div></div>
+                <b class="progress-pill">${progressText(p)}</b>
             </div>`).join("");
     }
 
@@ -1647,6 +1696,13 @@
     }
 
     function progressText(p) { if (p.status==="base") return "基地"; if (p.status==="outer") return `外 ${p.outerSteps}/${stepsToEntry(p.color)}`; if (p.status==="straight") return `直 ${p.straightIndex}/6`; return "终点"; }
+    function playerProgressPercent(p) {
+        if (p.status === "finished") return 100;
+        if (p.status === "base") return 4;
+        if (p.status === "outer") return Math.max(8, Math.min(82, Math.round((p.outerSteps / stepsToEntry(p.color)) * 76) + 8));
+        if (p.status === "straight") return Math.max(84, Math.min(98, 84 + Math.round((p.straightIndex / 6) * 14)));
+        return 0;
+    }
     function label(p) { return `${COLORS[p.color].emoji}${p.name}`; }
     function countColors(arr) { const counts = {R:0,Y:0,B:0,G:0}; arr.forEach(p => counts[p.color]++); return counts; }
 
