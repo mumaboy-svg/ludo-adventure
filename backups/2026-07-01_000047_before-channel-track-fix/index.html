@@ -473,17 +473,6 @@
         .dice-cube.show-4 { transform: rotateY(90deg) rotateX(0deg); }
         .dice-cube.show-5 { transform: rotateX(90deg) rotateY(0deg); }
         .dice-cube.show-6 { transform: rotateY(180deg) rotateX(0deg); }
-        .dice-result-face {
-            position: absolute; left: 50%; top: 50%; z-index: 3;
-            width: 60px; height: 60px; transform: translate(-50%, -50%);
-            display: none; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
-            padding: 6px; border-radius: 10px; border: 2px solid #8c5d24;
-            background: linear-gradient(145deg, #fff, #fff1cf);
-            box-shadow: inset -4px -4px 8px #0001, inset 4px 4px 8px #fff, 0 5px 10px #0002;
-            pointer-events: none;
-        }
-        .dice-result-face.show { display: grid; }
-        .dice-result-face .pip { width: 12px; height: 12px; align-self: center; justify-self: center; }
         .roll-btn {
             height: 74px; font-size: 24px; border-radius: 999px;
             background: transparent; color: #5b2408; text-shadow: 0 2px 0 #fff8, 0 0 10px #fff7;
@@ -899,7 +888,6 @@
                                     <div class="pip"></div>
                                 </div>
                             </div>
-                            <div class="dice-result-face" id="diceResultFace" aria-hidden="true"></div>
                         </div>
                         <button class="roll-btn" id="rollBtn">🎲 掷骰子</button>
                     </div>
@@ -1000,36 +988,11 @@
     }
 
     // ========== 3D骰子动画系统 (基于 ludo-dice-roller) ==========
-    function renderDiceResult(value) {
-        const face = document.getElementById('diceResultFace');
-        if (!face) return;
-        const positions = {
-            1: [5],
-            2: [1, 9],
-            3: [1, 5, 9],
-            4: [1, 3, 7, 9],
-            5: [1, 3, 5, 7, 9],
-            6: [1, 3, 4, 6, 7, 9]
-        };
-        face.innerHTML = (positions[value] || []).map(pos => {
-            const col = ((pos - 1) % 3) + 1;
-            const row = Math.floor((pos - 1) / 3) + 1;
-            return `<span class="pip" style="grid-column:${col};grid-row:${row}"></span>`;
-        }).join('');
-        face.classList.add('show');
-    }
-
-    function hideDiceResult() {
-        const face = document.getElementById('diceResultFace');
-        if (face) face.classList.remove('show');
-    }
-
     function animateDiceRoll(callback) {
         const diceCube = document.getElementById('diceCube');
         if (!diceCube) { if (callback) callback(); return; }
 
         playDiceRollSound();
-        hideDiceResult();
 
         diceCube.classList.remove('show-1', 'show-2', 'show-3', 'show-4', 'show-5', 'show-6');
         diceCube.classList.add('rolling');
@@ -1041,7 +1004,6 @@
             for (let i = 1; i <= 6; i++) diceCube.classList.remove('show-' + i);
             diceCube.classList.add('show-' + result);
             diceCube.dataset.finalRoll = String(result);
-            renderDiceResult(result);
             playDiceResultSound(result);
             if (callback) callback(result);
         }, 700);
@@ -1668,7 +1630,7 @@
         const need = 6 - p.straightIndex;
         if (steps === need) {
             const track = makeStraightTrack(p.color, p.straightIndex, 6);
-            appendPieceMoveTrack(p.id, track);
+            if (track.length) pieceMoveTracks.set(p.id, track);
             if (need > 0) queuePostMoveTask(p, 6);
             queuePostMoveFinish(p);
             return;
@@ -1679,7 +1641,7 @@
             const forward = makeStraightTrack(p.color, p.straightIndex, 6);
             const backward = makeStraightTrack(p.color, 6, target).reverse();
             const track = forward.concat(backward);
-            appendPieceMoveTrack(p.id, track);
+            if (track.length) pieceMoveTracks.set(p.id, track);
             p.straightIndex = target;
             addLog(`${label(p)} 点数超过终点，反弹后退到直道第 ${p.straightIndex} 格。`, "bad");
             queuePostMoveTask(p, p.straightIndex);
@@ -1688,7 +1650,7 @@
         const from = p.straightIndex;
         p.straightIndex += steps;
         const track = makeStraightTrack(p.color, from, p.straightIndex);
-        appendPieceMoveTrack(p.id, track);
+        if (track.length) pieceMoveTracks.set(p.id, track);
         if (fromOuter) addLog(`${label(p)} 进入直道第 ${p.straightIndex} 格。`, "good");
         else addLog(`${label(p)} 直道前进到第 ${p.straightIndex} 格。`);
         queuePostMoveTask(p, p.straightIndex);
@@ -1703,12 +1665,6 @@
             if (i >= 1 && i <= 6) track.push(path[i - 1]);
         }
         return track;
-    }
-
-    function appendPieceMoveTrack(pieceId, track) {
-        if (!track || !track.length) return;
-        const existing = pieceMoveTracks.get(pieceId) || [];
-        pieceMoveTracks.set(pieceId, existing.concat(track));
     }
 
     function finishPlayer(p) {
@@ -1820,7 +1776,6 @@ ${tasks.final}`, sub: "终极惩罚" });
                 for (let i = 1; i <= 6; i++) diceCube.classList.remove('show-' + i);
                 diceCube.classList.add('show-' + state.lastRoll);
                 diceCube.dataset.finalRoll = String(state.lastRoll);
-                renderDiceResult(state.lastRoll);
             }
         }
 
