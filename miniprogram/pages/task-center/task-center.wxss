@@ -1,0 +1,8 @@
+.page-shell { height:100vh; position:relative; overflow:hidden; }
+.page-bg { position:absolute; inset:0; width:100%; height:100%; z-index:0; }
+.content { position:relative; z-index:1; height:100vh; padding:28rpx; }
+.section-title { font-size:32rpx; font-weight:1000; margin-bottom:16rpx; }
+.task-item { margin-top:18rpx; }
+.task-item text { font-weight:900; font-size:26rpx; }
+textarea { width:100%; min-height:120rpx; background:rgba(255,255,255,.88); border-radius:18rpx; padding:16rpx; margin-top:8rpx; font-size:26rpx; }
+.actions button { flex:1; min-width:190rpx; }

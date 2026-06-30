@@ -1,0 +1,36 @@
+.page-shell { min-height:100vh; position:relative; overflow:hidden; padding: env(safe-area-inset-top) 36rpx 34rpx; }
+.page-bg { position:absolute; inset:0; width:100%; height:100%; z-index:0; }
+.home > view, .home > image:not(.page-bg) { position:relative; z-index:1; }
+.home-stats { position:absolute; top: calc(env(safe-area-inset-top) + 22rpx); right:24rpx; z-index:2; display:flex; gap:10rpx; }
+.stat { width:116rpx; padding:10rpx 8rpx; border-radius:22rpx; background:rgba(255,255,255,.74); border:2rpx solid rgba(255,255,255,.78); box-shadow:0 8rpx 18rpx rgba(80,45,10,.14); display:flex; flex-direction:column; align-items:center; line-height:1.08; }
+.num { font-size:30rpx; font-weight:1000; color:#30251c; }
+.stat text:last-child { font-size:20rpx; color:#795c3d; font-weight:900; }
+.hero { min-height: 335rpx; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding-top:42rpx; }
+.version { padding:8rpx 20rpx; border-radius:999rpx; background:rgba(255,255,255,.76); border:2rpx solid rgba(255,255,255,.86); box-shadow:0 8rpx 18rpx rgba(80,45,10,.12); font-size:22rpx; font-weight:1000; color:#6d4a24; }
+.title-logo { width: 600rpx; max-width:84vw; margin-top:20rpx; filter: drop-shadow(0 16rpx 18rpx rgba(60,36,8,.16)); }
+.slogan { margin-top:4rpx; color:#6d4a24; font-size:24rpx; font-weight:900; text-shadow:0 2rpx 0 rgba(255,255,255,.8); }
+.primary-menu { width: 660rpx; max-width: 92vw; margin: 18rpx auto 0; display:flex; flex-direction:column; gap:14rpx; }
+.menu-btn { position:relative; height:126rpx; padding:0; border:0; background:transparent; overflow:visible; display:flex; align-items:center; text-align:left; }
+.menu-btn::after { border:0; }
+.button-skin { position:absolute; left:0; top:0; width:100%; height:100%; z-index:0; }
+.menu-icon { position:relative; z-index:1; width:86rpx; height:86rpx; margin-left:36rpx; flex:none; }
+.menu-text { position:relative; z-index:1; margin-left:18rpx; display:flex; flex-direction:column; justify-content:center; max-width:420rpx; }
+.menu-title { font-size:38rpx; line-height:1.05; font-weight:1000; color:#2d231b; text-shadow:0 2rpx 0 rgba(255,255,255,.72); }
+.menu-sub { margin-top:6rpx; font-size:22rpx; font-weight:900; color:#725336; }
+.skin-continue .menu-title { color:#fffdf4; text-shadow:0 3rpx 0 rgba(0,0,0,.22); }
+.skin-continue .menu-sub { color:#fff8d9; }
+.skin-quick .menu-title { color:#173a22; }
+.tool-menu { width:620rpx; max-width:90vw; margin: 20rpx auto 0; display:flex; justify-content:center; gap:48rpx; }
+.tool { width:180rpx; height:150rpx; padding:0; border:0; background: radial-gradient(circle at 50% 38%, rgba(255,255,255,.92) 0 36%, rgba(255,247,198,.65) 58%, rgba(255,255,255,0) 76%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4rpx; }
+.tool::after { border:0; }
+.tool image { width:78rpx; height:78rpx; filter: drop-shadow(0 8rpx 10rpx rgba(30,20,10,.22)); }
+.tool text { font-size:25rpx; font-weight:1000; color:#fff8da; text-shadow:0 3rpx 4rpx rgba(66,38,8,.9), 0 0 10rpx rgba(255,232,92,.9); }
+@media (max-height: 700px) {
+  .hero { min-height: 280rpx; padding-top:22rpx; }
+  .title-logo { width:520rpx; }
+  .primary-menu { gap:8rpx; margin-top:10rpx; }
+  .menu-btn { height:112rpx; }
+  .menu-icon { width:76rpx; height:76rpx; }
+  .tool-menu { margin-top:10rpx; }
+  .tool { height:124rpx; }
+}

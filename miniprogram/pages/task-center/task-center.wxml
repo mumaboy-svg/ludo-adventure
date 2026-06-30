@@ -1,0 +1,39 @@
+<view class="task page-shell">
+  <image class="page-bg" mode="aspectFill" src="/assets/images/ui/task_center_bg_mobile.webp" />
+  <scroll-view class="content" scroll-y="true">
+    <view class="card">
+      <view class="title">任务中心</view>
+      <view class="subtitle">小程序第一版先支持本地编辑保存；导入导出后续做复制/粘贴 JSON。</view>
+      <view class="actions">
+        <button class="primary-btn" bindtap="saveTasks">保存任务</button>
+        <button class="secondary-btn" bindtap="resetTasks">恢复默认</button>
+        <button class="secondary-btn" bindtap="goSetup">玩家设置</button>
+      </view>
+    </view>
+    <view class="card">
+      <view class="section-title">起飞任务</view>
+      <textarea value="{{tasks.takeoff}}" data-field="takeoff" bindinput="onSimpleInput" />
+    </view>
+    <view class="card">
+      <view class="section-title">基地掷骰任务</view>
+      <view wx:for="{{baseRollList}}" wx:key="point" class="task-item">
+        <text>掷出 {{item.point}} 点</text>
+        <textarea value="{{item.text}}" data-point="{{item.point}}" bindinput="onBaseRollInput" />
+      </view>
+    </view>
+    <view class="card">
+      <view class="section-title">外圈任务</view>
+      <view wx:for="{{tasks.outer}}" wx:key="index" class="task-item">
+        <text>外圈任务 {{index + 1}}</text>
+        <textarea value="{{item}}" data-type="outer" data-index="{{index}}" bindinput="onArrayInput" />
+      </view>
+    </view>
+    <view class="card">
+      <view class="section-title">直道任务</view>
+      <view wx:for="{{tasks.straight}}" wx:key="index" class="task-item">
+        <text>直道第 {{index + 1}} 格</text>
+        <textarea value="{{item}}" data-type="straight" data-index="{{index}}" bindinput="onArrayInput" />
+      </view>
+    </view>
+  </scroll-view>
+</view>

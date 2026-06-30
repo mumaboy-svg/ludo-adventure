@@ -1,0 +1,31 @@
+<view class="game container">
+  <view class="board-card">
+    <view class="board">
+      <image class="board-img" src="/assets/images/ui/board_traditional_preview.webp" mode="aspectFit" />
+      <view wx:for="{{pieces}}" wx:key="id" class="piece" style="left: {{item.x}}%; top: {{item.y}}%;">
+        <image src="{{item.img}}" />
+        <text>{{item.shortName}}</text>
+      </view>
+    </view>
+  </view>
+  <view class="card">
+    <view class="title">{{currentName}}</view>
+    <view class="subtitle">{{statusText}}</view>
+    <view class="dice">{{lastRoll || '-'}}</view>
+    <view class="actions">
+      <button class="primary-btn" bindtap="rollDice">掷骰子</button>
+      <button class="secondary-btn" bindtap="saveAndBack">返回大厅</button>
+      <button class="warn-btn" bindtap="restart">重开</button>
+    </view>
+    <view class="log-box">
+      <view wx:for="{{log}}" wx:key="index" class="log-line">{{item}}</view>
+    </view>
+  </view>
+  <view wx:if="{{modalOpen}}" class="modal-mask">
+    <view class="modal-card">
+      <view class="section-title">{{modalTitle}}</view>
+      <text>{{modalBody}}</text>
+      <button class="primary-btn" bindtap="closeModal">完成，继续</button>
+    </view>
+  </view>
+</view>

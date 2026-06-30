@@ -1,0 +1,25 @@
+page {
+  min-height: 100vh;
+  background: #fff7df;
+  color: #30251c;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  box-sizing: border-box;
+}
+view, text, button, input, textarea, image { box-sizing: border-box; }
+button { border-radius: 20rpx; font-weight: 800; }
+.container { min-height: 100vh; padding: 28rpx; }
+.card {
+  background: rgba(255,255,255,.82);
+  border-radius: 28rpx;
+  padding: 24rpx;
+  box-shadow: 0 16rpx 36rpx rgba(80,50,20,.12);
+  margin-bottom: 24rpx;
+}
+.row { display: flex; align-items: center; gap: 16rpx; }
+.actions { display: flex; gap: 16rpx; flex-wrap: wrap; margin-top: 20rpx; }
+.primary-btn { background: #27231f; color: #fff; }
+.secondary-btn { background: #fff4df; color: #30251c; border: 2rpx solid rgba(80,50,20,.16); }
+.warn-btn { background: #bd3e35; color: #fff; }
+.hint { color: #7e6a55; font-size: 24rpx; }
+.title { font-size: 42rpx; font-weight: 1000; }
+.subtitle { color: #6f5945; font-size: 26rpx; margin-top: 8rpx; }

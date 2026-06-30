@@ -1,0 +1,36 @@
+<view class="home page-shell">
+  <image class="page-bg" mode="aspectFill" src="/assets/images/ui/home_bg_mobile.webp" />
+  <view class="home-stats">
+    <view class="stat"><text class="num">{{taskCount}}</text><text>任务</text></view>
+    <view class="stat"><text class="num">{{playerCount}}</text><text>玩家</text></view>
+  </view>
+
+  <view class="hero">
+    <view class="version">v{{version}} · 本地存档 · 任务挑战</view>
+    <image class="title-logo" mode="widthFix" src="/assets/images/ui/title_logo.webp" />
+    <text class="slogan">多人飞行棋 + 随机任务挑战</text>
+  </view>
+
+  <view class="primary-menu">
+    <button class="menu-btn skin-continue" bindtap="continueGame">
+      <image class="button-skin" mode="scaleToFill" src="/assets/images/ui/button_continue.webp" />
+      <image class="menu-icon" src="/assets/images/ui/icon_continue.webp" />
+      <view class="menu-text"><text class="menu-title">继续上局</text><text class="menu-sub">{{saveSummary}}</text></view>
+    </button>
+    <button class="menu-btn skin-new" bindtap="goSetup">
+      <image class="button-skin" mode="scaleToFill" src="/assets/images/ui/button_new_game.webp" />
+      <image class="menu-icon" src="/assets/images/ui/icon_new_game.webp" />
+      <view class="menu-text"><text class="menu-title">新游戏</text><text class="menu-sub">配置玩家和颜色</text></view>
+    </button>
+    <button class="menu-btn skin-quick" bindtap="quickStart">
+      <image class="button-skin" mode="scaleToFill" src="/assets/images/ui/button_quick_start.webp" />
+      <image class="menu-icon" src="/assets/images/ui/icon_quick_start.webp" />
+      <view class="menu-text"><text class="menu-title">直接开局</text><text class="menu-sub">使用当前配置</text></view>
+    </button>
+  </view>
+
+  <view class="tool-menu">
+    <button class="tool" bindtap="goTasks"><image src="/assets/images/ui/icon_tasks.webp" /><text>任务中心</text></button>
+    <button class="tool" bindtap="goSetup"><image src="/assets/images/ui/icon_settings.webp" /><text>设置</text></button>
+  </view>
+</view>

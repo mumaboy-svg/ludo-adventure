@@ -1,0 +1,17 @@
+{
+  "pages": [
+    "pages/home/home",
+    "pages/setup/setup",
+    "pages/task-center/task-center",
+    "pages/game/game"
+  ],
+  "window": {
+    "navigationBarTitleText": "飞行棋大冒险",
+    "navigationBarBackgroundColor": "#f7d65a",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#fff7df"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

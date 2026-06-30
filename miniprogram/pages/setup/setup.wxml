@@ -1,0 +1,23 @@
+<view class="setup page-shell">
+  <image class="page-bg" mode="aspectFill" src="/assets/images/ui/settings_bg_mobile.webp" />
+  <view class="content">
+    <view class="card">
+      <view class="title">新游戏设置</view>
+      <view class="subtitle">2-16 人；每色最多 4 人。</view>
+    </view>
+    <view class="card" wx:for="{{players}}" wx:key="index">
+      <view class="player-row">
+        <input value="{{item.name}}" data-index="{{index}}" bindinput="onNameInput" placeholder="玩家名" />
+        <picker mode="selector" range="{{colorOptions}}" range-key="label" value="{{item.colorIndex}}" data-index="{{index}}" bindchange="onColorChange">
+          <view class="picker">{{item.colorLabel}}</view>
+        </picker>
+        <button class="secondary-btn small" data-index="{{index}}" bindtap="removePlayer">删除</button>
+      </view>
+    </view>
+    <view class="actions">
+      <button class="secondary-btn" bindtap="addPlayer">+ 添加玩家</button>
+      <button class="primary-btn" bindtap="startGame">开始游戏</button>
+      <button class="secondary-btn" bindtap="goTasks">任务中心</button>
+    </view>
+  </view>
+</view>
