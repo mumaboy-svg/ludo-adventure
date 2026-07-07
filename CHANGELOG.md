@@ -7,12 +7,12 @@
 ### 新增
 
 - 暂无。
+
 ### 结构
 
 - 将项目整理为双方向结构：网页版位于 `web/`，微信小游戏版位于 `minigame/`。
 - 根目录新增兼容跳转页 `index.html`，自动跳转到 `web/index.html`。
 - 将旧版根目录散落文件归档到 `archive/legacy-root/`，旧版小程序结构归档到 `archive/legacy-miniprogram/`。
-
 
 ### 优化
 
