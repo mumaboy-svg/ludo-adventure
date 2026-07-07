@@ -19,3 +19,6 @@ minigame/.git/
 # Local historical snapshots not part of the structured source tree.
 backups/2026-06-30_*/
 backups/2026-07-01_dice-front-result-fix/
+
+# Local-only backups of nested Git metadata.
+archive/local-git-backups/
