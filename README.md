@@ -92,6 +92,7 @@
 
 - 更新流程总则：`docs/更新流程.md`
 - 发布检查表：`docs/release/发布检查表.md`
+- 双端发布说明：`docs/release/发布说明.md`
 - 更新日志：`CHANGELOG.md`
 - 玩家公告模板：`templates/更新公告模板.md`
 
