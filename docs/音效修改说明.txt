@@ -39,3 +39,10 @@
 回滚方法:
 ----------
 如需恢复原来的白噪音音效，将 playDiceRollSound() 函数恢复为原来的实现即可。
+
+
+---
+
+## 2026-07-07 双目录整理说明
+
+项目已整理为两个方向：网页版在 `web/`，微信小游戏版在 `minigame/`。本文档中较早记录的 `index.html`、`assets/`、`tests/` 等路径，若无特别说明，通常对应现在的 `web/index.html`、`web/assets/`、`web/tests/`。

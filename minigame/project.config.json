@@ -1,7 +1,16 @@
 {
-  "description": "飞行棋大冒险微信小程序版",
+  "description": "飞行棋大冒险微信小游戏版",
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      {
+        "type": "file",
+        "value": "project.private.config.json"
+      },
+      {
+        "type": "file",
+        "value": "sitemap.json"
+      }
+    ],
     "include": []
   },
   "setting": {
@@ -30,28 +39,11 @@
       "outputPath": ""
     }
   },
-  "compileType": "miniprogram",
+  "compileType": "minigame",
   "libVersion": "latest",
   "appid": "wx03730ae0403a92d3",
-  "projectname": "ludo-adventure-miniprogram",
-  "condition": {
-    "miniprogram": {
-      "list": [
-        {
-          "name": "首页",
-          "pathName": "pages/home/home",
-          "query": "",
-          "scene": null
-        },
-        {
-          "name": "游戏页",
-          "pathName": "pages/game/game",
-          "query": "mode=quick",
-          "scene": null
-        }
-      ]
-    }
-  },
+  "projectname": "ludo-adventure-minigame",
+  "condition": {},
   "simulatorPluginLibVersion": {},
   "editorSetting": {}
 }

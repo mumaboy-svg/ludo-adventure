@@ -1,4 +1,21 @@
-
 .DS_Store
+
+# Local/private configs
+minigame/project.private.config.json
 miniprogram/project.private.config.json
+
+# User/task data exports
 飞行棋任务表_*.json
+archive/legacy-root/飞行棋任务表_*.json
+
+# Dependencies/build cache
+node_modules/
+dist/
+build/
+
+# Local nested repository metadata; do not commit as a submodule.
+minigame/.git/
+
+# Local historical snapshots not part of the structured source tree.
+backups/2026-06-30_*/
+backups/2026-07-01_dice-front-result-fix/
