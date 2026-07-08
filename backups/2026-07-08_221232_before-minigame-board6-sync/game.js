@@ -40,7 +40,7 @@ let logText = '掷出 6 才能起飞';
 let modal = null;
 const bootTime = Date.now();
 const OUTER_PATH_LENGTH = 52;
-const START_INDEX = { R: 22, Y: 48, B: 9, G: 35 };
+const START_INDEX = { R: 9, Y: 22, B: 35, G: 48 };
 const ENTRY_INDEX = { R: 6, Y: 19, B: 32, G: 45 };
 const FLY_JUMP_RULES = {
   R: { from: 40, to: 52 },
@@ -49,10 +49,10 @@ const FLY_JUMP_RULES = {
   G: { from: 1, to: 13 }
 };
 const baseSlots = {
-  Y: [{ x: 13.35, y: 12.76 }, { x: 20.71, y: 12.80 }, { x: 13.32, y: 20.51 }, { x: 20.70, y: 20.52 }],
-  B: [{ x: 78.84, y: 12.75 }, { x: 86.24, y: 12.76 }, { x: 78.87, y: 20.52 }, { x: 86.27, y: 20.52 }],
-  R: [{ x: 78.78, y: 80.36 }, { x: 86.21, y: 80.36 }, { x: 78.80, y: 88.13 }, { x: 86.20, y: 88.02 }],
-  G: [{ x: 13.32, y: 80.48 }, { x: 20.65, y: 80.46 }, { x: 13.31, y: 88.31 }, { x: 20.61, y: 88.31 }]
+  R: [{ x: 78.84, y: 12.75 }, { x: 86.24, y: 12.76 }, { x: 78.87, y: 20.52 }, { x: 86.27, y: 20.52 }],
+  Y: [{ x: 78.78, y: 80.36 }, { x: 86.21, y: 80.36 }, { x: 78.80, y: 88.13 }, { x: 86.20, y: 88.02 }],
+  B: [{ x: 13.32, y: 80.48 }, { x: 20.65, y: 80.46 }, { x: 13.31, y: 88.31 }, { x: 20.61, y: 88.31 }],
+  G: [{ x: 13.35, y: 12.76 }, { x: 20.71, y: 12.80 }, { x: 13.32, y: 20.51 }, { x: 20.70, y: 20.52 }]
 };
 const outerPath = [
   [34.85, 34.10],
@@ -146,8 +146,10 @@ function newGameState() {
     gameOver: false
   };
 }
-function saveState() { wx.setStorageSync('ludo_minigame_state_v3', state); }
-function loadState() { return wx.getStorageSync('ludo_minigame_state_v3') || null; }
+function saveState() { wx.setStorageSync('ludo_minigame_state_v2', state); }
+function loadState() { return wx.getStorageSync('ludo_minigame_state_v2') || null; }
+
+function stepsToEntry(color) { return (ENTRY_INDEX[color] - START_INDEX[color] + OUTER_PATH_LENGTH) % OUTER_PATH_LENGTH; }
 
 const DEFAULT_TASKS = {
   takeoff: '🛫 起飞！大声说“起飞啦”，并做一个飞机起飞动作。',
@@ -404,7 +406,7 @@ function drawMiniProgress(y) {
   ctx.font = '800 12px sans-serif';
   state.players.slice(0, 4).forEach((piece, i) => {
     const rank = state.finishOrder && state.finishOrder.includes(piece.name) ? `第${state.finishOrder.indexOf(piece.name)+1}名` : '';
-    const progress = piece.status === 'base' ? '基地' : piece.status === 'outer' ? `外圈第${piece.outerIndex + 1}格` : piece.status === 'straight' ? `直${piece.straightIndex}/6` : '终点';
+    const progress = piece.status === 'base' ? '基地' : piece.status === 'outer' ? `外${piece.outerSteps}/${stepsToEntry(piece.color)}` : piece.status === 'straight' ? `直${piece.straightIndex}/6` : '终点';
     ctx.fillText(`${piece.name}：${progress}${rank ? ' · ' + rank : ''}`, 42, y + 22 + i * 15);
   });
   const latest = (state.logs || []).slice(-1)[0];
@@ -469,7 +471,7 @@ function drawDice(x, y, size, value) {
 function pieceCoord(piece) {
   if (piece.status === 'base') return baseSlots[piece.color][piece.slot] || baseSlots[piece.color][0];
   if (piece.status === 'outer') return outerPath[piece.outerIndex] || baseSlots[piece.color][0];
-  if (piece.status === 'straight') return piece.straightIndex <= 0 ? outerPath[ENTRY_INDEX[piece.color]] : straightPath[piece.color][Math.min(5, piece.straightIndex - 1)];
+  if (piece.status === 'straight') return piece.straightIndex <= 0 ? outerPath[START_INDEX[piece.color]] : straightPath[piece.color][Math.min(5, piece.straightIndex - 1)];
   return { x: 50, y: 50 };
 }
 
@@ -807,26 +809,6 @@ function applyFlyJump(piece) {
   piece.outerSteps = (piece.outerIndex - START_INDEX[piece.color] + OUTER_PATH_LENGTH) % OUTER_PATH_LENGTH;
   addLog(`${piece.name} 触发飞行航线：从 ${rule.from} 飞到 ${rule.to}`);
 }
-
-function moveOuter(piece, steps) {
-  for (let step = 1; step <= steps; step++) {
-    piece.outerIndex = (piece.outerIndex + 1) % OUTER_PATH_LENGTH;
-    piece.outerSteps += 1;
-    applyFlyJump(piece);
-    if (piece.outerIndex === ENTRY_INDEX[piece.color]) {
-      const remain = steps - step;
-      piece.status = 'straight';
-      piece.outerIndex = null;
-      piece.straightIndex = 0;
-      addLog(`${piece.name} 到达直道入口，进入直道`);
-      if (remain > 0) moveStraight(piece, remain);
-      return;
-    }
-  }
-  addLog(`${piece.name} 前进 ${steps} 步，落在外圈第 ${piece.outerIndex + 1} 格`);
-  triggerOuterTask(piece);
-}
-
 function moveStraight(piece, steps) {
   const need = 6 - piece.straightIndex;
   if (steps === need) {
@@ -869,7 +851,21 @@ function rollDice() {
       nextPlayer();
     }
   } else if (piece.status === 'outer') {
-    moveOuter(piece, value);
+    piece.outerSteps += value;
+    const entrySteps = stepsToEntry(piece.color);
+    if (piece.outerSteps >= entrySteps) {
+      const remain = piece.outerSteps - entrySteps;
+      piece.status = 'straight';
+      piece.outerIndex = null;
+      piece.straightIndex = 0;
+      addLog(`${piece.name} 到达直道入口，进入直道`);
+      if (remain > 0) moveStraight(piece, remain);
+    } else {
+      piece.outerIndex = (START_INDEX[piece.color] + piece.outerSteps) % OUTER_PATH_LENGTH;
+      addLog(`${piece.name} 前进 ${value} 步，落在外圈第 ${piece.outerIndex + 1} 格`);
+      applyFlyJump(piece);
+      triggerOuterTask(piece);
+    }
     if (value !== 6 || piece.status === 'finished') nextPlayer();
   } else if (piece.status === 'straight') {
     moveStraight(piece, value);

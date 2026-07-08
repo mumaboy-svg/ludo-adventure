@@ -1068,10 +1068,10 @@
     const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
     const baseSlots = {
-        Y: [{ x: 13.35, y: 12.76 }, { x: 20.71, y: 12.80 }, { x: 13.32, y: 20.51 }, { x: 20.70, y: 20.52 }],
-        B: [{ x: 78.84, y: 12.75 }, { x: 86.24, y: 12.76 }, { x: 78.87, y: 20.52 }, { x: 86.27, y: 20.52 }],
-        R: [{ x: 78.78, y: 80.36 }, { x: 86.21, y: 80.36 }, { x: 78.80, y: 88.13 }, { x: 86.20, y: 88.02 }],
-        G: [{ x: 13.32, y: 80.48 }, { x: 20.65, y: 80.46 }, { x: 13.31, y: 88.31 }, { x: 20.61, y: 88.31 }]
+        G: [{ x: 13.35, y: 12.76 }, { x: 20.71, y: 12.80 }, { x: 13.32, y: 20.51 }, { x: 20.70, y: 20.52 }],
+        R: [{ x: 78.84, y: 12.75 }, { x: 86.24, y: 12.76 }, { x: 78.87, y: 20.52 }, { x: 86.27, y: 20.52 }],
+        Y: [{ x: 78.78, y: 80.36 }, { x: 86.21, y: 80.36 }, { x: 78.80, y: 88.13 }, { x: 86.20, y: 88.02 }],
+        B: [{ x: 13.32, y: 80.48 }, { x: 20.65, y: 80.46 }, { x: 13.31, y: 88.31 }, { x: 20.61, y: 88.31 }]
     };
 
     const outerPath = makeOuterPath();
@@ -1620,21 +1620,25 @@
 
     function moveOuter(p, steps) {
         const track = [];
-        let remain = steps;
-        while (remain > 0) {
-            p.outerIndex = (p.outerIndex + 1) % OUTER_PATH_LENGTH;
-            p.outerSteps += 1;
-            track.push(outerPath[p.outerIndex]);
-            remain -= 1;
-
-            if (p.outerIndex === ENTRY_INDEX[p.color]) {
-                p.status = "straight"; p.outerIndex = null; p.straightIndex = 0;
-                addLog(`${label(p)} 到达直道入口，进入直道。`, "good");
-                if (track.length) pieceMoveTracks.set(p.id, track);
-                if (remain > 0) moveStraight(p, remain, true);
-                return;
+        p.outerSteps += steps;
+        const entrySteps = stepsToEntry(p.color);
+        if (p.outerSteps >= entrySteps) {
+            const remain = p.outerSteps - entrySteps;
+            const startSteps = p.outerSteps - steps;
+            for (let s = startSteps + 1; s <= entrySteps; s++) {
+                track.push(outerPath[(START_INDEX[p.color] + s) % OUTER_PATH_LENGTH]);
             }
+            p.status = "straight"; p.outerIndex = null; p.straightIndex = 0;
+            addLog(`${label(p)} 到达直道入口，进入直道。`, "good");
+            if (track.length) pieceMoveTracks.set(p.id, track);
+            if (remain > 0) moveStraight(p, remain, true);
+            return;
         }
+        const startSteps = p.outerSteps - steps;
+        for (let s = startSteps + 1; s <= p.outerSteps; s++) {
+            track.push(outerPath[(START_INDEX[p.color] + s) % OUTER_PATH_LENGTH]);
+        }
+        p.outerIndex = (START_INDEX[p.color] + p.outerSteps) % OUTER_PATH_LENGTH;
         if (track.length) pieceMoveTracks.set(p.id, track);
         addLog(`${label(p)} 落在外圈第 ${p.outerIndex+1} 格。`);
         applyFlyJump(p);
@@ -1654,6 +1658,10 @@
             const pieceEl = document.querySelector(`.piece[data-piece-id="${p.id}"]`);
             if (pieceEl) animatePieceMove(p, fromPos, toPos, () => flushPostMoveActions(p.id));
         });
+    }
+
+    function stepsToEntry(color) {
+        return (ENTRY_INDEX[color] - START_INDEX[color] + OUTER_PATH_LENGTH) % OUTER_PATH_LENGTH;
     }
 
     function moveStraight(p, steps, fromOuter = false) {
@@ -1986,16 +1994,16 @@ ${tasks.final}`, sub: "终极惩罚" });
 
     function statusText(p) {
         if (p.status === "base") return "在基地：需要6起飞。";
-        if (p.status === "outer") return `外圈：顺时针行进中，当前第 ${p.outerIndex + 1} 格。`;
+        if (p.status === "outer") return `外圈：已走 ${p.outerSteps}/${stepsToEntry(p.color)} 步。`;
         if (p.status === "straight") return `直道：第 ${p.straightIndex}/6 格。`;
         return "已到达终点。";
     }
 
-    function progressText(p) { if (p.status==="base") return "基地"; if (p.status==="outer") return `外 ${p.outerIndex + 1}`; if (p.status==="straight") return `直 ${p.straightIndex}/6`; return "终点"; }
+    function progressText(p) { if (p.status==="base") return "基地"; if (p.status==="outer") return `外 ${p.outerSteps}/${stepsToEntry(p.color)}`; if (p.status==="straight") return `直 ${p.straightIndex}/6`; return "终点"; }
     function playerProgressPercent(p) {
         if (p.status === "finished") return 100;
         if (p.status === "base") return 4;
-        if (p.status === "outer") return Math.max(8, Math.min(82, Math.round((p.outerSteps % OUTER_PATH_LENGTH) / OUTER_PATH_LENGTH * 76) + 8));
+        if (p.status === "outer") return Math.max(8, Math.min(82, Math.round((p.outerSteps / stepsToEntry(p.color)) * 76) + 8));
         if (p.status === "straight") return Math.max(84, Math.min(98, 84 + Math.round((p.straightIndex / 6) * 14)));
         return 0;
     }
