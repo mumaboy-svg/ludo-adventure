@@ -10,6 +10,7 @@ ctx.scale(dpr, dpr);
 
 const W = systemInfo.windowWidth;
 const H = systemInfo.windowHeight;
+const GAME_VERSION = '2.0.2';
 const safeTop = systemInfo.safeArea ? systemInfo.safeArea.top : (systemInfo.statusBarHeight || 0);
 const safeBottom = systemInfo.safeArea ? Math.max(0, H - systemInfo.safeArea.bottom) : 0;
 const capsuleBottom = menuButton ? menuButton.bottom : safeTop + 44;
@@ -38,6 +39,7 @@ let lastRoll = '-';
 let buttons = [];
 let logText = '掷出 6 才能起飞';
 let modal = null;
+let modalQueue = [];
 const bootTime = Date.now();
 const OUTER_PATH_LENGTH = 52;
 const START_INDEX = { R: 22, Y: 48, B: 9, G: 35 };
@@ -114,9 +116,13 @@ const straightPath = {
   B: [[49.88, 81.46], [49.87, 76.37], [49.91, 71.31], [49.94, 66.30], [49.94, 61.18], [49.93, 55.43]].map(([x, y]) => ({ x, y })),
   G: [[20.32, 50.92], [25.20, 50.93], [30.15, 50.90], [34.92, 50.91], [39.85, 50.87], [45.40, 50.85]].map(([x, y]) => ({ x, y }))
 };
+let idCounter = 0;
 let setupPlayers = loadSetupPlayers();
-let state = loadState() || newGameState();
-
+let state = normalizeState(loadState()) || newGameState();
+function makeId() {
+  idCounter += 1;
+  return `${Date.now().toString(36)}-${idCounter.toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+}
 function defaultSetupPlayers() {
   return [
     { name: '玩家1', color: 'R' },
@@ -130,7 +136,9 @@ function newGameState() {
   const used = { R: 0, Y: 0, B: 0, G: 0 };
   return {
     currentPlayer: 0,
+    lastRoll: null,
     players: setupPlayers.map((player) => ({
+      id: makeId(),
       name: player.name,
       color: player.color,
       slot: used[player.color]++,
@@ -148,6 +156,30 @@ function newGameState() {
 }
 function saveState() { wx.setStorageSync('ludo_minigame_state_v3', state); }
 function loadState() { return wx.getStorageSync('ludo_minigame_state_v3') || null; }
+function hasSavedState() { return !!wx.getStorageSync('ludo_minigame_state_v3'); }
+function normalizeState(saved) {
+  if (!saved || !Array.isArray(saved.players) || !saved.players.length) return null;
+  const nameIds = {};
+  saved.players.forEach((piece) => {
+    piece.id = piece.id || makeId();
+    if (!nameIds[piece.name]) nameIds[piece.name] = [];
+    nameIds[piece.name].push(piece.id);
+  });
+  const usedByName = {};
+  saved.finishOrder = (saved.finishOrder || []).map((entry) => {
+    if (saved.players.some((piece) => piece.id === entry)) return entry;
+    const ids = nameIds[entry] || [];
+    const offset = usedByName[entry] || 0;
+    usedByName[entry] = offset + 1;
+    return ids[offset] || entry;
+  });
+  saved.currentPlayer = Number.isInteger(saved.currentPlayer) ? saved.currentPlayer : 0;
+  saved.currentPlayer = Math.max(0, Math.min(saved.currentPlayer, saved.players.length - 1));
+  saved.triggered = saved.triggered || {};
+  saved.logs = Array.isArray(saved.logs) ? saved.logs : [];
+  saved.gameOver = !!saved.gameOver;
+  return saved;
+}
 
 const DEFAULT_TASKS = {
   takeoff: '🛫 起飞！大声说“起飞啦”，并做一个飞机起飞动作。',
@@ -172,9 +204,17 @@ function addLog(text) {
   state.logs.push(text);
   if (state.logs.length > 6) state.logs = state.logs.slice(-6);
 }
-function showTask(title, body, actor = '', type = 'task') { modal = { title, body, actor, type }; }
+function showTask(title, body, actor = '', type = 'task') {
+  const next = { title, body, actor, type };
+  if (modal) modalQueue.push(next);
+  else modal = next;
+}
+function clearModals() { modal = null; modalQueue = []; }
+function closeCurrentModal() {
+  modal = modalQueue.shift() || null;
+}
 function triggerBaseRollTask(piece, value) {
-  const key = `base-${piece.name}-${value}`;
+  const key = `base-${piece.id}-${value}`;
   if (state.triggered[key]) return;
   state.triggered[key] = true;
   showTask(`基地任务 ${value}点`, tasks.baseRoll[value] || `掷出 ${value} 点任务`, piece.name);
@@ -268,6 +308,21 @@ function fillRoundRect(x, y, w, h, r, color, shadow = false) {
   ctx.restore();
 }
 
+function fillRoundGradient(x, y, w, h, r, colors, shadow = false) {
+  const gradient = ctx.createLinearGradient(x, y, x + w, y + h);
+  colors.forEach(([stop, color]) => gradient.addColorStop(stop, color));
+  fillRoundRect(x, y, w, h, r, gradient, shadow);
+}
+
+function strokeRoundRect(x, y, w, h, r, color, width = 1) {
+  ctx.save();
+  roundRect(x, y, w, h, r);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.stroke();
+  ctx.restore();
+}
+
 
 function drawWarmBackground() {
   const gradient = ctx.createLinearGradient(0, 0, 0, H);
@@ -286,6 +341,13 @@ function drawHome() {
   const pulse = 1 + Math.sin((Date.now() - bootTime) / 650) * 0.028;
   const floatY = Math.sin((Date.now() - bootTime) / 900) * 6;
   const glow = 14 + Math.sin((Date.now() - bootTime) / 520) * 6;
+  const haloSize = Math.min(W * 0.84, 350);
+  const halo = ctx.createRadialGradient(W / 2, heroTop + logoSize * .48, 10, W / 2, heroTop + logoSize * .48, haloSize * .48);
+  halo.addColorStop(0, 'rgba(255,255,255,.92)');
+  halo.addColorStop(.55, 'rgba(255,248,198,.48)');
+  halo.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = halo;
+  ctx.fillRect((W - haloSize) / 2, heroTop - 12, haloSize, haloSize);
   ctx.save();
   ctx.shadowColor = 'rgba(255,255,255,.85)';
   ctx.shadowBlur = glow;
@@ -306,33 +368,58 @@ function drawHome() {
   drawMenuButton(bx, startY + (bh + gap) * 2, bw, bh, '快速开始', '默认配置开局', 'quickIcon', 'quick', false);
 
   drawToolBar(toolY);
+  ctx.fillStyle = 'rgba(77,60,45,.66)';
+  ctx.font = '800 10px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`v${GAME_VERSION}`, W / 2, H - safeBottom - 10);
+  ctx.textAlign = 'left';
 }
 
 function drawMenuButton(x, y, w, h, title, sub, icon, action, primary) {
-  fillRoundRect(x, y, w, h, 22, primary ? 'rgba(255,218,78,.94)' : 'rgba(255,255,255,.84)', true);
-  if (images[icon]) drawImageContain(images[icon], x + 16, y + 9, h - 18, h - 18);
-  ctx.fillStyle = primary ? '#2b241d' : '#30251c';
+  const palette = action === 'new'
+    ? [[0, 'rgba(255,244,142,.98)'], [1, 'rgba(255,193,53,.96)']]
+    : action === 'quick'
+      ? [[0, 'rgba(225,255,205,.97)'], [1, 'rgba(91,210,104,.94)']]
+      : [[0, 'rgba(255,255,255,.97)'], [1, 'rgba(225,242,255,.92)']];
+  fillRoundGradient(x, y, w, h, 23, palette, true);
+  strokeRoundRect(x, y, w, h, 23, 'rgba(255,255,255,.92)', 2);
+  if (images[icon]) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(70,42,14,.32)';
+    ctx.shadowBlur = 9;
+    ctx.shadowOffsetY = 4;
+    drawImageContain(images[icon], x + 15, y + 7, h - 14, h - 14);
+    ctx.restore();
+  }
+  const textX = x + h + 4 + (w - h - 4) / 2;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = action === 'quick' ? '#174d24' : action === 'new' ? '#754510' : '#30251c';
   ctx.font = '900 23px sans-serif';
-  ctx.fillText(title, x + h + 8, y + 32);
-  ctx.fillStyle = '#76593b';
-  ctx.font = '800 13px sans-serif';
-  ctx.fillText(sub, x + h + 8, y + 55);
+  ctx.fillText(title, textX, y + h * .45);
+  ctx.fillStyle = action === 'quick' ? '#387442' : '#76593b';
+  ctx.font = '800 12px sans-serif';
+  ctx.fillText(sub, textX, y + h * .73);
+  ctx.textAlign = 'left';
   buttons.push({ x, y, w, h, action });
 }
 
 function drawTool(x, y, title, icon, action) {
   const w = 112;
   const h = 70;
-  fillRoundRect(x, y, w, h, 22, 'rgba(255,255,255,.82)', true);
+  const glow = ctx.createRadialGradient(x + 35, y + 31, 4, x + 35, y + 31, 64);
+  glow.addColorStop(0, 'rgba(255,255,255,.98)');
+  glow.addColorStop(.62, 'rgba(255,248,207,.88)');
+  glow.addColorStop(1, 'rgba(255,255,255,.70)');
+  fillRoundRect(x, y, w, h, 22, glow, true);
+  strokeRoundRect(x, y, w, h, 22, 'rgba(255,255,255,.88)', 1.5);
   if (images[icon]) drawImageContain(images[icon], x + 13, y + 10, 42, 42);
   ctx.shadowBlur = 0;
   ctx.fillStyle = '#30251c';
   ctx.font = '900 18px sans-serif';
   ctx.textAlign = 'left';
   ctx.fillText(title, x + 58, y + 32);
-  ctx.fillStyle = '#fff7d0';
-  ctx.shadowColor = 'rgba(65,35,7,.82)';
-  ctx.shadowBlur = 5;
+  ctx.fillStyle = '#766047';
+  ctx.shadowBlur = 0;
   ctx.font = '900 11px sans-serif';
   ctx.fillText(action === 'tasks' ? '编辑任务' : '玩家设置', x + 58, y + 50);
   ctx.shadowBlur = 0;
@@ -356,31 +443,54 @@ function drawGame() {
   const topPad = Math.max(capsuleBottom + 12, safeTop + 58);
   const panelH = 226;
   const bottomPad = Math.max(16, safeBottom + 10);
-  const maxBoardH = H - topPad - panelH - bottomPad - 26;
+  const boardY = topPad + 38;
+  const maxBoardH = H - boardY - panelH - bottomPad - 26;
   const boardSize = Math.min(W - 52, maxBoardH, 330);
   const boardX = (W - boardSize) / 2;
-  const boardY = topPad;
 
-  fillRoundRect(18, boardY - 12, W - 36, boardSize + 24, 28, '#fff8e8', true);
-  ctx.strokeStyle = 'rgba(255,255,255,.95)';
-  ctx.lineWidth = 4;
-  roundRect(18, boardY - 12, W - 36, boardSize + 24, 28);
-  ctx.stroke();
+  const player = currentPiece();
+  const colorMap = { R: '#ef4b3e', Y: '#f4c82f', B: '#28aee7', G: '#43c95e' };
+  const playerColor = colorMap[player.color] || '#f4c82f';
+  fillRoundGradient(24, topPad, W - 48, 34, 17, [[0, 'rgba(255,255,255,.96)'], [1, 'rgba(255,245,210,.92)']], true);
+  ctx.fillStyle = playerColor;
+  ctx.beginPath();
+  ctx.arc(43, topPad + 17, 8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#30251c';
+  ctx.font = '900 14px sans-serif';
+  ctx.fillText(`${player.name} 的回合`, 58, topPad + 22);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#806344';
+  ctx.font = '800 11px sans-serif';
+  ctx.fillText('飞行棋 · 大冒险', W - 40, topPad + 21);
+  ctx.textAlign = 'left';
+
+  const frameX = boardX - 10;
+  const frameY = boardY - 10;
+  fillRoundGradient(frameX, frameY, boardSize + 20, boardSize + 20, 25,
+    [[0, '#fffdf5'], [.58, '#fff0be'], [1, '#e8a740']], true);
+  strokeRoundRect(frameX, frameY, boardSize + 20, boardSize + 20, 25, 'rgba(255,255,255,.95)', 4);
+  strokeRoundRect(boardX - 3, boardY - 3, boardSize + 6, boardSize + 6, 20, 'rgba(82,52,25,.22)', 2);
   drawImageContain(images.board, boardX, boardY, boardSize, boardSize);
   state.players.forEach((piece) => drawPiece(piece, boardX, boardY, boardSize));
 
   const panelY = boardY + boardSize + 22;
-  fillRoundRect(24, panelY, W - 48, panelH, 26, 'rgba(255,255,255,.95)', true);
+  fillRoundGradient(24, panelY, W - 48, panelH, 28,
+    [[0, 'rgba(255,255,255,.98)'], [.55, 'rgba(255,248,226,.97)'], [1, 'rgba(255,230,170,.94)']], true);
+  strokeRoundRect(24, panelY, W - 48, panelH, 28, 'rgba(255,255,255,.94)', 2);
 
   ctx.fillStyle = '#30251c';
-  ctx.font = '900 22px sans-serif';
-  ctx.fillText(`当前玩家：${currentPiece().name}`, 46, panelY + 43);
+  ctx.font = '900 20px sans-serif';
+  ctx.fillText('掷骰行动', 46, panelY + 39);
   ctx.fillStyle = '#76593b';
-  ctx.font = '800 15px sans-serif';
-  ctx.fillText(`最后点数：${lastRoll}`, 46, panelY + 72);
+  ctx.font = '800 14px sans-serif';
+  ctx.fillText(`上次点数：${lastRoll}`, 46, panelY + 66);
   ctx.fillStyle = '#9a7a58';
   ctx.font = '800 12px sans-serif';
-  ctx.fillText(logText, 46, panelY + 94);
+  ctx.fillText(logText, 46, panelY + 89);
+  fillRoundGradient(W - 126, panelY + 16, 82, 82, 22,
+    [[0, 'rgba(255,255,255,.96)'], [1, 'rgba(255,217,100,.88)']], false);
+  strokeRoundRect(W - 126, panelY + 16, 82, 82, 22, 'rgba(255,255,255,.95)', 2);
   drawDice(W - 116, panelY + 26, 62, lastRoll);
 
   const contentW = W - 92;
@@ -399,13 +509,21 @@ function drawGame() {
 
 function drawMiniProgress(y) {
   if (y > H - 78 - safeBottom) return;
-  fillRoundRect(24, y, W - 48, 64, 18, 'rgba(255,255,255,.72)', false);
+  fillRoundGradient(24, y, W - 48, 64, 18,
+    [[0, 'rgba(255,255,255,.90)'], [1, 'rgba(255,239,195,.82)']], false);
+  strokeRoundRect(24, y, W - 48, 64, 18, 'rgba(255,255,255,.86)', 1.5);
   ctx.fillStyle = '#5f4a35';
   ctx.font = '800 12px sans-serif';
   state.players.slice(0, 4).forEach((piece, i) => {
-    const rank = state.finishOrder && state.finishOrder.includes(piece.name) ? `第${state.finishOrder.indexOf(piece.name)+1}名` : '';
+    const rank = state.finishOrder && state.finishOrder.includes(piece.id) ? `第${state.finishOrder.indexOf(piece.id)+1}名` : '';
     const progress = piece.status === 'base' ? '基地' : piece.status === 'outer' ? `外圈第${piece.outerIndex + 1}格` : piece.status === 'straight' ? `直${piece.straightIndex}/6` : '终点';
-    ctx.fillText(`${piece.name}：${progress}${rank ? ' · ' + rank : ''}`, 42, y + 22 + i * 15);
+    const colorMap = { R: '#ef4b3e', Y: '#e6b916', B: '#259fd5', G: '#35af50' };
+    ctx.fillStyle = colorMap[piece.color] || '#806344';
+    ctx.beginPath();
+    ctx.arc(39, y + 18 + i * 15, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#5f4a35';
+    ctx.fillText(`${piece.name}：${progress}${rank ? ' · ' + rank : ''}`, 49, y + 22 + i * 15);
   });
   const latest = (state.logs || []).slice(-1)[0];
   if (latest) ctx.fillText(`记录：${latest}`, 42, y + 22 + Math.min(state.players.length,4) * 15 + 8);
@@ -413,28 +531,31 @@ function drawMiniProgress(y) {
 
 function drawModal() {
   if (!modal) return;
-  ctx.fillStyle = 'rgba(0,0,0,.52)';
+  ctx.fillStyle = 'rgba(30,18,8,.58)';
   ctx.fillRect(0, 0, W, H);
   const isKing = modal.type === 'king' || String(modal.title || '').includes('国王卡');
   const cardImage = isKing ? images.kingCard : images.taskCard;
   const cardSize = Math.min(W - 18, H - Math.max(capsuleBottom + 24, 84) - 18, 390);
   const cx = Math.round((W - cardSize) / 2);
   const cy = Math.round(Math.max(capsuleBottom + 16, (H - cardSize) / 2 - 8));
-  ctx.shadowBlur = 0;
-  ctx.shadowColor = 'transparent';
+  ctx.save();
+  ctx.shadowColor = isKing ? 'rgba(255,189,37,.62)' : 'rgba(255,255,255,.52)';
+  ctx.shadowBlur = 24;
+  ctx.shadowOffsetY = 9;
   if (cardImage) drawImageContain(cardImage, cx, cy, cardSize, cardSize);
   else fillRoundRect(cx, cy, cardSize, cardSize, 28, '#fff7df', false);
+  ctx.restore();
 
   ctx.shadowBlur = 0;
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = isKing ? '#4a2406' : '#241b14';
-  ctx.font = '900 24px sans-serif';
+  ctx.font = '900 23px sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText(modal.title, W / 2, Math.round(cy + cardSize * 0.30));
   ctx.textAlign = 'left';
   ctx.fillStyle = isKing ? '#4a2406' : '#3a2a1d';
-  ctx.font = '900 17px sans-serif';
-  drawWrappedText(modal.body, Math.round(cx + cardSize * 0.24), Math.round(cy + cardSize * 0.45), Math.round(cardSize * 0.52), 27, 4);
+  ctx.font = '800 16px sans-serif';
+  drawWrappedText(modal.body, Math.round(cx + cardSize * 0.23), Math.round(cy + cardSize * 0.44), Math.round(cardSize * 0.54), 25, 5);
   drawPanelButton(Math.round(cx + cardSize * 0.31), Math.round(cy + cardSize * 0.78), Math.round(cardSize * 0.38), 42, '完成，继续', 'closeModal', true);
 }
 
@@ -489,8 +610,14 @@ function nextPlayer() { state.currentPlayer = (state.currentPlayer + 1) % state.
 
 
 function drawPanelButton(x, y, w, h, text, action, primary) {
-  fillRoundRect(x, y, w, h, h / 2, primary ? '#2b241d' : '#fff4d6', false);
-  ctx.fillStyle = primary ? '#fff' : '#30251c';
+  if (primary) {
+    fillRoundGradient(x, y, w, h, h / 2, [[0, '#ffde55'], [.55, '#ffad31'], [1, '#ef7428']], true);
+    strokeRoundRect(x, y, w, h, h / 2, 'rgba(255,255,255,.88)', 2);
+  } else {
+    fillRoundGradient(x, y, w, h, h / 2, [[0, '#fffdf7'], [1, '#ffe8b7']], false);
+    strokeRoundRect(x, y, w, h, h / 2, 'rgba(169,112,48,.20)', 1.5);
+  }
+  ctx.fillStyle = primary ? '#542d0e' : '#493522';
   ctx.font = `900 ${h >= 50 ? 18 : 15}px sans-serif`;
   ctx.textAlign = 'center';
   ctx.fillText(text, x + w / 2, y + h / 2 + (h >= 50 ? 7 : 5));
@@ -557,7 +684,7 @@ function drawSettings() {
   });
   drawPanelButton(46, startY + 274, 126, 46, '保存开局', 'setupApply', true);
   drawPanelButton(190, startY + 274, 92, 46, '大厅', 'home', false);
-  drawPanelButton(W - 138, startY + 274, 92, 46, '游戏', 'quick', false);
+  drawPanelButton(W - 138, startY + 274, 92, 46, '游戏', hasSavedState() ? 'continue' : 'quick', false);
 }
 
 function drawColorDot(x, y, color) {
@@ -789,12 +916,15 @@ function drawKingCard(piece, reason) {
 }
 function finishPiece(piece) {
   piece.status = 'finished';
-  if (!state.finishOrder.includes(piece.name)) state.finishOrder.push(piece.name);
+  if (!state.finishOrder.includes(piece.id)) state.finishOrder.push(piece.id);
   addLog(`${piece.name} 到达终点，第 ${state.finishOrder.length} 名`);
   showTask('到达终点', `${piece.name} 第 ${state.finishOrder.length} 名到达终点！`);
   if (state.finishOrder.length === state.players.length) {
     state.gameOver = true;
-    const ranking = state.finishOrder.map((name, i) => `${i + 1}. ${name}`).join('\n');
+    const ranking = state.finishOrder.map((id, i) => {
+      const ranked = state.players.find((player) => player.id === id);
+      return `${i + 1}. ${ranked ? ranked.name : '玩家'}`;
+    }).join('\n');
     showTask('游戏结束', `${ranking}\n\n${tasks.final}`);
   }
 }
@@ -812,7 +942,6 @@ function moveOuter(piece, steps) {
   for (let step = 1; step <= steps; step++) {
     piece.outerIndex = (piece.outerIndex + 1) % OUTER_PATH_LENGTH;
     piece.outerSteps += 1;
-    applyFlyJump(piece);
     if (piece.outerIndex === ENTRY_INDEX[piece.color]) {
       const remain = steps - step;
       piece.status = 'straight';
@@ -824,6 +953,7 @@ function moveOuter(piece, steps) {
     }
   }
   addLog(`${piece.name} 前进 ${steps} 步，落在外圈第 ${piece.outerIndex + 1} 格`);
+  applyFlyJump(piece);
   triggerOuterTask(piece);
 }
 
@@ -850,6 +980,7 @@ function rollDice() {
   if (state.gameOver) { showTask('游戏结束', '本局已结束，请重开或返回大厅。'); return; }
   const value = Math.floor(Math.random() * 6) + 1;
   lastRoll = value;
+  state.lastRoll = value;
   const audio = wx.createInnerAudioContext();
   audio.src = 'assets/audio/dice_roll.mp3';
   audio.play();
@@ -880,17 +1011,39 @@ function rollDice() {
   saveState();
 }
 
+function startFreshGame(message) {
+  state = newGameState();
+  lastRoll = '-';
+  logText = message || '掷出 6 才能起飞';
+  clearModals();
+  saveState();
+  scene = 'game';
+}
+function continueSavedGame() {
+  const saved = normalizeState(loadState());
+  if (!saved) {
+    showTask('没有可继续的存档', '请先选择“新游戏”设置玩家，或使用“快速开始”创建一局。');
+    return;
+  }
+  state = saved;
+  lastRoll = state.lastRoll || '-';
+  logText = (state.logs || []).slice(-1)[0] || '已读取本地存档';
+  clearModals();
+  scene = 'game';
+}
 function handleAction(action) {
-  if (['new', 'quick', 'continue'].includes(action)) scene = 'game';
+  if (action === 'new') scene = 'settings';
+  if (action === 'quick') startFreshGame('快速开始：掷出 6 才能起飞');
+  if (action === 'continue') continueSavedGame();
   if (action === 'home') scene = 'home';
   if (action === 'settings') scene = 'settings';
   if (action === 'tasks') scene = 'tasks';
-  if (action === 'restart') { state = newGameState(); lastRoll = '-'; logText = '掷出 6 才能起飞'; modal = null; saveState(); scene = 'game'; }
+  if (action === 'restart') startFreshGame('游戏已重开：掷出 6 才能起飞');
   if (action === 'setupAdd' && setupPlayers.length < 4) { setupPlayers.push({ name: `玩家${setupPlayers.length + 1}`, color: ['R','Y','B','G'][setupPlayers.length] }); saveSetupPlayers(); }
   if (action === 'setupRemove' && setupPlayers.length > 2) { setupPlayers.pop(); saveSetupPlayers(); }
   if (action.startsWith('setupColor:')) cycleSetupColor(Number(action.split(':')[1]));
-  if (action === 'setupApply') { saveSetupPlayers(); state = newGameState(); lastRoll = '-'; logText = '设置已保存，新局开始'; saveState(); scene = 'game'; }
-  if (action === 'closeModal') modal = null;
+  if (action === 'setupApply') { saveSetupPlayers(); startFreshGame('设置已保存，新局开始'); }
+  if (action === 'closeModal') closeCurrentModal();
   if (action === 'roll' && !modal) rollDice();
   if (action === 'tasksDemo') showTask('示例任务', tasks.outer[0]);
   if (action === 'editTakeoff') editTaskText('编辑起飞任务', tasks.takeoff, value => { tasks.takeoff = value; });

@@ -94,6 +94,8 @@
 - 发布检查表：`docs/release/发布检查表.md`
 - 双端发布说明：`docs/release/发布说明.md`
 - 更新日志：`CHANGELOG.md`
+- 双端同步机制：`docs/sync/双端同步机制.md`
+- 小程序同步包模板：`templates/小程序同步包模板.md`
 - 玩家公告模板：`templates/更新公告模板.md`
 
 版本号采用 `主版本.功能版本.修订版本`：
