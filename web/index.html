@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>飞行棋 · 大冒险 v2.0</title>
+    <title>飞行棋 · 大冒险</title>
     <style>
         :root {
             --bg: #f7f1e8; --ink: #25211d; --muted: #776f65; --panel: #fffdf8ee; --line: #ddd0bf;
             --Y: #ffd84d; --B: #4aa3ff; --R: #ff6666; --G: #55d37d;
+            --game-gold: #ffd84d; --game-orange: #ff9f2f; --game-blue: #4aa3ff; --game-purple: #8c64ff;
+            --game-green: #55d37d; --game-red: #ff6666; --glass: #fffdf0cc;
+            --shadow-soft: 0 18px 42px #51311124; --shadow-pop: 0 14px 0 #9a5516, 0 24px 34px #4a250c2e;
         }
         * { box-sizing: border-box; }
         body {
@@ -124,16 +127,19 @@
         }
         .setup.active, .task-center.active { display: grid; }
         .home-hero {
-            min-height: 100svh; display: grid; grid-template-rows: auto auto 1fr;
-            gap: 12px; padding: clamp(14px, 2vw, 26px); border-radius: 0;
-            background: linear-gradient(#ffffff30, #ffffff30), url('./assets/images/ui/home_bg_desktop.webp') center / cover no-repeat;
-            border: 0; box-shadow: inset 0 0 0 8px #ffffff42;
+            min-height: 100svh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+            gap: clamp(10px, 1.3vw, 18px); padding: clamp(14px, 2vw, 26px); border-radius: 0;
+            background:
+                radial-gradient(circle at 50% 23%, #ffffffc7 0 10%, transparent 31%),
+                linear-gradient(180deg, #ffffff33, #fff0 45%, #3b250822),
+                url('./assets/images/ui/home_bg_desktop.webp') center / cover no-repeat;
+            border: 0; box-shadow: inset 0 0 0 8px #ffffff42, inset 0 -110px 130px #62310030;
             position: relative; overflow: hidden;
         }
         @media(min-width: 861px) {
             .home-hero { max-height: none; }
             .home-titlebar { padding-top: clamp(4px, 1vw, 10px); }
-            .primary-menu { padding: 0 clamp(42px, 9vw, 190px); align-self: start; }
+            .primary-menu { padding: 0 clamp(36px, 7vw, 160px); align-self: center; }
             .home-bottom { align-self: end; padding: 0 clamp(44px, 10vw, 210px) clamp(8px, 1vw, 16px); }
         }
         .home-hero::before {
@@ -141,24 +147,40 @@
             background: linear-gradient(to right, #0000000b 1px, transparent 1px), linear-gradient(to bottom, #0000000b 1px, transparent 1px);
             background-size: 42px 42px; mask-image: linear-gradient(to bottom, #000 0, transparent 78%);
         }
+        .home-hero::after {
+            content: ""; position: absolute; left: 8%; right: 8%; bottom: -9%; height: 24%; pointer-events: none;
+            background: radial-gradient(ellipse at center, #ffcf5d82 0, #8b4b0f28 46%, transparent 72%);
+            filter: blur(5px);
+        }
         .home-titlebar { position: relative; display: grid; justify-items: center; text-align: center; gap: 6px; padding-top: 8px; }
         .hero-title { font-size: clamp(42px, 8vw, 92px); line-height: .92; letter-spacing: 0; margin: 0; text-shadow: 0 5px 0 #fff, 0 13px 24px #4b2a151f; }
-        .title-logo { width: min(44vw, 460px); height: auto; display: block; filter: drop-shadow(0 14px 20px #3d260d24); }
+        .title-logo { width: min(40vw, 430px); height: auto; display: block; filter: drop-shadow(0 10px 0 #fff8) drop-shadow(0 18px 24px #3d260d30); }
         .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-        .hero-copy { max-width: 620px; color: #5e554b; font-size: 15px; line-height: 1.5; margin: 0; font-weight: 800; }
+        .hero-copy { max-width: 620px; color: #5e554b; font-size: 15px; line-height: 1.5; margin: 0; font-weight: 900; text-shadow: 0 1px 0 #fff; }
         .version-pill { position: absolute; right: 22px; top: 18px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #ffffffd4; background: linear-gradient(180deg, #fffdf0de, #ffffffa8); border-radius: 999px; padding: .34rem .62rem; font-size: 12px; font-weight: 1000; box-shadow: 0 8px 18px #61420f21, inset 0 1px 0 #fff; backdrop-filter: blur(8px) saturate(1.15); }
         .home-stats { position: absolute; left: 22px; top: 18px; z-index: 2; display: flex; gap: 10px; }
         .home-stats .stat { min-width: 96px; border: 1px solid #ffffffd4; background: linear-gradient(180deg, #fffef0e8, #ffffffb8); box-shadow: 0 10px 20px #6b431323, inset 0 1px 0 #fff, 0 0 0 3px #ffffff3b; backdrop-filter: blur(10px) saturate(1.15); }
         .home-stats .stat b { color: #8b4a08; text-shadow: 0 1px 0 #fff; }
         .home-stats .stat span { color: #5f4b35; letter-spacing: .02em; }
-        .primary-menu { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-self: center; justify-self: center; width: min(100%, 1160px); }
+        .primary-menu {
+            position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(14px, 2vw, 24px);
+            align-self: center; justify-self: center; width: min(100%, 1120px);
+            padding: clamp(14px, 2vw, 22px); border-radius: 34px;
+            background: linear-gradient(180deg, #ffffff5c, #fff8d42b); border: 1px solid #ffffff96;
+            box-shadow: var(--shadow-soft), inset 0 1px 0 #fff9, inset 0 -16px 28px #9d5c1118;
+            backdrop-filter: blur(8px) saturate(1.1);
+        }
+        .primary-menu::before {
+            content: ""; position: absolute; inset: -10px 7% auto; height: 18px; border-radius: 999px;
+            background: linear-gradient(90deg, transparent, #fff7, transparent); pointer-events: none;
+        }
         .menu-button {
             width: 100%; aspect-ratio: 2048 / 683; min-height: 0; text-align: center; border-radius: 24px; padding: 12px 14px;
             display: grid; grid-template-columns: auto 1fr; justify-items: start; align-items: center; align-content: center; gap: 12px;
             background: transparent center / 100% 100% no-repeat; border: 0;
-            box-shadow: none; transform: translateY(0) scale(1); transition: transform .16s ease, filter .16s ease;
+            box-shadow: 0 16px 22px #4d2b1226; transform: translateY(0) scale(1); transition: transform .16s ease, filter .16s ease, box-shadow .16s ease;
         }
-        .menu-button:hover { transform: translateY(-3px) scale(1.015); filter: brightness(1.04) drop-shadow(0 14px 16px #4d2b1230); }
+        .menu-button:hover { transform: translateY(-4px) scale(1.018); filter: brightness(1.05) drop-shadow(0 14px 16px #4d2b1230); box-shadow: 0 20px 28px #4d2b1230; }
         .menu-button:active { transform: translateY(2px) scale(.99); filter: brightness(.98); }
         .menu-button > span:last-child { justify-self: center; text-align: center; min-width: 0; }
         .menu-button.continue { background: transparent url('./assets/images/ui/button_continue.webp') center / 100% 100% no-repeat; }
@@ -170,8 +192,14 @@
         .menu-sub { display: block; color: #ffffffd9; font-size: clamp(11px, 1.1vw, 13px); line-height: 1.2; margin-top: 3px; font-weight: 900; text-shadow: 0 1px 2px #0006; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: min(22vw, 260px); }
         .menu-button.new-game .menu-title, .menu-button.new-game .menu-sub { color: #7a4a10; text-shadow: 0 1px 0 #fff8; }
         .menu-button.quick-start .menu-title, .menu-button.quick-start .menu-sub { color: #174d16; text-shadow: 0 1px 0 #ffffff8c; }
-        .home-bottom { position: relative; display: block; }
-        .dashboard-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(18px, 4vw, 54px); align-items: end; }
+        .home-bottom { position: relative; z-index: 1; display: block; }
+        .dashboard-grid {
+            display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(18px, 4vw, 54px); align-items: end;
+            width: min(880px, 100%); margin: 0 auto; padding: clamp(10px, 1.5vw, 14px) clamp(14px, 2vw, 26px);
+            border-radius: 30px 30px 18px 18px; background: linear-gradient(180deg, #ffffff5c, #fff1aa4a);
+            border: 1px solid #ffffff99; box-shadow: 0 16px 34px #4b2a1424, inset 0 1px 0 #fff9;
+            backdrop-filter: blur(8px) saturate(1.1);
+        }
         .tool-card { min-height: 0; text-align: center; border-radius: 24px; padding: 10px 8px 8px; background: radial-gradient(circle at 50% 38%, #ffffff 0 34%, #fff6c9d9 54%, #fff0a45f 68%, transparent 78%); color: var(--ink); border: 0; box-shadow: 0 0 26px #fff, 0 10px 22px #6a3f1330; transition: transform .16s ease, filter .16s ease; }
         .tool-card img { width: clamp(78px, 8vw, 122px); height: clamp(78px, 8vw, 122px); object-fit: contain; display: block; margin: -10px auto -4px; filter: drop-shadow(0 9px 12px #0004) drop-shadow(0 0 18px #fff) drop-shadow(0 0 8px #ffe081); transition: transform .16s ease, filter .16s ease; }
         .tool-card:hover { transform: translateY(-4px); filter: brightness(1.05); }
@@ -626,29 +654,43 @@
             .home-hero {
                 min-height: 100svh; height: 100svh; border-radius: 0; border: 0; padding: 10px 12px 12px;
                 grid-template-rows: auto auto 1fr; gap: 8px;
-                background: linear-gradient(#ffffff26, #ffffff26), url('./assets/images/ui/home_bg_mobile.webp') center / cover no-repeat;
+                background:
+                    radial-gradient(circle at 50% 22%, #ffffffa8 0 12%, transparent 34%),
+                    linear-gradient(#ffffff26, #ffffff26),
+                    url('./assets/images/ui/home_bg_mobile.webp') center / cover no-repeat;
                 box-shadow: none;
             }
+            .home-hero::after { left: -10%; right: -10%; bottom: -6%; height: 20%; }
             .home-titlebar { padding-top: 30px; align-self: start; gap: 2px; }
-            .home-stats { position: absolute; left: 8px; top: 8px; right: auto; justify-content: flex-start; gap: 6px; }
-            .home-stats .stat { min-width: 58px; max-width: 78px; padding: 4px 6px; text-align: center; border-radius: 12px; }
+            .home-stats { position: absolute; left: 8px; top: 8px; right: auto; justify-content: flex-start; gap: 5px; }
+            .home-stats .stat { min-width: 48px; max-width: 66px; padding: 4px 5px; text-align: center; border-radius: 12px; box-shadow: 0 5px 12px #6b43131c, inset 0 1px 0 #fff; }
             .home-stats .stat b { font-size: 14px; line-height: 1; }
             .home-stats .stat span { font-size: 9px; line-height: 1.1; }
-            .version-pill { right: 8px; top: 8px; font-size: 10px; padding: .24rem .42rem; border-width: 1px; box-shadow: none; }
+            .version-pill {
+                right: 8px; top: 8px; max-width: 29vw; min-width: 0;
+                display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                font-size: 10px; padding: .24rem .42rem; border-width: 1px; box-shadow: none;
+            }
             .hero-title { font-size: clamp(42px, 14vw, 62px); line-height: .96; max-width: 340px; }
             .title-logo { width: min(72vw, 260px); }
             .hero-copy { font-size: 12px; line-height: 1.15; }
-            .primary-menu { grid-template-columns: 1fr; width: min(88vw, 350px); gap: 7px; justify-self: center; align-self: start; }
+            .primary-menu { grid-template-columns: 1fr; width: min(88vw, 350px); gap: 7px; justify-self: center; align-self: start; padding: 8px; border-radius: 24px; }
             .menu-button {
-                aspect-ratio: 2048 / 683; min-height: 0; border-radius: 22px; grid-template-columns: 52px 1fr 8px; grid-template-rows: auto;
-                text-align: center; justify-items: center; padding: 2.8% 7%; background-size: 100% 100%;
+                position: relative; display: block; aspect-ratio: 2048 / 683; min-height: 0; border-radius: 22px;
+                text-align: center; padding: 2.8% 7%; background-size: 100% 100%;
             }
-            .menu-button .icon { width: clamp(38px, 11vw, 50px); height: clamp(38px, 11vw, 50px); justify-self: start; }
-            .menu-button > span:last-child { justify-self: center; text-align: center; width: 100%; }
+            .menu-button .icon {
+                position: absolute; left: 8%; top: 50%; transform: translateY(-50%);
+                width: clamp(38px, 11vw, 50px); height: clamp(38px, 11vw, 50px);
+            }
+            .menu-button > span:last-child {
+                position: absolute; inset: 0; display: grid; place-items: center;
+                width: 100%; padding: 0 20%; text-align: center; pointer-events: none;
+            }
             .menu-title { font-size: clamp(18px, 5.8vw, 22px); line-height: 1; }
             .menu-sub { display: none; }
             .home-bottom { grid-template-columns: 1fr; align-items: end; align-self: end; padding-bottom: 0; }
-            .dashboard-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+            .dashboard-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 6px 7px; border-radius: 22px 22px 14px 14px; }
             .tool-card { min-height: 0; border-radius: 17px; padding: 0 4px; box-shadow: none; background: radial-gradient(circle at 50% 40%, #ffffffd9 0 35%, #fff5b8a8 58%, transparent 76%); }
             .tool-card img { width: clamp(44px, 13vw, 56px); height: clamp(44px, 13vw, 56px); margin-bottom: -2px; }
             .tool-card strong { font-size: clamp(12px, 3.6vw, 14px); line-height: 1.1; }
@@ -714,10 +756,9 @@
         @media(max-width: 860px) and (max-height: 720px) {
             .home-hero { gap: 5px; padding-bottom: 8px; }
             .home-titlebar { padding-top: 24px; }
-            .title-logo { width: min(64vw, 220px); }
+            .title-logo { width: min(60vw, 205px); }
             .hero-copy { display: none; }
-            .primary-menu { width: min(84vw, 320px); gap: 5px; }
-            .menu-button { grid-template-columns: 44px 1fr 6px; }
+            .primary-menu { width: min(84vw, 320px); gap: 5px; padding: 6px; }
             .menu-button .icon { width: 40px; height: 40px; }
             .menu-title { font-size: 18px; }
             .tool-card img { width: 42px; height: 42px; }
@@ -731,7 +772,7 @@
         <div class="brand">
             <div class="logo">✈️</div>
             <div>
-                <h1>飞行棋 · 大冒险 v2.0</h1>
+                <h1 id="appTitle">飞行棋 · 大冒险</h1>
                 <small>游戏大厅｜任务中心｜基地掷骰任务｜导入导出</small>
             </div>
         </div>
@@ -743,9 +784,10 @@
             <div class="home-stats">
                 <div class="stat"><b id="taskCountTotal">-</b><span>任务</span></div>
                 <div class="stat"><b id="playerCountTotal">2</b><span>玩家</span></div>
+                <div class="stat save-stat"><b id="homeSaveState">-</b><span>存档</span></div>
             </div>
             <div class="home-titlebar">
-                <div class="version-pill">v2.0 · 本地存档 · 任务挑战</div>
+                <div class="version-pill"><span id="homeVersion">版本</span> · 本地存档 · 任务挑战</div>
                 <h2 class="hero-title sr-only">飞行棋 大冒险</h2>
                 <img class="title-logo" src="./assets/images/ui/title_logo.webp" alt="飞行棋 大冒险">
                 <p class="hero-copy">多人飞行棋 + 随机任务挑战</p>
@@ -964,6 +1006,7 @@
 
 <script>
 (() => {
+    const APP_VERSION = "2.2.0";
     const STATE_KEY = "flight_adventure_v66_state";
     const TASK_KEY = "flight_adventure_v66_tasks";
 
@@ -1149,7 +1192,7 @@
         takeoffTask: el("takeoffTask"), baseRollTasks: el("baseRollTasks"),
         topHomeBtn: el("topHomeBtn"), homeContinueBtn: el("homeContinueBtn"), homeNewGameBtn: el("homeNewGameBtn"),
         quickStartBtn: el("quickStartBtn"), homeTaskBtn: el("homeTaskBtn"), homeSetupBtn: el("homeSetupBtn"), homeTestBtn: el("homeTestBtn"),
-        saveSummary: el("saveSummary"), taskCountTotal: el("taskCountTotal"), playerCountTotal: el("playerCountTotal"),
+        saveSummary: el("saveSummary"), taskCountTotal: el("taskCountTotal"), playerCountTotal: el("playerCountTotal"), homeSaveState: el("homeSaveState"),
         setupBackHomeBtn: el("setupBackHomeBtn"), setupTaskBtn: el("setupTaskBtn"), setupContinueBtn: el("setupContinueBtn"),
         setupTaskTotal: el("setupTaskTotal"), setupSaveState: el("setupSaveState"),
         taskBackHomeBtn: el("taskBackHomeBtn"), checkTasksBtn: el("checkTasksBtn"), taskStartBtn: el("taskStartBtn"), taskSetupBtn: el("taskSetupBtn"),
@@ -1185,6 +1228,9 @@
     init();
 
     function init() {
+        document.title = `飞行棋 · 大冒险 v${APP_VERSION}`;
+        el("appTitle").textContent = `飞行棋 · 大冒险 v${APP_VERSION}`;
+        el("homeVersion").textContent = `v${APP_VERSION}`;
         renderBoard();
         renderSetupPlayers();
         renderTaskEditors();
@@ -1307,6 +1353,7 @@
         els.saveSummary.textContent = saved ? saveSummary(saved) : "暂无存档，请先新建游戏";
         els.taskCountTotal.textContent = count;
         els.playerCountTotal.textContent = setupPlayers.length;
+        els.homeSaveState.textContent = saved ? "有" : "无";
         els.setupTaskTotal.textContent = count;
         els.setupSaveState.textContent = saved ? "有" : "无";
         els.taskCenterTotal.textContent = count;

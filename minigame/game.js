@@ -10,7 +10,7 @@ ctx.scale(dpr, dpr);
 
 const W = systemInfo.windowWidth;
 const H = systemInfo.windowHeight;
-const GAME_VERSION = '2.0.2';
+const GAME_VERSION = '2.2.0';
 const safeTop = systemInfo.safeArea ? systemInfo.safeArea.top : (systemInfo.statusBarHeight || 0);
 const safeBottom = systemInfo.safeArea ? Math.max(0, H - systemInfo.safeArea.bottom) : 0;
 const capsuleBottom = menuButton ? menuButton.bottom : safeTop + 44;
@@ -40,7 +40,20 @@ let buttons = [];
 let logText = '掷出 6 才能起飞';
 let modal = null;
 let modalQueue = [];
+let settingsPage = 0;
+let progressPage = 0;
+let recordsPage = 0;
+let recordsTab = 'players';
+let rolling = false;
+let rollingDiceValue = null;
+let pieceAnimation = null;
+let pendingMoveTrack = [];
+let deferModals = false;
+const SETTINGS_PAGE_SIZE = H < 700 ? 3 : 4;
 const bootTime = Date.now();
+const requestFrame = typeof canvas.requestAnimationFrame === 'function'
+  ? callback => canvas.requestAnimationFrame(callback)
+  : (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : null);
 const OUTER_PATH_LENGTH = 52;
 const START_INDEX = { R: 22, Y: 48, B: 9, G: 35 };
 const ENTRY_INDEX = { R: 6, Y: 19, B: 32, G: 45 };
@@ -130,7 +143,14 @@ function defaultSetupPlayers() {
   ];
 }
 function imgForColor(color) { return { R: 'planeR', Y: 'planeY', B: 'planeB', G: 'planeG' }[color] || 'planeR'; }
-function loadSetupPlayers() { return wx.getStorageSync('ludo_minigame_setup_v1') || defaultSetupPlayers(); }
+function loadSetupPlayers() {
+  const saved = wx.getStorageSync('ludo_minigame_setup_v1');
+  if (!Array.isArray(saved) || saved.length < 2) return defaultSetupPlayers();
+  return saved.slice(0, 16).map((player, index) => ({
+    name: String(player.name || `玩家${index + 1}`),
+    color: ['R', 'Y', 'B', 'G'].includes(player.color) ? player.color : ['R', 'Y', 'B', 'G'][index % 4]
+  }));
+}
 function saveSetupPlayers() { wx.setStorageSync('ludo_minigame_setup_v1', setupPlayers); }
 function newGameState() {
   const used = { R: 0, Y: 0, B: 0, G: 0 };
@@ -146,9 +166,12 @@ function newGameState() {
       outerIndex: null,
       outerSteps: 0,
       straightIndex: 0,
+      finishPlace: null,
       img: imgForColor(player.color)
     })),
-    logs: ['游戏开始，掷出 6 才能起飞'],
+    logs: [{ text: '游戏开始，掷出 6 才能起飞', type: 'good', at: Date.now() }],
+    round: 1,
+    acted: {},
     triggered: {},
     finishOrder: [],
     gameOver: false
@@ -176,8 +199,25 @@ function normalizeState(saved) {
   saved.currentPlayer = Number.isInteger(saved.currentPlayer) ? saved.currentPlayer : 0;
   saved.currentPlayer = Math.max(0, Math.min(saved.currentPlayer, saved.players.length - 1));
   saved.triggered = saved.triggered || {};
-  saved.logs = Array.isArray(saved.logs) ? saved.logs : [];
-  saved.gameOver = !!saved.gameOver;
+  saved.round = Number.isInteger(saved.round) && saved.round > 0 ? saved.round : 1;
+  saved.acted = saved.acted && typeof saved.acted === 'object' ? saved.acted : {};
+  saved.logs = Array.isArray(saved.logs) ? saved.logs.map((entry) => (
+    typeof entry === 'string'
+      ? { text: entry, type: '', at: Date.now() }
+      : { text: String(entry.text || ''), type: entry.type || '', at: entry.at || Date.now() }
+  )).slice(-180) : [];
+  const used = { R: 0, Y: 0, B: 0, G: 0 };
+  saved.players.forEach((piece) => {
+    piece.slot = Number.isInteger(piece.slot) ? piece.slot : (Number.isInteger(piece.colorSlot) ? piece.colorSlot : used[piece.color]);
+    used[piece.color] = Math.max(used[piece.color], piece.slot + 1);
+    piece.outerSteps = Number.isFinite(piece.outerSteps) ? piece.outerSteps : 0;
+    piece.straightIndex = Number.isFinite(piece.straightIndex) ? piece.straightIndex : 0;
+    piece.finishPlace = piece.finishPlace || ((saved.finishOrder || []).indexOf(piece.id) + 1 || null);
+    piece.img = imgForColor(piece.color);
+  });
+  const activeIds = new Set(saved.players.filter((piece) => piece.status !== 'finished').map((piece) => piece.id));
+  saved.acted = Object.fromEntries(Object.entries(saved.acted).filter(([id, acted]) => activeIds.has(id) && !!acted));
+  saved.gameOver = !!saved.gameOver || activeIds.size === 0;
   return saved;
 }
 
@@ -198,20 +238,32 @@ let tasks = loadTasks();
 function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
 function loadTasks() { return wx.getStorageSync('ludo_minigame_tasks_v1') || clone(DEFAULT_TASKS); }
 function saveTasks() { wx.setStorageSync('ludo_minigame_tasks_v1', tasks); }
-function addLog(text) {
+function taskTotal() {
+  return 1
+    + Object.keys(tasks.baseRoll || {}).length
+    + (tasks.outer || []).length
+    + (tasks.straight || []).length
+    + (tasks.king || []).length
+    + 1;
+}
+function logEntryText(entry) { return typeof entry === 'string' ? entry : String(entry?.text || ''); }
+function addLog(text, type = '') {
   logText = text;
   state.logs = state.logs || [];
-  state.logs.push(text);
-  if (state.logs.length > 6) state.logs = state.logs.slice(-6);
+  state.logs.push({ text, type, at: Date.now() });
+  if (state.logs.length > 180) state.logs = state.logs.slice(-180);
 }
 function showTask(title, body, actor = '', type = 'task') {
   const next = { title, body, actor, type };
-  if (modal) modalQueue.push(next);
+  if (modal || deferModals) modalQueue.push(next);
   else modal = next;
 }
 function clearModals() { modal = null; modalQueue = []; }
 function closeCurrentModal() {
   modal = modalQueue.shift() || null;
+}
+function flushDeferredModal() {
+  if (!modal) modal = modalQueue.shift() || null;
 }
 function triggerBaseRollTask(piece, value) {
   const key = `base-${piece.id}-${value}`;
@@ -263,7 +315,21 @@ function init() {
   Promise.all(Object.entries(ASSETS).map(([key, src]) => loadImage(key, src))).then(() => {
     loaded = true;
     render();
+    startHomeAnimationLoop();
   });
+}
+
+function startHomeAnimationLoop() {
+  if (!requestFrame) return;
+  let previous = 0;
+  const tick = (now) => {
+    if (scene === 'home' && loaded && !pieceAnimation && now - previous >= 42) {
+      previous = now;
+      render();
+    }
+    requestFrame(tick);
+  };
+  requestFrame(tick);
 }
 
 function clear() { ctx.clearRect(0, 0, W, H); }
@@ -332,10 +398,56 @@ function drawWarmBackground() {
   ctx.fillRect(0, 0, W, H);
 }
 
+function fillHomeOverlay() {
+  const topGlow = ctx.createRadialGradient(W / 2, H * .2, 10, W / 2, H * .2, Math.min(W, H) * .65);
+  topGlow.addColorStop(0, 'rgba(255,255,255,.68)');
+  topGlow.addColorStop(.42, 'rgba(255,242,176,.24)');
+  topGlow.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = topGlow;
+  ctx.fillRect(0, 0, W, H);
+  const bottomShade = ctx.createLinearGradient(0, H * .64, 0, H);
+  bottomShade.addColorStop(0, 'rgba(255,255,255,0)');
+  bottomShade.addColorStop(1, 'rgba(95,48,8,.22)');
+  ctx.fillStyle = bottomShade;
+  ctx.fillRect(0, H * .64, W, H * .36);
+}
+
+function drawHomePill(x, y, w, label, value) {
+  fillRoundGradient(x, y, w, 34, 17, [[0, 'rgba(255,255,255,.92)'], [1, 'rgba(255,245,205,.78)']], true);
+  strokeRoundRect(x, y, w, 34, 17, 'rgba(255,255,255,.9)', 1);
+  ctx.fillStyle = '#8a4a09';
+  ctx.font = '900 14px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(String(value), x + w / 2, y + 15);
+  ctx.fillStyle = '#5f4b35';
+  ctx.font = '800 9px sans-serif';
+  ctx.fillText(label, x + w / 2, y + 27);
+  ctx.textAlign = 'left';
+}
+
+function drawHomeHud() {
+  const y = Math.max(8, safeTop + 4);
+  const pillW = Math.min(58, Math.max(46, W * .145));
+  const gap = 5;
+  drawHomePill(8, y, pillW, '任务', taskTotal());
+  drawHomePill(8 + pillW + gap, y, pillW, '玩家', setupPlayers.length);
+  drawHomePill(8 + (pillW + gap) * 2, y, pillW, '存档', hasSavedState() ? '有' : '无');
+  const versionText = `v${GAME_VERSION}`;
+  const vw = Math.min(92, Math.max(62, W * .2));
+  fillRoundGradient(W - vw - 8, y, vw, 28, 14, [[0, 'rgba(255,255,255,.9)'], [1, 'rgba(226,242,255,.72)']], false);
+  ctx.fillStyle = '#5f4b35';
+  ctx.font = '900 11px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(versionText, W - vw / 2 - 8, y + 18);
+  ctx.textAlign = 'left';
+}
+
 function drawHome() {
   buttons = [];
   if (images.bg) drawImageCover(images.bg, 0, 0, W, H);
   else drawWarmBackground();
+  fillHomeOverlay();
+  drawHomeHud();
   const heroTop = Math.max(capsuleBottom - 2, Math.round(H * 0.045));
   const logoSize = Math.min(W * 0.78, H * 0.30, 330);
   const pulse = 1 + Math.sin((Date.now() - bootTime) / 650) * 0.028;
@@ -362,17 +474,14 @@ function drawHome() {
   const toolY = H - safeBottom - (H < 700 ? 96 : 112);
   const buttonBlockH = bh * 3 + gap * 2;
   const preferredY = Math.max(heroTop + logoSize + 16, Math.round(H * 0.405));
-  const startY = Math.min(preferredY, toolY - buttonBlockH - 18);
+  const startY = Math.min(preferredY, toolY - buttonBlockH - 24);
+  fillRoundGradient(bx - 10, startY - 10, bw + 20, buttonBlockH + 20, 28, [[0, 'rgba(255,255,255,.46)'], [1, 'rgba(255,243,189,.28)']], true);
+  strokeRoundRect(bx - 10, startY - 10, bw + 20, buttonBlockH + 20, 28, 'rgba(255,255,255,.72)', 1);
   drawMenuButton(bx, startY, bw, bh, '继续上局', '读取本地进度', 'continueIcon', 'continue', false);
   drawMenuButton(bx, startY + bh + gap, bw, bh, '新游戏', '选择玩家后开始', 'newIcon', 'new', true);
   drawMenuButton(bx, startY + (bh + gap) * 2, bw, bh, '快速开始', '默认配置开局', 'quickIcon', 'quick', false);
 
   drawToolBar(toolY);
-  ctx.fillStyle = 'rgba(77,60,45,.66)';
-  ctx.font = '800 10px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(`v${GAME_VERSION}`, W / 2, H - safeBottom - 10);
-  ctx.textAlign = 'left';
 }
 
 function drawMenuButton(x, y, w, h, title, sub, icon, action, primary) {
@@ -432,6 +541,8 @@ function drawToolBar(y) {
   const w = 112;
   const total = w * 2 + gap;
   const x = (W - total) / 2;
+  fillRoundGradient(x - 12, y - 8, total + 24, 86, 26, [[0, 'rgba(255,255,255,.48)'], [1, 'rgba(255,241,175,.38)']], true);
+  strokeRoundRect(x - 12, y - 8, total + 24, 86, 26, 'rgba(255,255,255,.72)', 1);
   drawTool(x, y, '任务', 'tasksIcon', 'tasks');
   drawTool(x + w + gap, y, '设置', 'settingsIcon', 'settings');
 }
@@ -450,7 +561,7 @@ function drawGame() {
 
   const player = currentPiece();
   const colorMap = { R: '#ef4b3e', Y: '#f4c82f', B: '#28aee7', G: '#43c95e' };
-  const playerColor = colorMap[player.color] || '#f4c82f';
+  const playerColor = state.gameOver ? '#d49b24' : (colorMap[player?.color] || '#f4c82f');
   fillRoundGradient(24, topPad, W - 48, 34, 17, [[0, 'rgba(255,255,255,.96)'], [1, 'rgba(255,245,210,.92)']], true);
   ctx.fillStyle = playerColor;
   ctx.beginPath();
@@ -458,11 +569,11 @@ function drawGame() {
   ctx.fill();
   ctx.fillStyle = '#30251c';
   ctx.font = '900 14px sans-serif';
-  ctx.fillText(`${player.name} 的回合`, 58, topPad + 22);
+  ctx.fillText(state.gameOver ? '本局已结束' : `${player?.name || '玩家'} 的回合`, 58, topPad + 22);
   ctx.textAlign = 'right';
   ctx.fillStyle = '#806344';
   ctx.font = '800 11px sans-serif';
-  ctx.fillText('飞行棋 · 大冒险', W - 40, topPad + 21);
+  ctx.fillText(`第 ${state.round || 1} 轮`, W - 40, topPad + 21);
   ctx.textAlign = 'left';
 
   const frameX = boardX - 10;
@@ -491,18 +602,21 @@ function drawGame() {
   fillRoundGradient(W - 126, panelY + 16, 82, 82, 22,
     [[0, 'rgba(255,255,255,.96)'], [1, 'rgba(255,217,100,.88)']], false);
   strokeRoundRect(W - 126, panelY + 16, 82, 82, 22, 'rgba(255,255,255,.95)', 2);
-  drawDice(W - 116, panelY + 26, 62, lastRoll);
+  drawDice(W - 116, panelY + 26, 62, rolling ? rollingDiceValue : lastRoll);
 
   const contentW = W - 92;
   const gap = 14;
   const leftW = Math.floor(contentW * 0.46);
   const rightW = contentW - leftW - gap;
-  drawPanelButton(46, panelY + 112, leftW, 54, '掷骰子', 'roll', true);
+  const rollLabel = rolling ? '骰子滚动中' : pieceAnimation ? '飞机移动中' : state.gameOver ? '查看排名' : '掷骰子';
+  drawPanelButton(46, panelY + 112, leftW, 54, rollLabel, state.gameOver ? 'records' : 'roll', true);
   drawPanelButton(46 + leftW + gap, panelY + 112, rightW, 54, '任务中心', 'tasks', false);
-  const smallW = Math.floor((contentW - gap * 2) / 3);
+  const smallGap = 8;
+  const smallW = Math.floor((contentW - smallGap * 3) / 4);
   drawPanelButton(46, panelY + 176, smallW, 40, '设置', 'settings', false);
-  drawPanelButton(46 + smallW + gap, panelY + 176, smallW, 40, '重开', 'restart', false);
-  drawPanelButton(46 + (smallW + gap) * 2, panelY + 176, smallW, 40, '大厅', 'home', false);
+  drawPanelButton(46 + smallW + smallGap, panelY + 176, smallW, 40, '进度', 'records', false);
+  drawPanelButton(46 + (smallW + smallGap) * 2, panelY + 176, smallW, 40, '重开', 'restart', false);
+  drawPanelButton(46 + (smallW + smallGap) * 3, panelY + 176, smallW, 40, '大厅', 'home', false);
   drawMiniProgress(panelY + panelH + 12);
 }
 
@@ -526,7 +640,7 @@ function drawMiniProgress(y) {
     ctx.fillText(`${piece.name}：${progress}${rank ? ' · ' + rank : ''}`, 49, y + 22 + i * 15);
   });
   const latest = (state.logs || []).slice(-1)[0];
-  if (latest) ctx.fillText(`记录：${latest}`, 42, y + 22 + Math.min(state.players.length,4) * 15 + 8);
+  if (latest) ctx.fillText(`记录：${logEntryText(latest)}`, 42, y + 22 + Math.min(state.players.length,4) * 15 + 8);
 }
 
 function drawModal() {
@@ -594,8 +708,74 @@ function pieceCoord(piece) {
   return { x: 50, y: 50 };
 }
 
+function animationPosition(pieceId) {
+  if (!pieceAnimation || pieceAnimation.pieceId !== pieceId) return null;
+  const elapsed = Date.now() - pieceAnimation.startedAt;
+  let consumed = 0;
+  for (const segment of pieceAnimation.segments) {
+    const end = consumed + segment.duration;
+    if (elapsed <= end) {
+      const t = Math.max(0, Math.min(1, (elapsed - consumed) / segment.duration));
+      const ease = 1 - Math.pow(1 - t, 3);
+      const hop = Math.sin(Math.PI * ease) * segment.arc;
+      return {
+        x: segment.from.x + (segment.to.x - segment.from.x) * ease,
+        y: segment.from.y + (segment.to.y - segment.from.y) * ease - hop
+      };
+    }
+    consumed = end;
+  }
+  return pieceAnimation.segments.length
+    ? pieceAnimation.segments[pieceAnimation.segments.length - 1].to
+    : null;
+}
+
+function startPieceAnimation(piece, track, onDone) {
+  if (!piece || track.length < 2) {
+    if (onDone) onDone();
+    return;
+  }
+  const segments = [];
+  for (let index = 1; index < track.length; index++) {
+    const previous = track[index - 1];
+    const current = track[index];
+    segments.push({
+      from: previous.pos,
+      to: current.pos,
+      duration: current.kind === 'fly' ? 900 : 230,
+      arc: current.kind === 'fly' ? 7 : 1.3
+    });
+  }
+  pieceAnimation = { pieceId: piece.id, segments, startedAt: Date.now() };
+  const duration = segments.reduce((sum, segment) => sum + segment.duration, 0);
+  const tick = () => {
+    render();
+    if (pieceAnimation && Date.now() - pieceAnimation.startedAt < duration) {
+      scheduleFrame(tick);
+      return;
+    }
+    pieceAnimation = null;
+    if (onDone) onDone();
+  };
+  scheduleFrame(tick);
+}
+
+function scheduleFrame(callback) {
+  if (requestFrame) requestFrame(callback);
+  else setTimeout(() => callback(Date.now()), 16);
+}
+
+function beginMoveTrack(piece) {
+  pendingMoveTrack = [{ pos: { ...pieceCoord(piece) }, kind: 'step' }];
+}
+
+function appendMovePoint(pos, kind = 'step') {
+  if (!pos) return;
+  pendingMoveTrack.push({ pos: { x: pos.x, y: pos.y }, kind });
+}
+
 function drawPiece(piece, boardX, boardY, boardSize) {
-  const pos = pieceCoord(piece);
+  const pos = animationPosition(piece.id) || pieceCoord(piece);
   const px = boardX + boardSize * pos.x / 100;
   const py = boardY + boardSize * pos.y / 100;
   if (images[piece.img]) drawImageContain(images[piece.img], px - 17, py - 17, 34, 34);
@@ -605,8 +785,50 @@ function drawPiece(piece, boardX, boardY, boardSize) {
   ctx.fillText(piece.name, px + 15, py + 3);
 }
 
-function currentPiece() { return state.players[state.currentPlayer]; }
-function nextPlayer() { state.currentPlayer = (state.currentPlayer + 1) % state.players.length; }
+function findNextPlayable(start) {
+  const total = state.players.length;
+  for (let offset = 0; offset < total; offset++) {
+    const index = (start + offset) % total;
+    const piece = state.players[index];
+    if (piece.status !== 'finished' && !state.acted[piece.id]) return index;
+  }
+  for (let offset = 0; offset < total; offset++) {
+    const index = (start + offset) % total;
+    if (state.players[index].status !== 'finished') return index;
+  }
+  return -1;
+}
+
+function currentPiece() {
+  if (!state || !state.players.length) return null;
+  const piece = state.players[state.currentPlayer];
+  if (piece && piece.status !== 'finished' && !state.acted[piece.id]) return piece;
+  const next = findNextPlayable(state.currentPlayer || 0);
+  if (next >= 0) {
+    state.currentPlayer = next;
+    return state.players[next];
+  }
+  return state.players.find((player) => player.status !== 'finished') || state.players[0];
+}
+
+function isRoundComplete() {
+  const active = state.players.filter((piece) => piece.status !== 'finished');
+  return active.length > 0 && active.every((piece) => state.acted[piece.id]);
+}
+
+function roundEnd() {
+  state.round = (state.round || 1) + 1;
+  state.acted = {};
+  addLog(`第 ${state.round} 轮开始`, 'good');
+}
+
+function endTurn(piece) {
+  state.acted[piece.id] = true;
+  if (state.gameOver) return;
+  if (isRoundComplete()) roundEnd();
+  const next = findNextPlayable((state.players.indexOf(piece) + 1) % state.players.length);
+  if (next >= 0) state.currentPlayer = next;
+}
 
 
 function drawPanelButton(x, y, w, h, text, action, primary) {
@@ -640,6 +862,7 @@ function render() {
   else if (scene === 'game') drawGame();
   else if (scene === 'settings') drawSettings();
   else if (scene === 'tasks') drawTasks();
+  else if (scene === 'records') drawRecords();
   drawModal();
 }
 
@@ -666,25 +889,53 @@ function drawTopTitle(title, sub) {
 
 function drawSettings() {
   buttons = [];
-  drawTopTitle('玩家设置', '小游戏版基础设置：人数、颜色、重新开局');
+  drawTopTitle('玩家设置', '2–16 人 · 每种颜色最多 4 架飞机');
   const startY = Math.max(safeTop + 124, 138);
-  fillRoundRect(24, startY, W - 48, 330, 26, 'rgba(255,255,255,.94)', true);
+  const panelH = Math.min(520, H - startY - safeBottom - 18);
+  fillRoundRect(24, startY, W - 48, panelH, 26, 'rgba(255,255,255,.94)', true);
+  const counts = countColors(setupPlayers);
   ctx.fillStyle = '#30251c';
   ctx.font = '900 19px sans-serif';
-  ctx.fillText(`玩家数量：${setupPlayers.length}`, 46, startY + 38);
-  drawPanelButton(46, startY + 58, 86, 40, '- 人数', 'setupRemove', false);
-  drawPanelButton(146, startY + 58, 86, 40, '+ 人数', 'setupAdd', false);
-  setupPlayers.forEach((player, index) => {
-    const y = startY + 122 + index * 48;
-    ctx.fillStyle = '#5f4a35';
-    ctx.font = '900 16px sans-serif';
-    ctx.fillText(`${index + 1}. ${player.name}`, 52, y);
-    drawColorDot(154, y - 13, player.color);
-    drawPanelButton(W - 146, y - 28, 100, 36, '换颜色', `setupColor:${index}`, false);
+  ctx.fillText(`玩家 ${setupPlayers.length}/16`, 46, startY + 34);
+  ctx.fillStyle = '#806344';
+  ctx.font = '800 11px sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText(`红${counts.R}/4  黄${counts.Y}/4  蓝${counts.B}/4  绿${counts.G}/4`, W - 46, startY + 33);
+  ctx.textAlign = 'left';
+
+  const maxPage = Math.max(0, Math.ceil(setupPlayers.length / SETTINGS_PAGE_SIZE) - 1);
+  settingsPage = Math.min(settingsPage, maxPage);
+  const pagePlayers = setupPlayers.slice(settingsPage * SETTINGS_PAGE_SIZE, (settingsPage + 1) * SETTINGS_PAGE_SIZE);
+  pagePlayers.forEach((player, offset) => {
+    const index = settingsPage * SETTINGS_PAGE_SIZE + offset;
+    const y = startY + 58 + offset * 64;
+    fillRoundGradient(40, y, W - 80, 54, 16, [[0, '#fffdf8'], [1, '#fff0c9']], false);
+    drawColorDot(57, y + 27, player.color);
+    ctx.fillStyle = '#493522';
+    ctx.font = '900 14px sans-serif';
+    ctx.fillText(`${index + 1}. ${shortText(player.name, 9)}`, 91, y + 32);
+    drawPanelButton(W - 184, y + 9, 48, 36, '改名', `setupName:${index}`, false);
+    drawPanelButton(W - 130, y + 9, 48, 36, '颜色', `setupColor:${index}`, false);
+    drawPanelButton(W - 76, y + 9, 36, 36, '×', `setupDelete:${index}`, false);
   });
-  drawPanelButton(46, startY + 274, 126, 46, '保存开局', 'setupApply', true);
-  drawPanelButton(190, startY + 274, 92, 46, '大厅', 'home', false);
-  drawPanelButton(W - 138, startY + 274, 92, 46, '游戏', hasSavedState() ? 'continue' : 'quick', false);
+
+  const pagerY = startY + 62 + SETTINGS_PAGE_SIZE * 64;
+  drawPanelButton(46, pagerY, 70, 36, '上一页', 'setupPrev', false);
+  ctx.fillStyle = '#76593b';
+  ctx.font = '900 13px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${settingsPage + 1}/${maxPage + 1}`, W / 2, pagerY + 23);
+  ctx.textAlign = 'left';
+  drawPanelButton(W - 116, pagerY, 70, 36, '下一页', 'setupNext', false);
+
+  const addY = pagerY + 48;
+  drawPanelButton(46, addY, 104, 40, '+ 添加玩家', 'setupAdd', false);
+  drawPanelButton(160, addY, 86, 40, '- 最后一位', 'setupRemove', false);
+  const footerY = Math.min(startY + panelH - 58, addY + 54);
+  const footerW = Math.floor((W - 116) / 3);
+  drawPanelButton(46, footerY, footerW, 44, '保存开局', 'setupApply', true);
+  drawPanelButton(58 + footerW, footerY, footerW, 44, '大厅', 'home', false);
+  drawPanelButton(70 + footerW * 2, footerY, footerW, 44, '继续', hasSavedState() ? 'continue' : 'quick', false);
 }
 
 function drawColorDot(x, y, color) {
@@ -698,9 +949,151 @@ function drawColorDot(x, y, color) {
   ctx.fillText(color, x + 16, y + 4);
 }
 
+function shortText(text, maxChars) {
+  const chars = Array.from(String(text || ''));
+  return chars.length <= maxChars ? chars.join('') : `${chars.slice(0, Math.max(1, maxChars - 1)).join('')}…`;
+}
+
+function countColors(players) {
+  const counts = { R: 0, Y: 0, B: 0, G: 0 };
+  players.forEach((player) => { if (counts[player.color] !== undefined) counts[player.color] += 1; });
+  return counts;
+}
+
+function firstAvailableColor(players, preferredIndex = 0) {
+  const colors = ['R', 'Y', 'B', 'G'];
+  const counts = countColors(players);
+  for (let offset = 0; offset < colors.length; offset++) {
+    const color = colors[(preferredIndex + offset) % colors.length];
+    if (counts[color] < 4) return color;
+  }
+  return null;
+}
+
+function statusText(piece) {
+  if (piece.status === 'base') return '基地 · 掷出 6 起飞';
+  if (piece.status === 'outer') return `外圈第 ${piece.outerIndex + 1} 格`;
+  if (piece.status === 'straight') return `直道第 ${piece.straightIndex}/6 格`;
+  return '已到达终点';
+}
+
+function progressText(piece) {
+  if (piece.status === 'base') return '基地';
+  if (piece.status === 'outer') return `外 ${piece.outerIndex + 1}`;
+  if (piece.status === 'straight') return `直 ${piece.straightIndex}/6`;
+  return '终点';
+}
+
+function playerProgressPercent(piece) {
+  if (piece.status === 'finished') return 100;
+  if (piece.status === 'base') return 4;
+  if (piece.status === 'outer') return Math.max(8, Math.min(82, Math.round((piece.outerSteps % OUTER_PATH_LENGTH) / OUTER_PATH_LENGTH * 76) + 8));
+  if (piece.status === 'straight') return Math.max(84, Math.min(98, 84 + Math.round((piece.straightIndex / 6) * 14)));
+  return 0;
+}
+
+function drawRecords() {
+  buttons = [];
+  drawTopTitle('进度记录', `第 ${state.round || 1} 轮 · ${state.players.length} 位玩家`);
+  const startY = Math.max(safeTop + 124, 138);
+  const panelH = Math.max(320, H - startY - safeBottom - 18);
+  fillRoundRect(24, startY, W - 48, panelH, 26, 'rgba(255,255,255,.94)', true);
+  const tabGap = 10;
+  const tabW = Math.floor((W - 102) / 2);
+  drawPanelButton(46, startY + 20, tabW, 42, '玩家进度', 'recordsPlayers', recordsTab === 'players');
+  drawPanelButton(56 + tabW, startY + 20, tabW, 42, '游戏记录', 'recordsLogs', recordsTab === 'logs');
+
+  if (recordsTab === 'players') drawPlayerRecords(startY, panelH);
+  else drawGameRecords(startY, panelH);
+
+  const footerY = startY + panelH - 52;
+  drawPanelButton(46, footerY, 96, 38, '返回游戏', 'game', true);
+  drawPanelButton(W - 142, footerY, 96, 38, '大厅', 'home', false);
+}
+
+function drawPlayerRecords(startY, panelH) {
+  const pageSize = progressPageSize(panelH);
+  const maxPage = Math.max(0, Math.ceil(state.players.length / pageSize) - 1);
+  progressPage = Math.min(progressPage, maxPage);
+  const players = state.players.slice(progressPage * pageSize, (progressPage + 1) * pageSize);
+  players.forEach((piece, offset) => {
+    const rowGap = pageSize >= 4 ? 72 : 78;
+    const y = startY + 74 + offset * rowGap;
+    const isCurrent = currentPiece()?.id === piece.id && !state.gameOver;
+    fillRoundGradient(42, y, W - 84, 66, 17,
+      isCurrent ? [[0, '#fff8bd'], [1, '#ffe4a6']] : [[0, '#fffdf8'], [1, '#fff1d2']], false);
+    drawColorDot(59, y + 22, piece.color);
+    ctx.fillStyle = '#3e2d20';
+    ctx.font = '900 14px sans-serif';
+    const rank = piece.finishPlace ? ` · 第${piece.finishPlace}名` : '';
+    ctx.fillText(`${shortText(piece.name, 10)}${rank}`, 92, y + 23);
+    ctx.fillStyle = '#806344';
+    ctx.font = '800 11px sans-serif';
+    ctx.fillText(statusText(piece), 92, y + 42);
+    const barX = 92;
+    const barY = y + 50;
+    const barW = W - 202;
+    fillRoundRect(barX, barY, barW, 7, 4, 'rgba(118,89,59,.16)');
+    const color = { R: '#ef4b3e', Y: '#e5b717', B: '#259fd5', G: '#35af50' }[piece.color];
+    fillRoundRect(barX, barY, barW * playerProgressPercent(piece) / 100, 7, 4, color);
+    ctx.fillStyle = '#5c432d';
+    ctx.font = '900 11px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(progressText(piece), W - 54, y + 37);
+    ctx.textAlign = 'left';
+  });
+  drawRecordPager(startY + panelH - 98, progressPage, maxPage, 'progressPrev', 'progressNext');
+}
+
+function drawGameRecords(startY, panelH) {
+  const logs = (state.logs || []).slice().reverse();
+  const pageSize = gameRecordsPageSize(panelH);
+  const maxPage = Math.max(0, Math.ceil(logs.length / pageSize) - 1);
+  recordsPage = Math.min(recordsPage, maxPage);
+  const pageLogs = logs.slice(recordsPage * pageSize, (recordsPage + 1) * pageSize);
+  pageLogs.forEach((entry, offset) => {
+    const y = startY + 84 + offset * 50;
+    const type = entry.type || '';
+    const color = type === 'good' ? '#248d45' : type === 'bad' ? '#b53a2b' : type === 'hot' ? '#c46b15' : '#76593b';
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(53, y + 7, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#493522';
+    ctx.font = '800 12px sans-serif';
+    drawWrappedText(logEntryText(entry), 66, y + 12, W - 116, 17, 2);
+  });
+  if (!pageLogs.length) {
+    ctx.fillStyle = '#806344';
+    ctx.font = '800 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('还没有游戏记录', W / 2, startY + 130);
+    ctx.textAlign = 'left';
+  }
+  drawRecordPager(startY + panelH - 98, recordsPage, maxPage, 'recordsPrev', 'recordsNext');
+}
+
+function progressPageSize(panelH) {
+  return Math.max(2, Math.min(4, Math.floor((panelH - 174) / 72)));
+}
+
+function gameRecordsPageSize(panelH) {
+  return Math.max(3, Math.min(6, Math.floor((panelH - 180) / 50)));
+}
+
+function drawRecordPager(y, page, maxPage, prevAction, nextAction) {
+  drawPanelButton(46, y, 76, 34, '上一页', prevAction, false);
+  ctx.fillStyle = '#76593b';
+  ctx.font = '900 12px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${page + 1}/${maxPage + 1}`, W / 2, y + 22);
+  ctx.textAlign = 'left';
+  drawPanelButton(W - 122, y, 76, 34, '下一页', nextAction, false);
+}
+
 function drawTasks() {
   buttons = [];
-  drawTopTitle('任务中心', '先恢复任务查看；编辑和导入导出后续补齐');
+  drawTopTitle('任务中心', '逐条编辑 · JSON 导入导出 · 纯文本模板');
   const startY = Math.max(safeTop + 124, 138);
   fillRoundRect(24, startY, W - 48, 500, 26, 'rgba(255,255,255,.94)', true);
   ctx.fillStyle = '#30251c';
@@ -893,19 +1286,63 @@ function editFinalTask() {
 function cycleSetupColor(index) {
   const colors = ['R', 'Y', 'B', 'G'];
   const player = setupPlayers[index];
-  const next = colors[(colors.indexOf(player.color) + 1) % colors.length];
-  player.color = next;
+  if (!player) return;
+  const counts = countColors(setupPlayers);
+  for (let offset = 1; offset <= colors.length; offset++) {
+    const next = colors[(colors.indexOf(player.color) + offset) % colors.length];
+    if (next === player.color || counts[next] < 4) {
+      player.color = next;
+      saveSetupPlayers();
+      return;
+    }
+  }
+  showTask('颜色已满', '红、黄、蓝、绿每种颜色最多 4 位玩家。');
+}
+
+function editSetupName(index) {
+  const player = setupPlayers[index];
+  if (!player) return;
+  wx.showModal({
+    title: `编辑玩家 ${index + 1}`,
+    editable: true,
+    placeholderText: '输入玩家名',
+    content: player.name,
+    success(res) {
+      if (!res.confirm) return;
+      const name = String(res.content || '').trim();
+      if (!name) {
+        showTask('名字不能为空', '请填写玩家名后再保存。');
+      } else {
+        player.name = name;
+        saveSetupPlayers();
+      }
+      render();
+    }
+  });
+}
+
+function validateSetupPlayers() {
+  if (setupPlayers.length < 2 || setupPlayers.length > 16) return '玩家人数必须是 2–16 人。';
+  if (setupPlayers.some((player) => !String(player.name || '').trim())) return '请填写所有玩家名。';
+  const counts = countColors(setupPlayers);
+  if (Object.values(counts).some((count) => count > 4)) return '每种颜色最多 4 位玩家。';
+  return '';
+}
+
+function applySetupAndStart() {
+  const error = validateSetupPlayers();
+  if (error) {
+    showTask('无法开始', error);
+    return;
+  }
+  setupPlayers = setupPlayers.map((player) => ({ name: String(player.name).trim(), color: player.color }));
   saveSetupPlayers();
+  startFreshGame('设置已保存，新局开始');
 }
 
 
 function ensureCurrentPlayable() {
-  if (state.players.every(p => p.status === 'finished')) return null;
-  let guard = 0;
-  while (state.players[state.currentPlayer]?.status === 'finished' && guard < state.players.length) {
-    nextPlayer();
-    guard++;
-  }
+  if (state.players.every((piece) => piece.status === 'finished')) return null;
   return currentPiece();
 }
 function drawKingCard(piece, reason) {
@@ -917,8 +1354,9 @@ function drawKingCard(piece, reason) {
 function finishPiece(piece) {
   piece.status = 'finished';
   if (!state.finishOrder.includes(piece.id)) state.finishOrder.push(piece.id);
-  addLog(`${piece.name} 到达终点，第 ${state.finishOrder.length} 名`);
-  showTask('到达终点', `${piece.name} 第 ${state.finishOrder.length} 名到达终点！`);
+  piece.finishPlace = state.finishOrder.indexOf(piece.id) + 1;
+  addLog(`${piece.name} 到达终点，第 ${piece.finishPlace} 名`, 'good');
+  showTask('到达终点', `${piece.name} 第 ${piece.finishPlace} 名到达终点！`);
   if (state.finishOrder.length === state.players.length) {
     state.gameOver = true;
     const ranking = state.finishOrder.map((id, i) => {
@@ -935,6 +1373,7 @@ function applyFlyJump(piece) {
   if (!rule || piece.outerIndex !== rule.from - 1) return;
   piece.outerIndex = rule.to - 1;
   piece.outerSteps = (piece.outerIndex - START_INDEX[piece.color] + OUTER_PATH_LENGTH) % OUTER_PATH_LENGTH;
+  appendMovePoint(outerPath[piece.outerIndex], 'fly');
   addLog(`${piece.name} 触发飞行航线：从 ${rule.from} 飞到 ${rule.to}`);
 }
 
@@ -942,6 +1381,7 @@ function moveOuter(piece, steps) {
   for (let step = 1; step <= steps; step++) {
     piece.outerIndex = (piece.outerIndex + 1) % OUTER_PATH_LENGTH;
     piece.outerSteps += 1;
+    appendMovePoint(outerPath[piece.outerIndex]);
     if (piece.outerIndex === ENTRY_INDEX[piece.color]) {
       const remain = steps - step;
       piece.status = 'straight';
@@ -960,55 +1400,110 @@ function moveOuter(piece, steps) {
 function moveStraight(piece, steps) {
   const need = 6 - piece.straightIndex;
   if (steps === need) {
+    for (let index = piece.straightIndex + 1; index <= 6; index++) {
+      appendMovePoint(index === 6 ? { x: 50, y: 50 } : straightPath[piece.color][index - 1]);
+    }
     if (need > 0) triggerStraightTask(piece);
     finishPiece(piece);
     return;
   }
   if (steps > need) {
     const bounce = steps - need;
+    for (let index = piece.straightIndex + 1; index <= 6; index++) {
+      appendMovePoint(index === 6 ? { x: 50, y: 50 } : straightPath[piece.color][index - 1]);
+    }
+    for (let index = 5; index >= Math.max(0, 6 - bounce); index--) {
+      appendMovePoint(index === 0 ? outerPath[ENTRY_INDEX[piece.color]] : straightPath[piece.color][index - 1]);
+    }
     piece.straightIndex = Math.max(0, 6 - bounce);
     addLog(`${piece.name} 超出终点，后退`);
     triggerStraightTask(piece);
     return;
   }
-  piece.straightIndex += steps;
+  const target = piece.straightIndex + steps;
+  for (let index = piece.straightIndex + 1; index <= target; index++) {
+    appendMovePoint(straightPath[piece.color][index - 1]);
+  }
+  piece.straightIndex = target;
   addLog(`${piece.name} 直道前进`);
   triggerStraightTask(piece);
 }
 
-function rollDice() {
-  if (state.gameOver) { showTask('游戏结束', '本局已结束，请重开或返回大厅。'); return; }
-  const value = Math.floor(Math.random() * 6) + 1;
+function finishAnimatedMove(piece) {
+  const track = pendingMoveTrack.slice();
+  saveState();
+  const complete = () => {
+    deferModals = false;
+    pendingMoveTrack = [];
+    flushDeferredModal();
+    saveState();
+    render();
+  };
+  if (track.length > 1) startPieceAnimation(piece, track, complete);
+  else complete();
+}
+
+function resolveDiceRoll(value) {
   lastRoll = value;
   state.lastRoll = value;
-  const audio = wx.createInnerAudioContext();
-  audio.src = 'assets/audio/dice_roll.mp3';
-  audio.play();
   const piece = ensureCurrentPlayable();
-  if (!piece) return;
+  if (!piece) {
+    saveState();
+    render();
+    return;
+  }
+  beginMoveTrack(piece);
+  deferModals = true;
   if (value === 1) drawKingCard(piece, '掷出 1 点触发');
   if (piece.status === 'base') {
     if (value === 6) {
       piece.status = 'outer';
       piece.outerIndex = START_INDEX[piece.color];
       piece.outerSteps = 0;
+      appendMovePoint(outerPath[piece.outerIndex], 'fly');
       addLog(`${piece.name} 起飞，再掷一次`);
       showTask('起飞任务', tasks.takeoff);
     } else {
       addLog(`${piece.name} 未起飞，轮到下一位`);
       if (value >= 2 && value <= 5) triggerBaseRollTask(piece, value);
-      nextPlayer();
+      endTurn(piece);
     }
   } else if (piece.status === 'outer') {
     moveOuter(piece, value);
-    if (value !== 6 || piece.status === 'finished') nextPlayer();
+    if (value !== 6 || piece.status === 'finished') endTurn(piece);
   } else if (piece.status === 'straight') {
     moveStraight(piece, value);
-    if (value !== 6 || piece.status === 'finished') nextPlayer();
+    if (value !== 6 || piece.status === 'finished') endTurn(piece);
   } else {
-    nextPlayer();
+    endTurn(piece);
   }
-  saveState();
+  finishAnimatedMove(piece);
+}
+
+function rollDice() {
+  if (rolling || pieceAnimation || modal) return;
+  if (state.gameOver) { showTask('游戏结束', '本局已结束，请重开或返回大厅。'); return; }
+  rolling = true;
+  rollingDiceValue = Math.floor(Math.random() * 6) + 1;
+  const audio = wx.createInnerAudioContext();
+  audio.src = 'assets/audio/dice_roll.mp3';
+  audio.onEnded(() => audio.destroy());
+  audio.onError(() => audio.destroy());
+  audio.play();
+  const startedAt = Date.now();
+  const tick = () => {
+    rollingDiceValue = Math.floor(Math.random() * 6) + 1;
+    render();
+    if (Date.now() - startedAt < 700) {
+      setTimeout(tick, 70);
+      return;
+    }
+    const value = Math.floor(Math.random() * 6) + 1;
+    rolling = false;
+    rollingDiceValue = null;
+    resolveDiceRoll(value);
+  };
+  tick();
 }
 
 function startFreshGame(message) {
@@ -1027,7 +1522,7 @@ function continueSavedGame() {
   }
   state = saved;
   lastRoll = state.lastRoll || '-';
-  logText = (state.logs || []).slice(-1)[0] || '已读取本地存档';
+  logText = logEntryText((state.logs || []).slice(-1)[0]) || '已读取本地存档';
   clearModals();
   scene = 'game';
 }
@@ -1038,13 +1533,49 @@ function handleAction(action) {
   if (action === 'home') scene = 'home';
   if (action === 'settings') scene = 'settings';
   if (action === 'tasks') scene = 'tasks';
+  if (action === 'records') scene = 'records';
+  if (action === 'game') scene = 'game';
   if (action === 'restart') startFreshGame('游戏已重开：掷出 6 才能起飞');
-  if (action === 'setupAdd' && setupPlayers.length < 4) { setupPlayers.push({ name: `玩家${setupPlayers.length + 1}`, color: ['R','Y','B','G'][setupPlayers.length] }); saveSetupPlayers(); }
-  if (action === 'setupRemove' && setupPlayers.length > 2) { setupPlayers.pop(); saveSetupPlayers(); }
+  if (action === 'setupAdd') {
+    if (setupPlayers.length >= 16) showTask('人数已满', '最多支持 16 位玩家。');
+    else {
+      const color = firstAvailableColor(setupPlayers, setupPlayers.length % 4);
+      if (!color) showTask('颜色已满', '红、黄、蓝、绿每种颜色最多 4 位玩家。');
+      else {
+        setupPlayers.push({ name: `玩家${setupPlayers.length + 1}`, color });
+        settingsPage = Math.floor((setupPlayers.length - 1) / SETTINGS_PAGE_SIZE);
+        saveSetupPlayers();
+      }
+    }
+  }
+  if (action === 'setupRemove') {
+    if (setupPlayers.length <= 2) showTask('至少两人', '游戏至少需要 2 位玩家。');
+    else { setupPlayers.pop(); saveSetupPlayers(); }
+  }
+  if (action.startsWith('setupDelete:')) {
+    const index = Number(action.split(':')[1]);
+    if (setupPlayers.length <= 2) showTask('至少两人', '游戏至少需要 2 位玩家。');
+    else { setupPlayers.splice(index, 1); saveSetupPlayers(); }
+  }
+  if (action.startsWith('setupName:')) editSetupName(Number(action.split(':')[1]));
   if (action.startsWith('setupColor:')) cycleSetupColor(Number(action.split(':')[1]));
-  if (action === 'setupApply') { saveSetupPlayers(); startFreshGame('设置已保存，新局开始'); }
+  if (action === 'setupPrev') settingsPage = Math.max(0, settingsPage - 1);
+  if (action === 'setupNext') settingsPage = Math.min(Math.max(0, Math.ceil(setupPlayers.length / SETTINGS_PAGE_SIZE) - 1), settingsPage + 1);
+  if (action === 'setupApply') applySetupAndStart();
+  if (action === 'recordsPlayers') { recordsTab = 'players'; progressPage = 0; }
+  if (action === 'recordsLogs') { recordsTab = 'logs'; recordsPage = 0; }
+  if (action === 'progressPrev') progressPage = Math.max(0, progressPage - 1);
+  if (action === 'progressNext') {
+    const panelH = Math.max(320, H - Math.max(safeTop + 124, 138) - safeBottom - 18);
+    progressPage = Math.min(Math.max(0, Math.ceil(state.players.length / progressPageSize(panelH)) - 1), progressPage + 1);
+  }
+  if (action === 'recordsPrev') recordsPage = Math.max(0, recordsPage - 1);
+  if (action === 'recordsNext') {
+    const panelH = Math.max(320, H - Math.max(safeTop + 124, 138) - safeBottom - 18);
+    recordsPage = Math.min(Math.max(0, Math.ceil((state.logs || []).length / gameRecordsPageSize(panelH)) - 1), recordsPage + 1);
+  }
   if (action === 'closeModal') closeCurrentModal();
-  if (action === 'roll' && !modal) rollDice();
+  if (action === 'roll' && !modal && !rolling && !pieceAnimation) rollDice();
   if (action === 'tasksDemo') showTask('示例任务', tasks.outer[0]);
   if (action === 'editTakeoff') editTaskText('编辑起飞任务', tasks.takeoff, value => { tasks.takeoff = value; });
   if (action === 'editBase') editBaseRollTask();
