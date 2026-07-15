@@ -10,14 +10,14 @@ ctx.scale(dpr, dpr);
 
 const W = systemInfo.windowWidth;
 const H = systemInfo.windowHeight;
-const GAME_VERSION = '2.2.0';
+const GAME_VERSION = '2.2.1';
 const safeTop = systemInfo.safeArea ? systemInfo.safeArea.top : (systemInfo.statusBarHeight || 0);
 const safeBottom = systemInfo.safeArea ? Math.max(0, H - systemInfo.safeArea.bottom) : 0;
 const capsuleBottom = menuButton ? menuButton.bottom : safeTop + 44;
 
 const ASSETS = {
   bg: 'assets/minigame/ui/home_bg_mobile.jpg',
-  logo: 'assets/minigame/ui/title_logo.png',
+  logo: 'assets/minigame/ui/title_logo.webp',
   board: 'assets/minigame/ui/board_traditional_preview.jpg',
   continueIcon: 'assets/minigame/ui/icon_continue.png',
   newIcon: 'assets/minigame/ui/icon_new_game.png',
