@@ -1,0 +1,2995 @@
+{
+  "meta": {
+    "id": "commercial_v2_3_tasks",
+    "name": "飞行棋大冒险商业测试版任务库",
+    "version": "2.3.0",
+    "createdAt": "2026-07-16",
+    "status": "reviewed-draft",
+    "positioning": "聚会互动 + 情侣轻互动的轻量派对飞行棋小游戏",
+    "packs": [
+      {
+        "id": "safe_family",
+        "name": "家庭安全",
+        "defaultEnabled": true,
+        "description": "亲子、家庭、全年龄"
+      },
+      {
+        "id": "party_light",
+        "name": "聚会轻松",
+        "defaultEnabled": true,
+        "description": "朋友破冰、轻松聚会"
+      },
+      {
+        "id": "party_fun",
+        "name": "聚会搞笑",
+        "defaultEnabled": true,
+        "description": "熟人局、搞笑互动"
+      },
+      {
+        "id": "couple_light",
+        "name": "情侣轻互动",
+        "defaultEnabled": false,
+        "description": "情侣、暧昧、双人氛围"
+      },
+      {
+        "id": "king",
+        "name": "国王卡",
+        "defaultEnabled": true,
+        "description": "骰子为 1 时触发的特殊互动卡"
+      }
+    ],
+    "rules": {
+      "kingTrigger": "dice_result_is_1",
+      "kingCardDoesNotReplaceTaskFlow": true,
+      "adultOptionalDefaultEnabled": false
+    },
+    "counts": {
+      "normal": 100,
+      "king": 20,
+      "total": 120
+    }
+  },
+  "modes": {
+    "family": {
+      "name": "家庭模式",
+      "takeoff": ["safe_family_001", "safe_family_021", "safe_family_024"],
+      "baseRoll": {
+        "2": ["safe_family_012", "safe_family_020"],
+        "3": ["safe_family_005", "safe_family_009"],
+        "4": ["safe_family_014", "safe_family_018"],
+        "5": ["safe_family_003", "safe_family_015"]
+      },
+      "outer": ["safe_family_002", "safe_family_004", "safe_family_006", "safe_family_007", "safe_family_008", "safe_family_010", "safe_family_011", "safe_family_013", "safe_family_016", "safe_family_017", "safe_family_019", "safe_family_022", "safe_family_023", "safe_family_025"],
+      "straight": ["safe_family_018", "safe_family_003", "safe_family_015", "safe_family_021", "safe_family_024", "safe_family_001"],
+      "king": ["king_001", "king_002", "king_003", "king_004", "king_007", "king_009", "king_012", "king_015", "king_017", "king_019"],
+      "final": [
+        {"id": "family_final_001", "title": "全家掌声", "content": "最后到达的玩家摆一个小飞机姿势，大家为TA鼓掌5秒。"},
+        {"id": "family_final_002", "title": "快乐广播", "content": "最后到达的玩家用广播腔说：本次家庭航班圆满结束！"},
+        {"id": "family_final_003", "title": "好运祝福", "content": "最后到达的玩家给每位玩家送上一句简短的好运祝福。"}
+      ]
+    },
+    "party": {
+      "name": "聚会模式",
+      "takeoff": ["party_light_002", "party_light_007", "party_light_008", "party_fun_001"],
+      "baseRoll": {
+        "2": ["party_light_013", "party_fun_012", "party_fun_022"],
+        "3": ["party_light_021", "party_fun_006", "party_fun_026"],
+        "4": ["party_light_018", "party_fun_014", "party_fun_024"],
+        "5": ["party_light_010", "party_fun_010", "party_fun_023"]
+      },
+      "outer": ["party_light_001", "party_light_003", "party_light_004", "party_light_005", "party_light_006", "party_light_009", "party_light_011", "party_light_012", "party_light_014", "party_light_015", "party_light_016", "party_light_017", "party_light_020", "party_light_022", "party_light_023", "party_light_025", "party_light_027", "party_light_028", "party_light_029", "party_light_030", "party_fun_002", "party_fun_003", "party_fun_004", "party_fun_005", "party_fun_007", "party_fun_008", "party_fun_009", "party_fun_011", "party_fun_013", "party_fun_015", "party_fun_016", "party_fun_017", "party_fun_018", "party_fun_019", "party_fun_020", "party_fun_021", "party_fun_025", "party_fun_027", "party_fun_028", "party_fun_029", "party_fun_030"],
+      "straight": ["party_light_019", "party_light_024", "party_light_026", "party_fun_009", "party_fun_018", "party_fun_022", "party_fun_024", "party_fun_030"],
+      "king": ["king_001", "king_002", "king_003", "king_004", "king_005", "king_006", "king_007", "king_008", "king_009", "king_010", "king_011", "king_012", "king_013", "king_014", "king_015", "king_016", "king_017", "king_018", "king_019", "king_020"],
+      "final": [
+        {"id": "party_final_001", "title": "终场播报", "content": "最后到达的玩家用新闻播报语气总结本局三个精彩瞬间。"},
+        {"id": "party_final_002", "title": "庆祝舞步", "content": "最后到达的玩家表演5秒庆祝舞，其他玩家负责鼓掌伴奏。"},
+        {"id": "party_final_003", "title": "航班谢幕", "content": "最后到达的玩家设计一个夸张谢幕动作，并喊出本局航班名。"}
+      ]
+    },
+    "couple": {
+      "name": "情侣模式",
+      "takeoff": ["couple_light_003", "couple_light_005", "couple_light_010"],
+      "baseRoll": {
+        "2": ["couple_light_002", "couple_light_007"],
+        "3": ["couple_light_003", "couple_light_013"],
+        "4": ["couple_light_008", "couple_light_014"],
+        "5": ["couple_light_005", "couple_light_011"]
+      },
+      "outer": ["couple_light_001", "couple_light_002", "couple_light_004", "couple_light_006", "couple_light_007", "couple_light_008", "couple_light_009", "couple_light_012", "couple_light_013", "couple_light_014"],
+      "straight": ["couple_light_003", "couple_light_005", "couple_light_010", "couple_light_011", "couple_light_015", "couple_light_006"],
+      "king": ["king_001", "king_003", "king_004", "king_008", "king_009", "king_010", "king_014", "king_017", "king_019", "king_020"],
+      "final": [
+        {"id": "couple_final_001", "title": "双人谢幕", "content": "两人一起摆一个起飞姿势；不方便时可以同时比心。"},
+        {"id": "couple_final_002", "title": "今日心愿", "content": "最后到达的玩家说一件想和对方一起完成的小事。"},
+        {"id": "couple_final_003", "title": "专属夸奖", "content": "最后到达的玩家送给对方一句本局限定夸奖。"}
+      ]
+    },
+    "all-light": {
+      "name": "轻松全集",
+      "inherits": ["family", "party", "couple"],
+      "description": "合并家庭、聚会、情侣三套已审核的轻松任务，并保持棋盘任务类型分类。"
+    }
+  },
+  "tasks": [
+    {
+      "id": "safe_family_001",
+      "pack": "safe_family",
+      "type": "perform",
+      "level": "easy",
+      "title": "小飞机起飞",
+      "content": "模仿一架小飞机起飞，绕原地一圈。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "亲子",
+        "表演"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_002",
+      "pack": "safe_family",
+      "type": "truth",
+      "level": "easy",
+      "title": "开心小事",
+      "content": "说出今天或最近一件让你开心的小事。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "分享",
+        "轻松"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_003",
+      "pack": "safe_family",
+      "type": "social",
+      "level": "easy",
+      "title": "真诚夸夸",
+      "content": "夸一位玩家一句，必须是真心话。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "互动",
+        "夸赞"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_004",
+      "pack": "safe_family",
+      "type": "choice",
+      "level": "easy",
+      "title": "旅行选择",
+      "content": "如果现在能旅行，你想去海边还是山里？",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "选择",
+        "聊天"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_005",
+      "pack": "safe_family",
+      "type": "perform",
+      "level": "easy",
+      "title": "动物飞行员",
+      "content": "模仿一种会飞的动物，大家猜是什么。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "表演",
+        "猜谜"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_006",
+      "pack": "safe_family",
+      "type": "truth",
+      "level": "easy",
+      "title": "最爱零食",
+      "content": "说出你最喜欢的一种零食。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "分享",
+        "生活"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_007",
+      "pack": "safe_family",
+      "type": "mini_game",
+      "level": "easy",
+      "title": "十秒微笑",
+      "content": "保持微笑 10 秒，不能笑场。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "小游戏",
+        "轻松"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_008",
+      "pack": "safe_family",
+      "type": "social",
+      "level": "easy",
+      "title": "谢谢你",
+      "content": "对右边玩家说一句感谢的话。",
+      "players": "right",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "互动",
+        "温暖"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_009",
+      "pack": "safe_family",
+      "type": "perform",
+      "level": "easy",
+      "title": "天气播报",
+      "content": "用天气预报员的语气播报今天的心情。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "表演",
+        "搞笑"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_010",
+      "pack": "safe_family",
+      "type": "truth",
+      "level": "easy",
+      "title": "小愿望",
+      "content": "说出一个最近想完成的小愿望。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "分享",
+        "愿望"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_011",
+      "pack": "safe_family",
+      "type": "vote",
+      "level": "easy",
+      "title": "最像队长",
+      "content": "大家投票：谁最像本局小队长？",
+      "players": "all",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "投票",
+        "破冰"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_012",
+      "pack": "safe_family",
+      "type": "dare",
+      "level": "easy",
+      "title": "拍拍手",
+      "content": "拍手打一个简单节奏，让大家跟一次。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "动作",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_013",
+      "pack": "safe_family",
+      "type": "truth",
+      "level": "easy",
+      "title": "喜欢颜色",
+      "content": "说出你最喜欢的颜色和原因。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "分享",
+        "轻松"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_014",
+      "pack": "safe_family",
+      "type": "perform",
+      "level": "easy",
+      "title": "慢动作",
+      "content": "用慢动作表演一次掷骰子。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "表演",
+        "搞笑"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_015",
+      "pack": "safe_family",
+      "type": "social",
+      "level": "easy",
+      "title": "好运传递",
+      "content": "对下一位玩家说一句好运祝福。",
+      "players": "right",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "互动",
+        "祝福"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_016",
+      "pack": "safe_family",
+      "type": "mini_game",
+      "level": "easy",
+      "title": "不眨眼",
+      "content": "和一位玩家比赛 5 秒不眨眼。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "小游戏",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_017",
+      "pack": "safe_family",
+      "type": "truth",
+      "level": "easy",
+      "title": "最想学",
+      "content": "说出一件你想学会的新技能。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "分享",
+        "成长"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_018",
+      "pack": "safe_family",
+      "type": "dare",
+      "level": "easy",
+      "title": "胜利姿势",
+      "content": "摆一个胜利姿势，保持 3 秒。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "动作",
+        "轻松"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_019",
+      "pack": "safe_family",
+      "type": "choice",
+      "level": "easy",
+      "title": "超能力",
+      "content": "如果有一种超能力，你想会飞还是会隐身？",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "选择",
+        "想象"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_020",
+      "pack": "safe_family",
+      "type": "social",
+      "level": "easy",
+      "title": "击掌成功",
+      "content": "和左边玩家击掌一次。",
+      "players": "left",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "互动",
+        "动作"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_021",
+      "pack": "safe_family",
+      "type": "perform",
+      "level": "easy",
+      "title": "机器人",
+      "content": "用机器人声音说：“飞行棋大冒险开始！”",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "表演",
+        "搞笑"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_022",
+      "pack": "safe_family",
+      "type": "truth",
+      "level": "easy",
+      "title": "最爱季节",
+      "content": "说出你最喜欢的季节。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "分享",
+        "生活"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_023",
+      "pack": "safe_family",
+      "type": "vote",
+      "level": "easy",
+      "title": "最会讲笑话",
+      "content": "大家投票：谁看起来最会讲笑话？",
+      "players": "all",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "投票",
+        "轻松"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_024",
+      "pack": "safe_family",
+      "type": "dare",
+      "level": "easy",
+      "title": "原地起飞",
+      "content": "原地小跳一下，说“起飞成功”。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "动作",
+        "表演"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "safe_family_025",
+      "pack": "safe_family",
+      "type": "social",
+      "level": "easy",
+      "title": "取代号",
+      "content": "给自己取一个飞行员代号。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "破冰",
+        "命名"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_001",
+      "pack": "party_light",
+      "type": "truth",
+      "level": "easy",
+      "title": "最近单曲",
+      "content": "说出你最近循环最多的一首歌。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "破冰",
+        "音乐"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_002",
+      "pack": "party_light",
+      "type": "perform",
+      "level": "easy",
+      "title": "飞机降落",
+      "content": "用 5 秒钟模仿飞机降落。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "表演",
+        "搞笑"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_003",
+      "pack": "party_light",
+      "type": "vote",
+      "level": "easy",
+      "title": "本局队长",
+      "content": "大家投票：谁最适合当本局队长？",
+      "players": "all",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "投票",
+        "破冰"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_004",
+      "pack": "party_light",
+      "type": "social",
+      "level": "easy",
+      "title": "夸左边",
+      "content": "夸左边玩家一个优点。",
+      "players": "left",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "互动",
+        "夸赞"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_005",
+      "pack": "party_light",
+      "type": "truth",
+      "level": "easy",
+      "title": "周末计划",
+      "content": "说出你理想中的周末安排。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "聊天",
+        "生活"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_006",
+      "pack": "party_light",
+      "type": "choice",
+      "level": "easy",
+      "title": "夜猫早鸟",
+      "content": "你更像夜猫子还是早起鸟？",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "选择",
+        "破冰"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_007",
+      "pack": "party_light",
+      "type": "dare",
+      "level": "easy",
+      "title": "口号一遍",
+      "content": "为本局游戏喊一句队伍口号。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "动作",
+        "氛围"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_008",
+      "pack": "party_light",
+      "type": "perform",
+      "level": "normal",
+      "title": "播音起飞",
+      "content": "用播音腔宣布：“本机即将起飞。”",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "表演",
+        "搞笑"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_009",
+      "pack": "party_light",
+      "type": "truth",
+      "level": "easy",
+      "title": "小骄傲",
+      "content": "说出最近一件让你有点骄傲的事。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "分享",
+        "正向"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_010",
+      "pack": "party_light",
+      "type": "social",
+      "level": "easy",
+      "title": "随机采访",
+      "content": "采访一位玩家：今天心情几分？",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "互动",
+        "聊天"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_011",
+      "pack": "party_light",
+      "type": "mini_game",
+      "level": "easy",
+      "title": "快速反应",
+      "content": "大家依次说一种水果，重复或卡住的人跳过一次发言。",
+      "players": "all",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "小游戏",
+        "反应"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_012",
+      "pack": "party_light",
+      "type": "truth",
+      "level": "normal",
+      "title": "好笑小插曲",
+      "content": "分享一件现在想起来觉得轻松好笑的小插曲。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "分享",
+        "搞笑"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_013",
+      "pack": "party_light",
+      "type": "dare",
+      "level": "easy",
+      "title": "表情三连",
+      "content": "连续做三个不同表情。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "表演",
+        "轻松"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_014",
+      "pack": "party_light",
+      "type": "vote",
+      "level": "easy",
+      "title": "最会旅行",
+      "content": "大家投票：谁最会做旅行攻略？",
+      "players": "all",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "投票",
+        "聊天"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_015",
+      "pack": "party_light",
+      "type": "choice",
+      "level": "easy",
+      "title": "奶茶咖啡",
+      "content": "奶茶和咖啡只能选一个，你选哪个？",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "选择",
+        "生活"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_016",
+      "pack": "party_light",
+      "type": "social",
+      "level": "normal",
+      "title": "称号颁奖",
+      "content": "给右边玩家颁一个今晚专属称号。",
+      "players": "right",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "互动",
+        "搞笑"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_017",
+      "pack": "party_light",
+      "type": "truth",
+      "level": "easy",
+      "title": "童年游戏",
+      "content": "说出一个你小时候喜欢玩的游戏。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "回忆",
+        "聊天"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_018",
+      "pack": "party_light",
+      "type": "perform",
+      "level": "normal",
+      "title": "广告时间",
+      "content": "为飞行棋大冒险即兴打一个 10 秒广告。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "表演",
+        "创意"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_019",
+      "pack": "party_light",
+      "type": "dare",
+      "level": "easy",
+      "title": "反手点赞",
+      "content": "用两只手同时给大家点赞。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "动作",
+        "轻松"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_020",
+      "pack": "party_light",
+      "type": "truth",
+      "level": "normal",
+      "title": "幸运瞬间",
+      "content": "说出一次你觉得自己很幸运的经历。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "分享",
+        "故事"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_021",
+      "pack": "party_light",
+      "type": "mini_game",
+      "level": "easy",
+      "title": "数到三",
+      "content": "和一位玩家同时数 1、2、3，然后同时说一个颜色。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "小游戏",
+        "默契"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_022",
+      "pack": "party_light",
+      "type": "social",
+      "level": "easy",
+      "title": "好运指定",
+      "content": "指定一位玩家，下次掷骰前必须说一句好运咒语。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "互动",
+        "轻松"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_023",
+      "pack": "party_light",
+      "type": "truth",
+      "level": "easy",
+      "title": "最近想吃",
+      "content": "说出你现在最想吃的一道菜。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "聊天",
+        "生活"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_024",
+      "pack": "party_light",
+      "type": "perform",
+      "level": "normal",
+      "title": "电影旁白",
+      "content": "用电影旁白语气描述你刚才的走棋。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "表演",
+        "搞笑"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_025",
+      "pack": "party_light",
+      "type": "vote",
+      "level": "normal",
+      "title": "最有综艺感",
+      "content": "大家投票：谁最有综艺感？",
+      "players": "all",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "投票",
+        "搞笑"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_026",
+      "pack": "party_light",
+      "type": "dare",
+      "level": "normal",
+      "title": "站立播报",
+      "content": "站起来播报当前比赛形势，限 10 秒。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "动作",
+        "表演"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_027",
+      "pack": "party_light",
+      "type": "choice",
+      "level": "easy",
+      "title": "猫派狗派",
+      "content": "你是猫派还是狗派？说一句理由。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "选择",
+        "聊天"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_028",
+      "pack": "party_light",
+      "type": "social",
+      "level": "normal",
+      "title": "互换口号",
+      "content": "和任意一位玩家一起编一句双人起飞口号。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "互动",
+        "创意"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_029",
+      "pack": "party_light",
+      "type": "truth",
+      "level": "normal",
+      "title": "最近好笑",
+      "content": "说一个最近让你笑出来的瞬间。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "分享",
+        "搞笑"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_light_030",
+      "pack": "party_light",
+      "type": "dare",
+      "level": "easy",
+      "title": "鼓掌欢迎",
+      "content": "全场为当前玩家鼓掌 3 秒，当前玩家鞠躬回应。",
+      "players": "all",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "互动",
+        "氛围"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_001",
+      "pack": "party_fun",
+      "type": "perform",
+      "level": "normal",
+      "title": "机长广播",
+      "content": "用机长广播腔说一句离谱通知。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "表演",
+        "搞笑"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_002",
+      "pack": "party_fun",
+      "type": "dare",
+      "level": "normal",
+      "title": "航班号",
+      "content": "给自己编一个航班号，并解释含义。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "创意",
+        "搞笑"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_003",
+      "pack": "party_fun",
+      "type": "social",
+      "level": "normal",
+      "title": "可爱代号",
+      "content": "给一名玩家起一个可爱的飞行员代号。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "互动",
+        "命名"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_004",
+      "pack": "party_fun",
+      "type": "perform",
+      "level": "normal",
+      "title": "无声表演",
+      "content": "不出声表演“飞机遇到气流”，大家猜。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "表演",
+        "猜谜"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_005",
+      "pack": "party_fun",
+      "type": "truth",
+      "level": "normal",
+      "title": "反差技能",
+      "content": "说出一个别人可能想不到的小技能。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "分享",
+        "破冰"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_006",
+      "pack": "party_fun",
+      "type": "mini_game",
+      "level": "normal",
+      "title": "三词故事",
+      "content": "用“飞机、骰子、香蕉”编一句故事。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "小游戏",
+        "创意"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_007",
+      "pack": "party_fun",
+      "type": "vote",
+      "level": "normal",
+      "title": "最像老板",
+      "content": "大家投票：谁最像航空公司老板？",
+      "players": "all",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "投票",
+        "搞笑"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_008",
+      "pack": "party_fun",
+      "type": "dare",
+      "level": "normal",
+      "title": "夸张走路",
+      "content": "用夸张步伐走三步，假装登机。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "动作",
+        "表演"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_009",
+      "pack": "party_fun",
+      "type": "perform",
+      "level": "normal",
+      "title": "反派台词",
+      "content": "用反派语气说：“这颗骰子归我了。”",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "表演",
+        "搞笑"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_010",
+      "pack": "party_fun",
+      "type": "social",
+      "level": "normal",
+      "title": "颁奖典礼",
+      "content": "给右边玩家颁一个最离谱但友好的奖。",
+      "players": "right",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "互动",
+        "搞笑"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_011",
+      "pack": "party_fun",
+      "type": "truth",
+      "level": "normal",
+      "title": "搞笑小糗事",
+      "content": "分享一个现在想起来能笑出来的小糗事。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "分享",
+        "搞笑"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_012",
+      "pack": "party_fun",
+      "type": "dare",
+      "level": "normal",
+      "title": "定格动画",
+      "content": "摆一个“起飞失败”的定格姿势 3 秒。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "表演",
+        "动作"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_013",
+      "pack": "party_fun",
+      "type": "choice",
+      "level": "normal",
+      "title": "荒岛物品",
+      "content": "荒岛只能带一种零食，你带什么？",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "选择",
+        "聊天"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_014",
+      "pack": "party_fun",
+      "type": "perform",
+      "level": "normal",
+      "title": "配音大师",
+      "content": "给任意一个棋子配一句台词。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "表演",
+        "创意"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_015",
+      "pack": "party_fun",
+      "type": "vote",
+      "level": "normal",
+      "title": "最会迷路",
+      "content": "大家投票：谁最可能在机场迷路？",
+      "players": "all",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "投票",
+        "搞笑"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_016",
+      "pack": "party_fun",
+      "type": "mini_game",
+      "level": "normal",
+      "title": "禁止说我",
+      "content": "接下来一轮你不能说“我”，说了就表演敬礼。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "小游戏",
+        "限制"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_017",
+      "pack": "party_fun",
+      "type": "social",
+      "level": "normal",
+      "title": "采访机长",
+      "content": "指定一位玩家回答：本航班目的地是哪？",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "互动",
+        "创意"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_018",
+      "pack": "party_fun",
+      "type": "dare",
+      "level": "normal",
+      "title": "空气方向盘",
+      "content": "假装驾驶飞机 5 秒。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "动作",
+        "搞笑"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_019",
+      "pack": "party_fun",
+      "type": "truth",
+      "level": "normal",
+      "title": "奇怪习惯",
+      "content": "说一个你无伤大雅的小习惯。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "分享",
+        "破冰"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_020",
+      "pack": "party_fun",
+      "type": "perform",
+      "level": "spicy",
+      "title": "夸张求救",
+      "content": "用夸张语气说：“塔台塔台，我需要一杯奶茶！”",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "表演",
+        "刺激"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_021",
+      "pack": "party_fun",
+      "type": "vote",
+      "level": "normal",
+      "title": "最佳乘客",
+      "content": "大家投票：谁看起来最像头等舱乘客？",
+      "players": "all",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "投票",
+        "搞笑"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_022",
+      "pack": "party_fun",
+      "type": "dare",
+      "level": "normal",
+      "title": "三秒舞步",
+      "content": "即兴跳 3 秒庆祝舞。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "动作",
+        "氛围"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_023",
+      "pack": "party_fun",
+      "type": "social",
+      "level": "normal",
+      "title": "互夸接力",
+      "content": "你夸一位玩家，被夸的人再夸下一位。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "互动",
+        "正向"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_024",
+      "pack": "party_fun",
+      "type": "perform",
+      "level": "normal",
+      "title": "新闻播报",
+      "content": "用新闻播报语气报道当前棋局。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "表演",
+        "搞笑"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_025",
+      "pack": "party_fun",
+      "type": "truth",
+      "level": "normal",
+      "title": "最想交换",
+      "content": "你最想和现场谁交换一天生活？说理由。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "聊天",
+        "互动"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_026",
+      "pack": "party_fun",
+      "type": "mini_game",
+      "level": "normal",
+      "title": "押韵挑战",
+      "content": "用“飞”字结尾说一句押韵口号。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "小游戏",
+        "创意"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_027",
+      "pack": "party_fun",
+      "type": "dare",
+      "level": "spicy",
+      "title": "严肃搞笑",
+      "content": "严肃地讲一句最不像真的人生格言。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "表演",
+        "刺激"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_028",
+      "pack": "party_fun",
+      "type": "social",
+      "level": "normal",
+      "title": "任务导演",
+      "content": "指定一位玩家给你这回合表现打分，满分 10 分。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "互动",
+        "评分"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_029",
+      "pack": "party_fun",
+      "type": "choice",
+      "level": "normal",
+      "title": "变身一天",
+      "content": "如果能变成一种交通工具，你选什么？",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "选择",
+        "想象"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "party_fun_030",
+      "pack": "party_fun",
+      "type": "perform",
+      "level": "normal",
+      "title": "退场动作",
+      "content": "设计一个你的专属退场动作。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "表演",
+        "创意"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "couple_light_001",
+      "pack": "couple_light",
+      "type": "truth",
+      "level": "easy",
+      "title": "可爱瞬间",
+      "content": "说出对方今天或最近最可爱的一个瞬间。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "情侣",
+        "夸赞"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "couple_light_002",
+      "pack": "couple_light",
+      "type": "choice",
+      "level": "easy",
+      "title": "旅行地点",
+      "content": "如果一起旅行，你最想去海边还是城市？",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "情侣",
+        "选择"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "couple_light_003",
+      "pack": "couple_light",
+      "type": "social",
+      "level": "easy",
+      "title": "专属称号",
+      "content": "给对方取一个 10 秒内想到的飞行员称号。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "情侣",
+        "命名"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "couple_light_004",
+      "pack": "couple_light",
+      "type": "truth",
+      "level": "easy",
+      "title": "第一印象",
+      "content": "说出你对对方的一个第一印象。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "情侣",
+        "回忆"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "couple_light_005",
+      "pack": "couple_light",
+      "type": "dare",
+      "level": "easy",
+      "title": "比心起飞",
+      "content": "对对方比一个起飞爱心。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "情侣",
+        "动作"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "couple_light_006",
+      "pack": "couple_light",
+      "type": "truth",
+      "level": "normal",
+      "title": "心动细节",
+      "content": "说一个让你觉得对方加分的小细节。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "情侣",
+        "分享"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "couple_light_007",
+      "pack": "couple_light",
+      "type": "choice",
+      "level": "easy",
+      "title": "宅家出门",
+      "content": "约会你更喜欢宅家还是出门？",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "情侣",
+        "选择"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "couple_light_008",
+      "pack": "couple_light",
+      "type": "social",
+      "level": "normal",
+      "title": "三词夸夸",
+      "content": "用三个词夸对方。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "情侣",
+        "夸赞"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "couple_light_009",
+      "pack": "couple_light",
+      "type": "truth",
+      "level": "normal",
+      "title": "想完成的事",
+      "content": "说一件想和对方一起完成的小事。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "情侣",
+        "计划"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "couple_light_010",
+      "pack": "couple_light",
+      "type": "perform",
+      "level": "easy",
+      "title": "偶像剧台词",
+      "content": "用偶像剧语气说：“我们的航班不会延误。”",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "情侣",
+        "表演"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "couple_light_011",
+      "pack": "couple_light",
+      "type": "mini_game",
+      "level": "normal",
+      "title": "默契颜色",
+      "content": "同时说一种颜色，一样则两人都获得掌声。",
+      "players": "all",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "情侣",
+        "默契"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "couple_light_012",
+      "pack": "couple_light",
+      "type": "truth",
+      "level": "normal",
+      "title": "安全感",
+      "content": "说一件对方做过让你有安全感的事。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "情侣",
+        "情绪"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "couple_light_013",
+      "pack": "couple_light",
+      "type": "social",
+      "level": "easy",
+      "title": "今日夸奖",
+      "content": "给对方一个今日限定夸奖。",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "情侣",
+        "夸赞"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "couple_light_014",
+      "pack": "couple_light",
+      "type": "choice",
+      "level": "normal",
+      "title": "礼物偏好",
+      "content": "你更喜欢惊喜礼物还是实用礼物？",
+      "players": "current",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "情侣",
+        "选择"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "couple_light_015",
+      "pack": "couple_light",
+      "type": "dare",
+      "level": "normal",
+      "title": "合拍动作",
+      "content": "两人一起做一个起飞动作，保持 3 秒；不方便可改为同时比心。",
+      "players": "all",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "情侣",
+        "互动"
+      ],
+      "safeForFamily": false,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_001",
+      "pack": "king",
+      "type": "king",
+      "level": "easy",
+      "title": "指定夸夸",
+      "content": "指定一名玩家夸另一名玩家一句。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_002",
+      "pack": "king",
+      "type": "king",
+      "level": "easy",
+      "title": "好运咒语",
+      "content": "指定下一位玩家掷骰前说一句好运咒语。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_003",
+      "pack": "king",
+      "type": "king",
+      "level": "easy",
+      "title": "称号授予",
+      "content": "给任意一名玩家授予一个本局称号。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_004",
+      "pack": "king",
+      "type": "king",
+      "level": "easy",
+      "title": "掌声时刻",
+      "content": "指定一名玩家接受全场 3 秒掌声。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_005",
+      "pack": "king",
+      "type": "king",
+      "level": "easy",
+      "title": "好友助攻",
+      "content": "指定一名玩家给你下一次任务提供一句友好建议。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_006",
+      "pack": "king",
+      "type": "king",
+      "level": "normal",
+      "title": "机长命令",
+      "content": "指定一名玩家用机长腔说一句话。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_007",
+      "pack": "king",
+      "type": "king",
+      "level": "easy",
+      "title": "鼓励补给",
+      "content": "获得全场一句鼓励后，继续完成当前任务。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_008",
+      "pack": "king",
+      "type": "king",
+      "level": "normal",
+      "title": "采访时间",
+      "content": "指定一名玩家回答一个轻松问题。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_009",
+      "pack": "king",
+      "type": "king",
+      "level": "easy",
+      "title": "祝福卡",
+      "content": "给一名玩家送出一句好运祝福。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_010",
+      "pack": "king",
+      "type": "king",
+      "level": "normal",
+      "title": "表情指定",
+      "content": "指定一名玩家做一个你说的表情。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_011",
+      "pack": "king",
+      "type": "king",
+      "level": "normal",
+      "title": "航班改名",
+      "content": "把本局航班改一个搞笑名字。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_012",
+      "pack": "king",
+      "type": "king",
+      "level": "easy",
+      "title": "全员击掌",
+      "content": "全员依次击掌一次。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_013",
+      "pack": "king",
+      "type": "king",
+      "level": "normal",
+      "title": "投票发起",
+      "content": "发起一个友好投票问题，由大家投票。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_014",
+      "pack": "king",
+      "type": "king",
+      "level": "normal",
+      "title": "双人配合",
+      "content": "指定两名玩家一起喊一句起飞口号。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_015",
+      "pack": "king",
+      "type": "king",
+      "level": "easy",
+      "title": "夸自己",
+      "content": "当前玩家必须夸自己一个优点。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_016",
+      "pack": "king",
+      "type": "king",
+      "level": "normal",
+      "title": "解说员",
+      "content": "指定一名玩家当下一轮临时解说员。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_017",
+      "pack": "king",
+      "type": "king",
+      "level": "easy",
+      "title": "微笑命令",
+      "content": "指定一名玩家保持微笑 5 秒。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_018",
+      "pack": "king",
+      "type": "king",
+      "level": "normal",
+      "title": "台词卡",
+      "content": "指定一名玩家用夸张语气读出一句台词。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_019",
+      "pack": "king",
+      "type": "king",
+      "level": "easy",
+      "title": "幸运传递",
+      "content": "把“幸运飞行员”称号传给任意玩家。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": "king_020",
+      "pack": "king",
+      "type": "king",
+      "level": "normal",
+      "title": "国王姿势",
+      "content": "全员摆一个合照姿势即可，不需要真的拍照。",
+      "players": "chosen",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "tags": [
+        "国王卡",
+        "互动"
+      ],
+      "safeForFamily": true,
+      "requiresAdult": false,
+      "version": "2.3.0",
+      "review": {
+        "safety": "pass",
+        "playability": "pass",
+        "fun": "pass",
+        "status": "PASS"
+      }
+    }
+  ]
+}

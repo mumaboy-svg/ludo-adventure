@@ -21,3 +21,6 @@ backups/
 
 # Local-only backups of nested Git metadata.
 archive/local-git-backups/
+
+# Agent-to-agent coordination scratch (Claude <-> Codex); not part of the product.
+AGENT_CHANNEL.md

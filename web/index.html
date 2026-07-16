@@ -116,6 +116,74 @@
             background: linear-gradient(180deg, #fff, #ffe4a6); color: #6a3b12; box-shadow: 0 6px 0 #d99a3b, 0 10px 16px #5b2b0b20, inset 0 2px 0 #fff8;
         }
         .task-center.active .actions .warn { box-shadow: 0 6px 0 #a83a22, 0 10px 16px #5b2b0b20, inset 0 2px 0 #fff8; }
+        .task-pack-panel {
+            margin-top: 14px; padding: 13px; border-radius: 20px;
+            background: linear-gradient(135deg, #fffdf0cf, #eaf7ffcf); border: 1px solid #ffffffd6;
+            box-shadow: inset 0 1px 0 #fff, 0 8px 18px #6b44161a;
+        }
+        .task-pack-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+        .task-pack-head h3 { margin: 0; color: #4d3115; }
+        .task-pack-head .hint, .task-pack-panel .hint { margin: 4px 0 0; font-weight: 800; }
+        .task-mode-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+        .task-mode-button {
+            min-height: 66px; padding: 8px; border-radius: 16px; background: #ffffffc7; color: #553917;
+            border: 2px solid #fff; box-shadow: 0 5px 12px #7a4a1512; font-size: 14px;
+        }
+        .task-mode-button span { display: block; margin-bottom: 3px; font-size: 21px; }
+        .task-mode-button.is-active { background: linear-gradient(180deg, #fff7a8, #ffc95c); border-color: #fff7d0; color: #633608; box-shadow: 0 5px 0 #d18a25, 0 9px 15px #7a4a1524; }
+        .task-editor-card.is-hidden { display: none; }
+        .task-mode-status {
+            display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px;
+        }
+        .task-mode-status-item {
+            min-width: 0; padding: 9px 10px; border-radius: 14px; text-align: center;
+            background: #ffffffb8; border: 1px solid #fff; box-shadow: inset 0 1px 0 #fff, 0 5px 12px #7a4a1512;
+        }
+        .task-mode-status-item b { display: block; color: #4d3115; font-size: 14px; line-height: 1.25; }
+        .task-mode-status-item span { display: block; margin-top: 2px; color: #806344; font-size: 11px; font-weight: 800; }
+        .task-center-launch { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; margin-top: 14px; }
+        .task-center-launch-copy { min-width: 0; color: #6f4b22; font-size: 12px; font-weight: 800; }
+        .task-center-launch-copy strong { display: block; margin-bottom: 2px; color: #4d3115; font-size: 14px; }
+        .task-center-start-button { min-width: 138px; min-height: 46px; border-radius: 999px; }
+        .task-center-start-button:disabled { filter: grayscale(.45); opacity: .62; cursor: not-allowed; transform: none; box-shadow: 0 4px 0 #a99272, 0 7px 12px #5b2b0b1c; }
+        .task-book-card { border: 2px solid #fff9 !important; box-shadow: 0 18px 38px #57330d24, inset 0 1px 0 #fff !important; }
+        .task-book-card::after {
+            content: ""; position: absolute; left: 10px; top: 24px; bottom: 24px; width: 5px; border-radius: 999px;
+            background: repeating-linear-gradient(180deg, #d89037 0 10px, #fff2bd 10px 18px); box-shadow: 1px 0 0 #a86423;
+        }
+        .task-book-card > * { margin-left: 8px; }
+        .task-book-eyebrow {
+            display: inline-flex; align-items: center; gap: 6px; margin-bottom: 4px; padding: 4px 9px; border-radius: 999px;
+            background: linear-gradient(180deg, #9d6df0, #7042bd); color: #fff; font-size: 11px; font-weight: 900;
+            letter-spacing: .08em; box-shadow: 0 3px 0 #57318f, 0 5px 10px #4c23752d;
+        }
+        .task-center.active .stat-grid { gap: 10px; margin-top: 12px; }
+        .task-center.active .stat { position: relative; overflow: hidden; padding: 12px 10px 11px 44px; text-align: left; }
+        .task-center.active .stat::before {
+            content: "🎴"; position: absolute; left: 13px; top: 50%; transform: translateY(-50%); font-size: 22px;
+            filter: drop-shadow(0 2px 1px #fff);
+        }
+        .task-center.active .stat + .stat::before { content: "✨"; }
+        .task-center.active .stat b { font-size: 20px; color: #5c3510; }
+        .task-pack-panel { position: relative; overflow: hidden; }
+        .task-pack-panel::after {
+            content: "TASK BOOK"; position: absolute; right: -10px; top: 8px; color: #9b6b2b13; font-size: 30px; font-weight: 1000;
+            transform: rotate(5deg); pointer-events: none;
+        }
+        .task-pack-head::before { content: "📚"; display: grid; place-items: center; flex: 0 0 42px; height: 42px; border-radius: 14px; background: linear-gradient(145deg,#fff,#ffd873); box-shadow: 0 5px 0 #d79533; font-size: 22px; }
+        .task-mode-button { position: relative; overflow: hidden; transition: transform .16s ease, filter .16s ease, box-shadow .16s ease; }
+        .task-mode-button::after { content: ""; position: absolute; inset: 0; background: linear-gradient(120deg, transparent 15%, #fff7 45%, transparent 65%); transform: translateX(-120%); transition: transform .35s ease; }
+        .task-mode-button:hover::after { transform: translateX(120%); }
+        .task-mode-button:hover { transform: translateY(-2px); filter: saturate(1.08); }
+        .task-mode-button.is-active::before { content: "已启用"; position: absolute; right: 5px; top: 5px; padding: 2px 6px; border-radius: 999px; background: #7550c7; color: #fff; font-size: 9px; box-shadow: 0 2px 0 #4d2b91; }
+        .task-editor-card > h2 { display: flex; align-items: center; gap: 8px; }
+        .task-editor-card > h2::before { content: "🗂️"; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 13px; background: linear-gradient(145deg,#fff,#ffd46a); box-shadow: 0 4px 0 #d58c2a; font-size: 20px; }
+        .task-editor-card details { border-left: 5px solid #d79335 !important; }
+        .task-editor-card details:nth-of-type(2n) { border-left-color: #7c5ad0 !important; }
+        .task-tool-actions { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+        .task-tool-actions button { min-height: 48px; padding: 8px 6px !important; box-shadow: 0 5px 0 #b8671a, 0 8px 12px #5b2b0b20, inset 0 2px 0 #fff8 !important; }
+        .task-tool-actions .secondary { box-shadow: 0 5px 0 #d99a3b, 0 8px 12px #5b2b0b20, inset 0 2px 0 #fff8 !important; }
+        .game { display: none; }
         .game { display: none; }
         .game.active {
             min-height: calc(100svh - 90px); padding: 18px; border-radius: 30px;
@@ -224,6 +292,60 @@
             border-color: #fff8d4; box-shadow: 0 22px 42px #6540142b, inset 0 0 0 8px #ffffff82;
         }
         .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .sound-setting {
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            margin-top: 14px; padding: 13px 14px; border-radius: 18px;
+            background: linear-gradient(135deg, #fffdf0e8, #eaf7ffe8); border: 1px solid #fff;
+            box-shadow: inset 0 1px 0 #fff, 0 7px 16px #5b3a1617;
+        }
+        .sound-setting strong { display: block; color: #49321c; font-size: 15px; }
+        .sound-setting small { display: block; margin-top: 2px; color: #806344; font-size: 11px; font-weight: 800; }
+        .settings-section {
+            margin-top: 14px; padding: 14px; border-radius: 20px;
+            background: linear-gradient(135deg, #fffdf0d9, #eef8ffd9); border: 1px solid #ffffffd9;
+            box-shadow: inset 0 1px 0 #fff, 0 8px 18px #6b441618;
+        }
+        .settings-section:first-of-type { margin-top: 0; }
+        .settings-section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; }
+        .settings-section-icon {
+            width: 38px; height: 38px; display: grid; place-items: center; flex: 0 0 auto;
+            border-radius: 13px; background: linear-gradient(180deg, #fff, #ffe29a);
+            box-shadow: inset 0 1px 0 #fff, 0 5px 10px #6b44161f; font-size: 20px;
+        }
+        .settings-section-head h3 { margin: 0; color: #4d3115; font-size: 17px; }
+        .settings-section-head p { margin: 2px 0 0; color: #806344; font-size: 11px; font-weight: 800; }
+        .settings-note {
+            display: flex; align-items: center; gap: 10px; padding: 11px 12px; border-radius: 16px;
+            background: #ffffffa8; color: #684b2d; font-size: 12px; font-weight: 850;
+        }
+        .danger-zone {
+            margin-top: 12px; padding: 12px; border-radius: 17px;
+            background: linear-gradient(135deg, #fff4f1e8, #ffd9d2e8); border: 1px solid #ffb7aa;
+            box-shadow: inset 0 1px 0 #fff, 0 7px 15px #8f27151c;
+        }
+        .danger-zone strong { display: block; color: #8f2e22; }
+        .danger-zone p { margin: 3px 0 9px; color: #9b5047; font-size: 11px; font-weight: 800; }
+        .danger-zone .warn { width: 100%; background: linear-gradient(180deg, #ff8978, #d94635); box-shadow: 0 5px 0 #a52d21, 0 8px 14px #701d1628, inset 0 2px 0 #fff7; }
+        .music-toggle {
+            position: relative; width: 76px; min-width: 76px; height: 38px; min-height: 38px; padding: 0;
+            border-radius: 999px; overflow: hidden; color: transparent; font-size: 0;
+            background: linear-gradient(#77dc8c, #36ad58); border: 2px solid #fff;
+            box-shadow: 0 4px 0 #218940, 0 7px 12px #164f2928, inset 0 2px 0 #ffffff80;
+        }
+        .music-toggle::before {
+            content: "开"; position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+            color: #fff; font-size: 12px; font-weight: 1000;
+        }
+        .music-toggle::after {
+            content: ""; position: absolute; width: 28px; height: 28px; right: 3px; top: 3px;
+            border-radius: 50%; background: linear-gradient(180deg, #fff, #fff2d5);
+            box-shadow: 0 3px 7px #1f4f2c4d; transition: transform .18s ease;
+        }
+        .music-toggle[aria-pressed="false"] {
+            background: linear-gradient(#c8c8c8, #8d9298); box-shadow: 0 4px 0 #686d72, 0 7px 12px #26313d20, inset 0 2px 0 #fff8;
+        }
+        .music-toggle[aria-pressed="false"]::before { content: "关"; left: auto; right: 13px; }
+        .music-toggle[aria-pressed="false"]::after { right: 3px; transform: translateX(-38px); }
         .player-row {
             display: grid; grid-template-columns: 1fr 112px 42px; gap: 8px; margin-bottom: 9px;
             padding: 9px; border-radius: 18px; background: linear-gradient(135deg, #ffffffc9, #ffe9a8c9);
@@ -246,14 +368,47 @@
         .task-grid label { color: var(--muted); font-size: 12px; font-weight: 900; }
 
         .board-wrap {
+            --turn-color: #f0ad2f;
+            --turn-glow: rgba(240, 173, 47, .32);
+            position: relative; isolation: isolate;
             width: min(96vw, 760px); max-width: 100%; margin: auto; padding: clamp(8px, 1.6vw, 18px);
-            border-radius: 34px; background: linear-gradient(145deg, #fff8d9, #ffc65f);
-            box-shadow: inset 0 0 0 4px #fff7, 0 12px 28px #7a4a1426;
-            transform-origin: center center; transition: transform .45s ease, box-shadow .45s ease;
+            border: 2px solid #754319;
+            border-radius: 34px;
+            background:
+                linear-gradient(90deg, transparent 5%, #ffffff75 18%, transparent 35% 70%, #5e2f1430 92%),
+                linear-gradient(145deg, #f7cf7b 0%, #c87931 48%, #7f3f1e 100%);
+            box-shadow:
+                inset 0 0 0 3px #ffeeb0,
+                inset 0 0 0 7px #8c4b24,
+                inset 0 12px 18px #fff5c552,
+                inset 0 -12px 18px #5f2c1838,
+                0 9px 0 #673519,
+                0 16px 0 #432411,
+                0 24px 34px #38200d55,
+                0 0 24px var(--turn-glow);
+            transform-origin: center center;
+            transition: transform .45s ease, box-shadow .45s ease, filter .35s ease;
+        }
+        .board-wrap::before {
+            content: "当前回合";
+            position: absolute; z-index: 2; left: 13%; right: 13%; top: -6px; height: 7px;
+            border-radius: 0 0 999px 999px;
+            background: linear-gradient(90deg, transparent, var(--turn-color) 18% 82%, transparent);
+            box-shadow: 0 0 8px var(--turn-color), 0 0 18px var(--turn-glow);
+            color: transparent; font-size: 0; pointer-events: none;
+        }
+        .board-wrap::after {
+            content: "";
+            position: absolute; z-index: -1; left: 7%; right: 7%; bottom: -24px; height: 26px;
+            border-radius: 50%; background: #321a0c66; filter: blur(9px); pointer-events: none;
         }
         .board-wrap.flight-focus {
             transform: scale(1.045);
-            box-shadow: inset 0 0 0 4px #fff7, 0 18px 38px #7a4a1438, 0 0 0 9999px #00000010;
+            box-shadow:
+                inset 0 0 0 3px #ffeeb0, inset 0 0 0 7px #8c4b24,
+                inset 0 12px 18px #fff5c552, inset 0 -12px 18px #5f2c1838,
+                0 9px 0 #673519, 0 16px 0 #432411, 0 28px 42px #38200d66,
+                0 0 34px var(--turn-glow), 0 0 0 9999px #00000010;
             z-index: 5; position: relative;
         }
         .board-wrap.flight-focus .board {
@@ -268,7 +423,8 @@
         }
         .board.preview-board {
             background: url('./assets/images/ui/board_traditional_preview.webp') center / contain no-repeat;
-            border: 0; border-radius: 18px; overflow: visible; box-shadow: 0 18px 38px #0003, 0 0 0 8px #fff8;
+            border: 0; border-radius: 18px; overflow: visible;
+            box-shadow: 0 10px 22px #2f170b4d, 0 0 0 3px #fff7, 0 0 0 7px #4f2c1970;
         }
         .board.preview-board::before,
         .board.preview-board .base-panel,
@@ -553,31 +709,64 @@
         }
         .game-tools button:hover { transform: translateY(-1px); background: #fff; }
         .game-tools .warn { background: #fff0ec; color: #9d2f18; }
-        .players { display: grid; gap: 8px; max-height: 330px; overflow: auto; }
+        .players-panel { overflow: hidden; }
+        .players-panel .panel-title { margin-bottom: 12px; }
+        .players-panel .panel-title-meta {
+            margin-left: auto; flex: 0 0 auto; padding: .28rem .5rem; border-radius: 999px;
+            background: #fff9; color: #70420f; font-size: 11px; font-weight: 1000;
+            box-shadow: inset 0 1px 0 #fff, 0 4px 8px #7a4a1516;
+        }
+        .players-panel .panel-title::after { display: none; }
+        .players { display: grid; gap: 10px; max-height: 350px; overflow-y: auto; overflow-x: hidden; padding: 3px 5px 8px 3px; scrollbar-width: thin; }
         .player-card {
             --player-color: #ffcf4a;
-            display: grid; grid-template-columns: 46px 1fr auto; align-items: center; gap: 10px;
-            background: linear-gradient(135deg, #ffffffd9, #fff0c5d9); border: 1px solid #ffffffd9; border-radius: 18px; padding: .72rem;
-            box-shadow: 0 8px 16px #6b44161a; position: relative; overflow: hidden;
+            --progress: 0%;
+            isolation: isolate;
+            display: grid; grid-template-columns: 50px minmax(0, 1fr) auto; align-items: center; gap: 11px;
+            background: linear-gradient(135deg, #ffffffef, #fff1cce8); border: 2px solid #ffffffdc; border-radius: 20px; padding: .72rem .76rem;
+            box-shadow: inset 0 1px 0 #fff, 0 9px 18px #6b44161a; position: relative; overflow: hidden;
+            transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
         }
-        .player-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 6px; background: var(--player-color); box-shadow: 0 0 18px var(--player-color); }
-        .player-card.current { border-color: var(--player-color); box-shadow: 0 0 0 3px color-mix(in srgb, var(--player-color) 38%, transparent), 0 10px 22px #6b441626; background: linear-gradient(135deg, #fff7b4, #ffffffd9); }
-        .player-card.done { background: linear-gradient(135deg, #e9ffe9, #ffffffd9); }
+        .player-card::before { content: ""; position: absolute; z-index: -1; inset: 0 auto 0 0; width: 7px; background: var(--player-color); box-shadow: 0 0 20px var(--player-color); }
+        .player-card::after {
+            content: ""; position: absolute; z-index: -1; right: -26px; top: -30px; width: 116px; height: 116px; border-radius: 50%;
+            background: radial-gradient(circle, color-mix(in srgb, var(--player-color) 26%, transparent), transparent 68%); opacity: .8;
+        }
+        .player-card:hover { transform: translateY(-1px); box-shadow: inset 0 1px 0 #fff, 0 12px 22px #6b441626; }
+        .player-card.current {
+            border-color: color-mix(in srgb, var(--player-color) 74%, #fff); transform: translateY(-1px);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--player-color) 30%, transparent), 0 0 22px color-mix(in srgb, var(--player-color) 28%, transparent), 0 12px 24px #6b44162b;
+            background: linear-gradient(135deg, color-mix(in srgb, var(--player-color) 17%, #fff), #fffdf1ed);
+        }
+        .player-card.current .player-avatar { animation: activeAvatar 1.25s ease-in-out infinite alternate; }
+        .player-card.done { background: linear-gradient(135deg, #e7ffe8f2, #fffdf2e8); }
         .player-avatar {
-            width: 42px; height: 42px; border-radius: 16px; display: grid; place-items: center;
-            background: radial-gradient(circle at 35% 25%, #fff, var(--player-color));
-            box-shadow: inset 0 2px 0 #fff9, 0 8px 14px #0002;
+            width: 46px; height: 46px; border-radius: 17px; display: grid; place-items: center; position: relative;
+            background: radial-gradient(circle at 35% 25%, #fff 0 18%, color-mix(in srgb, var(--player-color) 48%, #fff) 46%, var(--player-color));
+            border: 2px solid #fff; box-shadow: inset 0 2px 0 #fff9, 0 8px 14px #0002, 0 0 0 2px color-mix(in srgb, var(--player-color) 34%, transparent);
         }
-        .player-avatar img { width: 32px; height: 32px; object-fit: contain; filter: drop-shadow(0 4px 4px #0004); }
+        .player-avatar img { width: 35px; height: 35px; object-fit: contain; filter: drop-shadow(0 4px 4px #0004); }
         .player-info { min-width: 0; }
-        .pname { font-weight: 1000; }
-        .psub { font-size: 12px; color: var(--muted); margin-top: 2px; }
-        .player-progress {
-            height: 8px; border-radius: 999px; background: #ffffffa8; overflow: hidden;
-            margin-top: 7px; box-shadow: inset 0 1px 3px #0002;
+        .player-heading { display: flex; align-items: center; gap: 6px; min-width: 0; }
+        .pname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 1000; color: #352518; }
+        .turn-chip, .rank-chip {
+            flex: 0 0 auto; border-radius: 999px; padding: .18rem .4rem; font-size: 10px; font-weight: 1000; line-height: 1.2;
+            border: 1px solid #fff; box-shadow: inset 0 1px 0 #fff9, 0 3px 7px #0001;
         }
-        .player-progress i { display: block; height: 100%; width: var(--progress, 0%); border-radius: inherit; background: linear-gradient(90deg, var(--player-color), #fff06a); box-shadow: 0 0 10px var(--player-color); }
-        .progress-pill { justify-self: end; border-radius: 999px; padding: .38rem .58rem; font-size: 12px; font-weight: 1000; background: #fff8; color: #4b3219; box-shadow: inset 0 1px 0 #fff, 0 5px 10px #0001; }
+        .turn-chip { background: var(--player-color); color: #fff; text-shadow: 0 1px 2px #0005; }
+        .rank-chip { background: #e9ffe9; color: #26713a; }
+        .psub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: #76593b; font-weight: 800; margin-top: 3px; }
+        .progress-line { display: flex; align-items: center; gap: 7px; margin-top: 7px; }
+        .player-progress {
+            position: relative; flex: 1; height: 9px; border-radius: 999px; background: #9a6d321f; overflow: hidden;
+            box-shadow: inset 0 1px 3px #0002, 0 1px 0 #fff;
+        }
+        .player-progress::after { content: ""; position: absolute; inset: 1px 0 auto; height: 2px; background: #ffffff91; }
+        .player-progress i { display: block; height: 100%; width: var(--progress); border-radius: inherit; background: linear-gradient(90deg, var(--player-color), color-mix(in srgb, var(--player-color) 45%, #fff)); box-shadow: 0 0 10px var(--player-color); transition: width .35s ease; }
+        .progress-percent { min-width: 30px; text-align: right; color: #6d4a29; font-size: 10px; font-weight: 1000; }
+        .progress-pill { justify-self: end; min-width: 52px; text-align: center; border-radius: 999px; padding: .4rem .54rem; font-size: 11px; font-weight: 1000; background: #fff9; color: #4b3219; border: 1px solid #fff; box-shadow: inset 0 1px 0 #fff, 0 5px 10px #0001; }
+        .player-card.current .progress-pill { background: var(--player-color); color: #fff; text-shadow: 0 1px 2px #0005; }
+        @keyframes activeAvatar { to { transform: translateY(-2px) scale(1.04); filter: brightness(1.08); } }
         .log {
             height: 220px; overflow: auto; display: grid; align-content: start; gap: 7px;
             background: linear-gradient(180deg, #fff8de, #f6dca8); color: #523216;
@@ -585,37 +774,56 @@
             font: 12px/1.45 ui-rounded, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             box-shadow: inset 0 2px 8px #7a4a151f, 0 8px 16px #6b44161a;
         }
-        .log p {
-            --event-color: #d19a36;
-            position: relative; margin: 0; padding: 8px 10px 8px 34px;
-            border-radius: 15px; background: #fffdf0d9; border: 1px solid #fff9;
-            box-shadow: 0 5px 10px #7a4a1514; font-weight: 800;
+        .event-bubble {
+            --event-color: #d19a36; --event-ink: #684827;
+            position: relative; margin: 0; padding: 8px 10px 9px 38px;
+            border-radius: 15px; background: #fffdf0e8; border: 1px solid #fff;
+            box-shadow: 0 5px 10px #7a4a1514; color: var(--event-ink);
+            overflow-wrap: anywhere;
         }
-        .log p::before {
-            content: "📜"; position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
-            width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%;
+        .event-bubble.latest {
+            border-color: color-mix(in srgb, var(--event-color) 68%, #fff);
+            box-shadow: 0 6px 14px #7a4a1524, 0 0 0 2px color-mix(in srgb, var(--event-color) 18%, transparent);
+        }
+        .event-icon {
+            position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+            width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%;
             background: color-mix(in srgb, var(--event-color) 26%, #fff); box-shadow: 0 0 0 2px #fff, 0 3px 6px #0001;
             font-size: 12px;
         }
-        .log p.hot { --event-color: #ffb72b; color: #7d3f00; }
-        .log p.hot::before { content: "🎲"; }
-        .log p.good { --event-color: #35ce66; color: #165b27; }
-        .log p.good::before { content: "✨"; }
-        .log p.bad { --event-color: #ff6b58; color: #7c2017; }
-        .log p.bad::before { content: "⚠️"; }
-        .log p.task { --event-color: #4db2ff; color: #164e79; }
-        .log p.task::before { content: "🎯"; }
+        .event-content { display: grid; gap: 3px; min-width: 0; }
+        .event-head { display: flex; align-items: center; gap: 6px; min-width: 0; }
+        .event-tag {
+            padding: 1px 6px; border-radius: 999px; background: color-mix(in srgb, var(--event-color) 20%, #fff);
+            color: var(--event-ink); font-size: 9px; line-height: 1.5; font-weight: 1000;
+        }
+        .event-time { margin-left: auto; color: #8a6e4d; font-size: 9px; font-weight: 800; white-space: nowrap; }
+        .event-latest { color: #9c5b00; font-size: 9px; font-weight: 1000; }
+        .event-text { font-size: 11px; line-height: 1.4; font-weight: 800; }
+        .event-roll { --event-color: #ffb72b; --event-ink: #7d3f00; }
+        .event-move { --event-color: #35ce66; --event-ink: #165b27; }
+        .event-reward { --event-color: #7bd85d; --event-ink: #286326; }
+        .event-warning { --event-color: #ff6b58; --event-ink: #7c2017; }
+        .event-task { --event-color: #4db2ff; --event-ink: #164e79; }
+        .event-king { --event-color: #a875e9; --event-ink: #54237e; }
+        .event-system { --event-color: #d19a36; --event-ink: #684827; }
         .modal-bg {
             position: fixed; inset: 0; display: none; place-items: center;
-            background: #0008; z-index: 99; padding: 16px;
+            background: radial-gradient(circle at 50% 42%, #39230a33, #120b07c7 74%);
+            backdrop-filter: blur(3px); z-index: 99; padding: 16px;
+            opacity: 0; transition: opacity .18s ease;
         }
+        .modal-bg.open { opacity: 1; }
         .modal {
             width: min(92vw, 560px); aspect-ratio: 1 / 1; border-radius: 0;
             padding: 0;
             background: url('./assets/images/ui/modal_task_card.webp') center / contain no-repeat;
             box-shadow: none;
             color: #4d2b18; position: relative; overflow: hidden;
+            transform: translateY(18px) scale(.94); opacity: 0;
+            transition: transform .2s cubic-bezier(.2,.9,.25,1.18), opacity .16s ease;
         }
+        .modal-bg.open .modal { transform: translateY(0) scale(1); opacity: 1; }
         .modal.king-card { background-image: url('./assets/images/ui/modal_king_card.webp'); color: #4a260e; }
         .modal::before {
             content: ""; position: absolute; inset: 0; pointer-events: none;
@@ -640,12 +848,21 @@
             min-height: 42px; padding: .62rem .8rem; font-size: 14px;
             box-shadow: 0 10px 20px #5c2e1230;
         }
+        .modal .modal-close {
+            left: auto; right: 16.5%; top: 14.5%; bottom: auto; width: 38px; min-height: 38px; padding: 0;
+            display: grid; place-items: center; border-radius: 50%; border: 2px solid #fff9;
+            background: linear-gradient(#fffdf3, #f7cf86); color: #6b3e1a; font-size: 24px; line-height: 1;
+            box-shadow: 0 6px 14px #4f2b1838, inset 0 2px 0 #fff;
+        }
+        .modal .modal-close:hover { filter: brightness(1.06); transform: translateY(-1px); }
+        .modal .modal-close:active { transform: translateY(1px) scale(.96); }
         @media(max-width: 560px) {
             .modal {
                 width: min(94vw, 390px); border-radius: 0;
             }
             .modal pre { left: 22%; right: 22%; top: 39%; bottom: 28%; font-size: clamp(15px, 4.7vw, 20px); }
             .modal button { left: 31%; right: 31%; bottom: 14.5%; min-height: 38px; font-size: 12px; }
+            .modal .modal-close { left: auto; right: 14.5%; top: 14%; bottom: auto; width: 34px; min-height: 34px; font-size: 21px; }
         }
         @media(max-width: 860px) {
             .home-hero, .setup, .task-center, .game-grid { grid-template-columns: 1fr; }
@@ -711,9 +928,22 @@
             .home-bottom .stat b { font-size: 18px; }
             .home-bottom .stat span { font-size: 11px; }
             .task-grid { grid-template-columns: 1fr; }
+            .task-mode-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .task-mode-status { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+            .task-mode-status-item { padding: 7px 5px; }
+            .task-center-launch { grid-template-columns: 1fr; }
+            .task-center-start-button { width: 100%; }
+            .task-tool-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .task-book-card > * { margin-left: 5px; }
             .setup.active .page-head, .task-center.active .page-head { padding: 10px; border-radius: 18px; align-items: flex-start; }
             .setup.active .page-head h2, .task-center.active .page-head h2 { font-size: 20px; }
             .setup.active .page-head .hint, .task-center.active .page-head .hint { font-size: 12px; }
+            .settings-section { padding: 11px; border-radius: 17px; margin-top: 10px; }
+            .settings-section-head { margin-bottom: 8px; }
+            .settings-section-icon { width: 34px; height: 34px; border-radius: 11px; font-size: 18px; }
+            .settings-section-head h3 { font-size: 15px; }
+            .sound-setting { padding: 10px; margin-top: 0; }
+            .danger-zone { padding: 10px; }
             .player-row { grid-template-columns: 1fr 92px 38px; padding: 7px; border-radius: 15px; }
             .task-center.active details, .setup.active details { border-radius: 16px; padding: .62rem; }
             .task-center.active .actions button, .setup.active .actions button { min-height: 40px; box-shadow: 0 5px 0 #b8671a, 0 8px 12px #5b2b0b20, inset 0 2px 0 #fff8; }
@@ -722,8 +952,15 @@
             .game.active { min-height: 100svh; border-radius: 0; padding: 10px; box-shadow: none; }
             .game-grid { gap: 10px; }
             .game.active .game-grid > .card:first-child { padding: 8px; border-radius: 24px; }
-            .board-wrap { width: min(100%, 520px); padding: 7px; border-radius: 22px; }
-            .board.preview-board { border-radius: 12px; box-shadow: 0 10px 22px #0003, 0 0 0 4px #fff8; }
+            .board-wrap {
+                width: min(100%, 520px); padding: 7px; border-radius: 22px;
+                box-shadow: inset 0 0 0 2px #ffeeb0, inset 0 0 0 5px #8c4b24, inset 0 7px 12px #fff5c552,
+                    inset 0 -8px 12px #5f2c1838, 0 5px 0 #673519, 0 9px 0 #432411,
+                    0 14px 22px #38200d4d, 0 0 17px var(--turn-glow);
+            }
+            .board-wrap::before { top: -4px; height: 5px; }
+            .board-wrap::after { bottom: -14px; height: 18px; filter: blur(6px); }
+            .board.preview-board { border-radius: 12px; box-shadow: 0 7px 14px #2f170b42, 0 0 0 2px #fff7, 0 0 0 4px #4f2c1966; }
             .side { gap: 10px; }
             .side .card { border-radius: 20px; }
             .status { min-height: 70px; padding: 13px 5.8%; gap: 8px; align-items: center; }
@@ -737,21 +974,27 @@
             .roll-btn { height: 54px; font-size: 18px; margin-left: 3%; }
             .game-tools { justify-content: center; }
             .game-tools button { min-height: 30px; font-size: 11px; padding: .34rem .5rem; }
-            .players { max-height: 185px; }
+            .players { max-height: 202px; gap: 7px; padding: 2px 3px 5px 2px; }
             .panel-title { margin-bottom: 8px; padding: 7px 10px; border-radius: 15px; font-size: 14px; }
             .panel-title::before { width: 26px; height: 26px; border-radius: 10px; font-size: 15px; }
-            .player-card { padding: .55rem; border-radius: 15px; }
+            .player-card { grid-template-columns: 40px minmax(0, 1fr) auto; gap: 8px; padding: .48rem .52rem; border-radius: 15px; }
             .log { height: 140px; border-radius: 16px; gap: 6px; }
-            .log p { padding: 7px 8px 7px 31px; border-radius: 13px; }
+            .event-bubble { padding: 7px 8px 7px 34px; border-radius: 13px; }
+            .event-icon { left: 7px; width: 20px; height: 20px; }
+            .event-text { font-size: 10px; }
             .piece { min-width: 40px; transform-origin: center; }
             .piece-img { width: 28px; height: 28px; }
             .piece.current::before { left: 14px; top: 14px; width: 40px; height: 40px; }
             .piece-name { display: none; }
-            .player-card { grid-template-columns: 40px 1fr auto; gap: 8px; }
             .player-avatar { width: 36px; height: 36px; border-radius: 13px; }
             .player-avatar img { width: 28px; height: 28px; }
-            .psub { font-size: 11px; }
-            .progress-pill { font-size: 11px; padding: .3rem .44rem; }
+            .pname { font-size: 12px; }
+            .turn-chip, .rank-chip { font-size: 9px; padding: .14rem .3rem; }
+            .psub { font-size: 10px; margin-top: 1px; }
+            .progress-line { margin-top: 4px; gap: 5px; }
+            .player-progress { height: 7px; }
+            .progress-percent { min-width: 27px; font-size: 9px; }
+            .progress-pill { min-width: 44px; font-size: 10px; padding: .28rem .38rem; }
         }
         @media(max-width: 860px) and (max-height: 720px) {
             .home-hero { gap: 5px; padding-bottom: 8px; }
@@ -820,39 +1063,58 @@
         <div class="card">
             <div class="page-head">
                 <div>
-                    <h2>新游戏设置</h2>
-                    <p class="hint">2-16 人；每色最多 4 人。每人一枚棋子。</p>
+                    <h2>游戏设置</h2>
+                    <p class="hint">配置本局玩家与棋子颜色。</p>
                 </div>
                 <button class="secondary" id="setupBackHomeBtn">返回大厅</button>
             </div>
-            <div id="playersBox"></div>
-            <div class="chips" id="colorCounts"></div>
-            <div class="actions">
-                <button class="secondary" id="addPlayerBtn">+ 添加玩家</button>
-                <button id="startBtn">开始游戏</button>
-                <button class="secondary" id="setupTaskBtn">任务中心</button>
+            <div class="settings-section">
+                <div class="settings-section-head"><span class="settings-section-icon">🎮</span><div><h3>玩家与颜色</h3><p>2–16 人，每种颜色最多 4 位玩家</p></div></div>
+                <div id="playersBox"></div>
+                <div class="chips" id="colorCounts"></div>
+                <div class="actions">
+                    <button class="secondary" id="addPlayerBtn">+ 添加玩家</button>
+                    <button id="startBtn">开始游戏</button>
+                    <button class="secondary" id="setupTaskBtn">任务中心</button>
+                </div>
             </div>
         </div>
 
         <div class="card">
-            <h2>开始前检查</h2>
-            <p class="hint">开始游戏前建议确认任务库数量，避免进入棋盘后任务为空。</p>
-            <div class="stat-grid">
-                <div class="stat"><b id="setupTaskTotal">-</b><span>任务总数</span></div>
-                <div class="stat"><b id="setupSaveState">-</b><span>存档状态</span></div>
+            <div class="settings-section">
+                <div class="settings-section-head"><span class="settings-section-icon">🔊</span><div><h3>声音设置</h3><p>控制大厅与游戏中的背景音乐</p></div></div>
+                <div class="sound-setting">
+                    <div><strong>背景音乐</strong><small id="musicStatusText">进入游戏后循环播放</small></div>
+                    <button type="button" class="music-toggle" id="musicToggleBtn" aria-pressed="true" aria-label="背景音乐开关">音乐：开</button>
+                </div>
             </div>
-            <div class="actions">
-                <button class="secondary" id="setupContinueBtn">继续上局</button>
+            <div class="settings-section">
+                <div class="settings-section-head"><span class="settings-section-icon">✨</span><div><h3>视觉设置</h3><p>界面会自动适配电脑横屏和手机竖屏</p></div></div>
+                <div class="settings-note"><span>📱</span><span>当前使用自适应布局，无需手动调整分辨率。</span></div>
+            </div>
+            <div class="settings-section">
+                <div class="settings-section-head"><span class="settings-section-icon">💾</span><div><h3>数据管理</h3><p>检查任务与本地存档状态</p></div></div>
+                <div class="stat-grid">
+                    <div class="stat"><b id="setupTaskTotal">-</b><span>任务总数</span></div>
+                    <div class="stat"><b id="setupSaveState">-</b><span>存档状态</span></div>
+                </div>
+                <div class="actions"><button class="secondary" id="setupContinueBtn">继续上局</button></div>
+                <div class="danger-zone">
+                    <strong>危险操作</strong>
+                    <p>清除游戏存档、玩家设置、自定义任务与音频偏好，操作不可撤销。</p>
+                    <button class="warn" id="setupClearDataBtn">🗑 清空全部数据</button>
+                </div>
             </div>
         </div>
     </section>
 
     <section id="taskCenter" class="task-center">
-        <div class="card">
+        <div class="card task-book-card">
             <div class="page-head">
                 <div>
-                    <h2>任务中心</h2>
-                    <p class="hint">任务表保存在浏览器。建议先读取或检查任务，再开始游戏。</p>
+                    <span class="task-book-eyebrow">ADVENTURE TASKS</span>
+                    <h2>任务卡册</h2>
+                    <p class="hint">翻开卡册，选择适合本局的任务模式。</p>
                 </div>
                 <button class="secondary" id="taskBackHomeBtn">返回大厅</button>
             </div>
@@ -860,19 +1122,48 @@
                 <div class="stat"><b id="taskCenterTotal">-</b><span>任务总数</span></div>
                 <div class="stat"><b id="taskCenterStatus">-</b><span>任务状态</span></div>
             </div>
-            <div class="actions">
-                <button id="importTasksBtn">📥 读取任务</button>
-                <button class="secondary" id="saveTasksBtn">💾 保存任务</button>
-                <button class="secondary" id="exportTasksBtn">📤 导出任务</button>
-                <button class="secondary" id="fillDemoBtn">✨ 示例任务</button>
-                <button class="secondary" id="checkTasksBtn">任务检查</button>
-                <button class="warn" id="clearBtn">🗑 清空全部数据</button>
+            <div class="task-pack-panel">
+                <div class="task-pack-head">
+                    <div>
+                        <h3>选择游戏模式</h3>
+                        <p class="hint" id="taskPackHint">选择后直接使用对应任务。</p>
+                    </div>
+                </div>
+                <div class="task-mode-grid">
+                    <button class="task-mode-button" data-task-mode="family"><span>🏠</span>家庭</button>
+                    <button class="task-mode-button" data-task-mode="party"><span>🎉</span>聚会</button>
+                    <button class="task-mode-button" data-task-mode="couple"><span>💕</span>情侣</button>
+                    <button class="task-mode-button" data-task-mode="all-light"><span>🎴</span>轻松全集</button>
+                    <button class="task-mode-button" data-task-mode="manual"><span>✏️</span>手动任务</button>
+                </div>
+                <p class="hint" id="taskPackSummary">当前使用下方手动任务表。</p>
+                <div class="task-mode-status" aria-label="当前任务模式状态">
+                    <div class="task-mode-status-item"><b id="taskModeStatus">待选择</b><span>模式状态</span></div>
+                    <div class="task-mode-status-item"><b id="taskModePlayerCount">2 人</b><span>当前玩家</span></div>
+                    <div class="task-mode-status-item"><b id="taskModeSaveState">无存档</b><span>游戏存档</span></div>
+                </div>
+                <div class="task-center-launch">
+                    <div class="task-center-launch-copy"><strong id="taskLaunchTitle">选择任务后开始</strong><span id="taskLaunchHint">将使用当前玩家配置创建新游戏。</span></div>
+                    <button class="task-center-start-button" id="taskModeStartBtn">开始游戏</button>
+                </div>
             </div>
-            <input type="file" id="importFileInput" accept=".json" style="display:none;">
         </div>
 
-        <div class="card">
+        <div class="card task-editor-card" id="taskEditorCard">
             <h2>任务编辑</h2>
+            <details>
+                <summary>手动任务工具</summary>
+                <p class="hint">读取、保存或导出自己制作的任务表。</p>
+                <div class="actions task-tool-actions">
+                    <button id="importTasksBtn">📥<br>读取任务</button>
+                    <button class="secondary" id="saveTasksBtn">💾<br>保存任务</button>
+                    <button class="secondary" id="exportTasksBtn">📤<br>导出任务</button>
+                    <button class="secondary" id="fillDemoBtn">✨<br>示例任务</button>
+                    <button class="secondary" id="checkTasksBtn">✅<br>任务检查</button>
+                    <button class="warn" id="clearBtn">🗑<br>清空数据</button>
+                </div>
+                <input type="file" id="importFileInput" accept=".json" style="display:none;">
+            </details>
             <details>
                 <summary>🛫 起飞点任务（首次起飞时触发）</summary>
                 <textarea id="takeoffTask" data-task="takeoff" style="margin-top:8px;"></textarea>
@@ -982,7 +1273,7 @@
                 </div>
 
                 <div class="card players-panel">
-                    <h3 class="panel-title">玩家进度</h3>
+                    <h3 class="panel-title"><span>玩家进度</span><span class="panel-title-meta" id="playerProgressMeta">0 位</span></h3>
                     <div class="players" id="playersList"></div>
                 </div>
 
@@ -997,6 +1288,7 @@
 
 <div class="modal-bg" id="modalBg">
     <div class="modal">
+        <button class="modal-close" id="modalClose" type="button" aria-label="关闭弹窗">×</button>
         <small id="modalSub">任务</small>
         <h2 id="modalTitle">任务卡</h2>
         <pre id="modalBody"></pre>
@@ -1006,13 +1298,79 @@
 
 <script>
 (() => {
-    const APP_VERSION = "2.2.1";
+    const APP_VERSION = "2.7.7";
     const STATE_KEY = "flight_adventure_v66_state";
     const TASK_KEY = "flight_adventure_v66_tasks";
+    const AUDIO_SETTINGS_KEY = "flight_adventure_audio_v1";
+    const TASK_LIBRARY_URL = "./assets/tasks/commercial_v2_3_tasks.json";
+    const COMMERCIAL_TASK_LIBRARY_KEY = "flight_adventure_commercial_tasks_v1";
+    const TASK_PACK_SETTINGS_KEY = "flight_adventure_task_packs_v1";
+    const PACK_LABELS = {
+        safe_family: "家庭安全",
+        party_light: "聚会轻松",
+        party_fun: "聚会搞笑",
+        couple_light: "情侣轻互动",
+        king: "国王卡"
+    };
+    const DEFAULT_PACK_SELECTION = { safe_family: true, party_light: true, party_fun: true, couple_light: false, king: true };
+    const TASK_PACK_PRESETS = {
+        family: { enabled: true, packs: { safe_family: true, party_light: false, party_fun: false, couple_light: false, king: true } },
+        party: { enabled: true, packs: { safe_family: false, party_light: true, party_fun: true, couple_light: false, king: true } },
+        couple: { enabled: true, packs: { safe_family: false, party_light: false, party_fun: false, couple_light: true, king: true } },
+        "all-light": { enabled: true, packs: { safe_family: true, party_light: true, party_fun: true, couple_light: false, king: true } },
+        manual: { enabled: false, packs: DEFAULT_PACK_SELECTION }
+    };
+    const TASK_MODE_LABELS = { family: "家庭", party: "聚会", couple: "情侣", "all-light": "轻松全集", manual: "手动任务" };
 
     // ========== 音效系统 (Web Audio API) ==========
     let audioCtx = null;
     let diceRollAudio = null;
+    let backgroundMusicAudio = null;
+    let musicEnabled = loadMusicEnabled();
+
+    function loadMusicEnabled() {
+        try {
+            const saved = localStorage.getItem(AUDIO_SETTINGS_KEY);
+            return saved === null ? true : saved !== "off";
+        } catch { return true; }
+    }
+
+    function ensureBackgroundMusic() {
+        if (!backgroundMusicAudio) {
+            backgroundMusicAudio = new Audio('./assets/audio/bgm_adventure_pilot.mp3');
+            backgroundMusicAudio.loop = true;
+            backgroundMusicAudio.preload = 'auto';
+            backgroundMusicAudio.volume = 0.22;
+        }
+        return backgroundMusicAudio;
+    }
+
+    function playBackgroundMusic() {
+        if (!musicEnabled) return;
+        const audio = ensureBackgroundMusic();
+        audio.play().catch(() => {
+            // 浏览器可能在用户首次操作前拦截自动播放；下一次点击会重试。
+        });
+    }
+
+    function pauseBackgroundMusic() {
+        if (backgroundMusicAudio) backgroundMusicAudio.pause();
+    }
+
+    function updateMusicControl() {
+        if (!els?.musicToggleBtn) return;
+        els.musicToggleBtn.setAttribute('aria-pressed', String(musicEnabled));
+        els.musicToggleBtn.textContent = musicEnabled ? '音乐：开' : '音乐：关';
+        els.musicStatusText.textContent = musicEnabled ? '已开启，首次点击页面后播放' : '已关闭，点击开关可恢复';
+    }
+
+    function toggleBackgroundMusic() {
+        musicEnabled = !musicEnabled;
+        try { localStorage.setItem(AUDIO_SETTINGS_KEY, musicEnabled ? 'on' : 'off'); } catch {}
+        updateMusicControl();
+        if (musicEnabled) playBackgroundMusic();
+        else pauseBackgroundMusic();
+    }
 
     function getAudioContext() {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1194,22 +1552,27 @@
         quickStartBtn: el("quickStartBtn"), homeTaskBtn: el("homeTaskBtn"), homeSetupBtn: el("homeSetupBtn"), homeTestBtn: el("homeTestBtn"),
         saveSummary: el("saveSummary"), taskCountTotal: el("taskCountTotal"), playerCountTotal: el("playerCountTotal"), homeSaveState: el("homeSaveState"),
         setupBackHomeBtn: el("setupBackHomeBtn"), setupTaskBtn: el("setupTaskBtn"), setupContinueBtn: el("setupContinueBtn"),
-        setupTaskTotal: el("setupTaskTotal"), setupSaveState: el("setupSaveState"),
+        setupTaskTotal: el("setupTaskTotal"), setupSaveState: el("setupSaveState"), setupClearDataBtn: el("setupClearDataBtn"), musicToggleBtn: el("musicToggleBtn"), musicStatusText: el("musicStatusText"),
         taskBackHomeBtn: el("taskBackHomeBtn"), checkTasksBtn: el("checkTasksBtn"), taskStartBtn: el("taskStartBtn"), taskSetupBtn: el("taskSetupBtn"),
         taskCenterTotal: el("taskCenterTotal"), taskCenterStatus: el("taskCenterStatus"),
+        taskPackHint: el("taskPackHint"), taskPackSummary: el("taskPackSummary"), taskEditorCard: el("taskEditorCard"),
+        taskModeStatus: el("taskModeStatus"), taskModePlayerCount: el("taskModePlayerCount"), taskModeSaveState: el("taskModeSaveState"),
+        taskLaunchTitle: el("taskLaunchTitle"), taskLaunchHint: el("taskLaunchHint"), taskModeStartBtn: el("taskModeStartBtn"),
         addPlayerBtn: el("addPlayerBtn"), startBtn: el("startBtn"),
         saveTasksBtn: el("saveTasksBtn"), exportTasksBtn: el("exportTasksBtn"),
         importTasksBtn: el("importTasksBtn"), importFileInput: el("importFileInput"),
         fillDemoBtn: el("fillDemoBtn"), clearBtn: el("clearBtn"),
         currentName: el("currentName"), roundBadge: el("roundBadge"),
         lastRoll: el("lastRoll"), rollBtn: el("rollBtn"),
-        playersList: el("playersList"), log: el("log"), coordTip: el("coordTip"),
-        modalBg: el("modalBg"), modal: document.querySelector("#modalBg .modal"), modalSub: el("modalSub"), modalTitle: el("modalTitle"),
+        playersList: el("playersList"), playerProgressMeta: el("playerProgressMeta"), log: el("log"), coordTip: el("coordTip"),
+        modalBg: el("modalBg"), modal: document.querySelector("#modalBg .modal"), modalClose: el("modalClose"), modalSub: el("modalSub"), modalTitle: el("modalTitle"),
         modalBody: el("modalBody"), modalOk: el("modalOk"),
         backSetupBtn: el("backSetupBtn"), gameHomeBtn: el("gameHomeBtn"), debugCoordsBtn: el("debugCoordsBtn"), newGameBtn: el("newGameBtn")
     };
 
     let tasks = loadTasks();
+    let commercialTaskLibrary = loadCommercialTaskLibraryFromStorage();
+    let taskPackSettings = loadTaskPackSettings();
     let setupPlayers = [
         { name: "玩家1", color: "R" },
         { name: "玩家2", color: "Y" }
@@ -1218,6 +1581,7 @@
     let rolling = false;
     let modalQueue = [];
     let modalOpen = false;
+    let modalClosing = false;
     let postMoveQueue = [];
     let postMoveTimer = null;
     let animationLock = false;
@@ -1234,9 +1598,12 @@
         renderBoard();
         renderSetupPlayers();
         renderTaskEditors();
+        renderTaskPackManager();
         bind();
+        updateMusicControl();
         updateDashboard();
         showHome();
+        if (!commercialTaskLibrary?.modes) loadCommercialTaskLibrary({ silent: true });
     }
 
     function bind() {
@@ -1250,9 +1617,14 @@
         els.setupBackHomeBtn.onclick = goHome;
         els.setupTaskBtn.onclick = showTaskCenter;
         els.setupContinueBtn.onclick = continueGame;
+        els.musicToggleBtn.onclick = toggleBackgroundMusic;
+        document.addEventListener('pointerdown', (event) => {
+            if (!event.target.closest('#musicToggleBtn')) playBackgroundMusic();
+        }, { passive: true });
         els.taskBackHomeBtn.onclick = goHome;
         els.taskSetupBtn.onclick = goSetup;
         els.taskStartBtn.onclick = () => { saveTasksFromEditors(); startGame(); };
+        els.taskModeStartBtn.onclick = startGameFromTaskCenter;
         els.checkTasksBtn.onclick = () => alert(taskCheckMessage());
         els.addPlayerBtn.onclick = () => {
             if (setupPlayers.length >= 16) return alert("最多 16 人。");
@@ -1265,10 +1637,21 @@
         els.exportTasksBtn.onclick = exportTasks;
         els.importTasksBtn.onclick = () => els.importFileInput.click();
         els.importFileInput.onchange = importTasks;
+        document.querySelectorAll("[data-task-mode]").forEach(btn => btn.onclick = () => selectTaskMode(btn.dataset.taskMode));
         els.fillDemoBtn.onclick = () => { tasks = JSON.parse(JSON.stringify(demoTasks)); saveTasks(); renderTaskEditors(); updateDashboard(); alert("已填充示例任务。"); };
-        els.clearBtn.onclick = () => { if (confirm("确定清空全部数据？这会删除游戏存档和任务表。")) { localStorage.clear(); location.reload(); } };
+        const clearAllLocalData = () => {
+            if (confirm("确定清空全部数据？这会删除游戏存档、玩家设置、自定义任务和声音偏好，操作不能撤销。")) {
+                localStorage.clear();
+                location.reload();
+            }
+        };
+        els.clearBtn.onclick = clearAllLocalData;
+        els.setupClearDataBtn.onclick = clearAllLocalData;
         els.rollBtn.onclick = rollDice;
-        els.modalOk.onclick = () => { els.modalBg.style.display = "none"; modalOpen = false; showNextModal(); };
+        els.modalOk.onclick = closeCurrentWebModal;
+        els.modalClose.onclick = closeCurrentWebModal;
+        els.modalBg.onclick = (event) => { if (event.target === els.modalBg) closeCurrentWebModal(); };
+        document.addEventListener("keydown", (event) => { if (event.key === "Escape" && modalOpen) closeCurrentWebModal(); });
         els.backSetupBtn.onclick = returnToSetupFromGame;
         els.gameHomeBtn.onclick = goHome;
         els.debugCoordsBtn.onclick = toggleDebugCoords;
@@ -1305,9 +1688,22 @@
         if (!modalOpen && !modalQueue.length) return;
         els.modalBg.style.display = "none";
         modalOpen = false;
+        modalClosing = false;
         modalQueue = [];
         postMoveQueue = [];
         clearTimeout(postMoveTimer);
+    }
+
+    function closeCurrentWebModal() {
+        if (!modalOpen) return;
+        modalOpen = false;
+        modalClosing = true;
+        els.modalBg.classList.remove("open");
+        setTimeout(() => {
+            els.modalBg.style.display = "none";
+            modalClosing = false;
+            showNextModal();
+        }, 160);
     }
 
     function returnToSetupFromGame() {
@@ -1322,6 +1718,7 @@
         els.home.style.display = "block";
         els.setup.classList.remove("active");
         els.taskCenter.classList.remove("active");
+        els.game.classList.remove("active");
         els.game.style.display = "none";
     }
 
@@ -1331,6 +1728,7 @@
         els.home.style.display = "none";
         els.taskCenter.classList.remove("active");
         els.setup.classList.add("active");
+        els.game.classList.remove("active");
         els.game.style.display = "none";
     }
 
@@ -1341,13 +1739,17 @@
         els.home.style.display = "none";
         els.setup.classList.remove("active");
         els.taskCenter.classList.add("active");
+        els.game.classList.remove("active");
         els.game.style.display = "none";
     }
 
     function updateDashboard() {
         const saved = getSavedState();
-        const count = taskCount(tasks);
-        const taskStatus = count >= 36 ? "完整" : "偏少";
+        renderTaskPackManager();
+        const count = activeTaskCount();
+        const taskStatus = commercialTaskModeActive()
+            ? "六类完整"
+            : (count >= 36 ? "完整" : "偏少");
         els.homeContinueBtn.disabled = !saved;
         els.setupContinueBtn.disabled = !saved;
         els.saveSummary.textContent = saved ? saveSummary(saved) : "暂无存档，请先新建游戏";
@@ -1377,6 +1779,18 @@
         reader.onload = (e) => {
             try {
                 const data = JSON.parse(e.target.result);
+                if (isCommercialTaskLibrary(data)) {
+                    commercialTaskLibrary = normalizeCommercialTaskLibrary(data);
+                    taskPackSettings.enabled = true;
+                    taskPackSettings.mode = taskPackSettings.mode === "manual" ? "party" : (taskPackSettings.mode || "party");
+                    saveCommercialTaskLibrary();
+                    saveTaskPackSettings();
+                    renderTaskPackManager();
+                    updateDashboard();
+                    alert("商业任务库导入成功，已启用任务包模式。");
+                    els.importFileInput.value = "";
+                    return;
+                }
                 if (!data.outer || !data.straight || !data.king || !data.final) throw new Error("缺少必要字段");
                 if (!Array.isArray(data.straight)) data.straight = defaultTasks.straight;
                 if (!data.takeoff) data.takeoff = defaultTasks.takeoff;
@@ -1587,10 +2001,13 @@
         els.home.style.display = "none";
         els.setup.classList.remove("active");
         els.taskCenter.classList.remove("active");
+        els.game.classList.add("active");
         els.game.style.display = "block";
         if (els.modalBg) {
             els.modalBg.style.display = "none";
+            els.modalBg.classList.remove("open");
             modalOpen = false;
+            modalClosing = false;
             modalQueue = [];
         }
         renderAll();
@@ -1657,9 +2074,10 @@
                     const key = `baseRoll-${p.id}-${value}`;
                     if (!state.triggered[key]) {
                         state.triggered[key] = true;
-                        const taskText = tasks.baseRoll[value] || `掷出${value}点任务`;
+                        const modeTask = pickModeTask("baseRoll", value);
+                        const taskText = modeTask?.content || tasks.baseRoll[value] || `掷出${value}点任务`;
                         addLog(`${label(p)} 触发基地掷骰任务（点数${value}）。`, "task");
-                        enqueueModal(`🎲 基地任务 ${value}点`, taskText, `${label(p)} 还在基地`);
+                        enqueueModal(`🎲 ${modeTask?.title || `基地任务 ${value}点`}`, taskText, `${label(p)} · ${activeModeName()} · 基地${value}点`);
                     } else {
                         addLog(`${label(p)} 掷出${value}点，该点数任务已完成。`);
                     }
@@ -1683,14 +2101,9 @@
     function takeOff(p) {
         p.status = "outer"; p.outerSteps = 0; p.outerIndex = START_INDEX[p.color]; p.straightIndex = 0;
         addLog(`${label(p)} 起飞进入起飞点。`, "good");
-        const key = `outer-${p.outerIndex}`;
-        if (!state.triggered[key]) {
-            state.triggered[key] = true;
-            addLog(`${label(p)} 触发起飞点任务。`, "task");
-            queuePostMoveModal("🛫 起飞点任务", tasks.takeoff || "起飞任务未设置", `${label(p)} 起飞`);
-        } else {
-            addLog("起飞点任务已触发过。", "task");
-        }
+        addLog(`${label(p)} 触发起飞点任务。`, "task");
+        const modeTask = pickModeTask("takeoff");
+        queuePostMoveModal(`🛫 ${modeTask?.title || "起飞点任务"}`, modeTask?.content || tasks.takeoff || "起飞任务未设置", `${label(p)} · ${activeModeName()} · 起飞`);
     }
 
     function moveOuter(p, steps) {
@@ -1736,7 +2149,7 @@
         if (steps === need) {
             const track = makeStraightTrack(p.color, p.straightIndex, 6);
             appendPieceMoveTrack(p.id, track);
-            if (need > 0) queuePostMoveTask(p, 6);
+            p.straightIndex = 6;
             queuePostMoveFinish(p);
             return;
         }
@@ -1744,7 +2157,7 @@
             const bounce = steps - need;
             const target = Math.max(0, 6 - bounce);
             const forward = makeStraightTrack(p.color, p.straightIndex, 6);
-            const backward = makeStraightTrack(p.color, 6, target).reverse();
+            const backward = makeStraightTrack(p.color, 6, target);
             const track = forward.concat(backward);
             appendPieceMoveTrack(p.id, track);
             p.straightIndex = target;
@@ -1785,7 +2198,8 @@
         if (state.finishOrder.length === state.players.length) {
             state.gameOver = true;
             addLog("游戏结束！", "bad");
-            enqueueModal("🏁 游戏结束", `最后一名：${label(p)}\n终极惩罚：\n${tasks.final}`, "终极惩罚");
+            const finalTask = pickModeTask("final");
+            enqueueModal(`🏁 ${finalTask?.title || "游戏结束"}`, `最后一名：${label(p)}\n终极任务：\n${finalTask?.content || tasks.final}`, `${activeModeName()} · 终极任务`);
         }
     }
 
@@ -1811,6 +2225,16 @@
 
     function queuePostMoveTask(p, index) {
         if (p.status === "straight" && (index < 1 || index > 6)) return;
+        const triggerType = p.status === "straight" ? "straight" : "outer";
+        const commercialTask = pickModeTask(triggerType);
+        if (commercialTask) {
+            postMoveQueue.push({
+                title: `${triggerType === "straight" ? "➡️" : "📍"} ${commercialTask.title || "任务卡"}`,
+                body: commercialTask.content,
+                sub: `${label(p)} · ${activeModeName()} · ${triggerType === "straight" ? "直道" : "外圈"}`
+            });
+            return;
+        }
         const payload = p.status === "straight"
             ? { title: "➡️ 直道任务", body: tasks.straight[index-1], sub: `${label(p)} · 直道第${index}格` }
             : { title: "📍 外圈任务", body: tasks.outer[index % 12], sub: `${label(p)} · 外圈第${index+1}格` };
@@ -1818,6 +2242,15 @@
     }
 
     function queuePostMoveKing(p, reason) {
+        const commercialKing = pickModeTask("king");
+        if (commercialKing) {
+            postMoveQueue.push({
+                title: `👑 ${commercialKing.title || "国王卡"}`,
+                body: commercialKing.content,
+                sub: `${label(p)} · ${reason} · ${activeModeName()}`
+            });
+            return;
+        }
         const i = Math.floor(Math.random() * 13);
         postMoveQueue.push({ title: `👑 国王卡 ${RANKS[i]}`, body: tasks.king[i], sub: `${label(p)} · ${reason}` });
     }
@@ -1832,9 +2265,10 @@
         p.status = "finished"; p.finishPlace = state.finishOrder.length + 1; state.finishOrder.push(p.id);
         if (state.finishOrder.length === state.players.length) {
             state.gameOver = true;
+            const finalTask = pickModeTask("final");
             postMoveQueue.push({ title: "🏁 游戏结束", body: `最后一名：${label(p)}
 终极惩罚：
-${tasks.final}`, sub: "终极惩罚" });
+${finalTask?.content || tasks.final}`, sub: `${activeModeName()} · 终极任务` });
         }
     }
 
@@ -1849,7 +2283,7 @@ ${tasks.final}`, sub: "终极惩罚" });
 
     function flushPostMoveActions(pieceId) {
         if (!state || !postMoveQueue.length) return;
-        if (modalOpen) {
+        if (modalOpen || modalClosing) {
             schedulePostMoveActions(120);
             return;
         }
@@ -1860,20 +2294,34 @@ ${tasks.final}`, sub: "终极惩罚" });
 
     function enqueueModal(title, body, sub) {
         modalQueue.push({ title, body, sub });
-        if (!modalOpen) showNextModal();
+        if (!modalOpen && !modalClosing) showNextModal();
     }
 
     function showNextModal() {
+        if (modalClosing) return;
         if (modalQueue.length === 0) { modalOpen = false; renderAll(); schedulePostMoveActions(0); return; }
         const m = modalQueue.shift();
         modalOpen = true;
         els.modal.classList.toggle("king-card", m.title.startsWith("👑"));
-        els.modalTitle.textContent = m.title; els.modalSub.textContent = m.sub || ""; els.modalBody.textContent = m.body || ""; els.modalBg.style.display = "grid";
+        els.modalTitle.textContent = m.title; els.modalSub.textContent = m.sub || ""; els.modalBody.textContent = m.body || "";
+        els.modalBg.style.display = "grid";
+        els.modalBg.classList.remove("open");
+        requestAnimationFrame(() => els.modalBg.classList.add("open"));
     }
 
     function renderAll() {
         if (!state) return;
         const p = currentPlayer();
+        const boardWrap = els.board.closest(".board-wrap");
+        const turnColors = {
+            R: ["#ef4b3e", "rgba(239,75,62,.32)"], Y: ["#f4c82f", "rgba(244,200,47,.34)"],
+            B: ["#28aee7", "rgba(40,174,231,.32)"], G: ["#43c95e", "rgba(67,201,94,.32)"]
+        };
+        if (boardWrap) {
+            const turnTheme = state.gameOver ? ["#d49b24", "rgba(212,155,36,.30)"] : (turnColors[p?.color] || ["#f0ad2f", "rgba(240,173,47,.32)"]);
+            boardWrap.style.setProperty("--turn-color", turnTheme[0]);
+            boardWrap.style.setProperty("--turn-glow", turnTheme[1]);
+        }
         els.currentName.closest(".status")?.classList.remove("color-R", "color-Y", "color-B", "color-G");
         if (p && !state.gameOver) els.currentName.closest(".status")?.classList.add(`color-${p.color}`);
         els.currentName.textContent = state.gameOver ? "游戏结束" : (p ? label(p) : "-");
@@ -2035,16 +2483,55 @@ ${tasks.final}`, sub: "终极惩罚" });
 
     function renderPlayersList() {
         const cur = currentPlayer();
-        els.playersList.innerHTML = state.players.map(p => `
-            <div class="player-card ${cur?.id === p.id ? "current" : ""} ${p.status==="finished"?"done":""}" style="--player-color: var(--${p.color}); --progress: ${playerProgressPercent(p)}%;">
+        if (els.playerProgressMeta) {
+            const finished = state.players.filter(p => p.status === "finished").length;
+            els.playerProgressMeta.textContent = finished ? `${finished}/${state.players.length} 完成` : `${state.players.length} 位`;
+        }
+        els.playersList.innerHTML = state.players.map(p => {
+            const isCurrent = cur?.id === p.id && p.status !== "finished";
+            const progress = playerProgressPercent(p);
+            return `
+            <div class="player-card ${isCurrent ? "current" : ""} ${p.status==="finished"?"done":""}" style="--player-color: var(--${p.color}); --progress: ${progress}%;" aria-label="${escapeHtml(p.name)}，${statusText(p)}，进度 ${progress}%">
                 <div class="player-avatar"><img src="./assets/images/plane_${p.color}.webp" alt="${COLORS[p.color].name}飞机"></div>
-                <div class="player-info"><div class="pname">${COLORS[p.color].emoji} ${escapeHtml(p.name)} ${p.finishPlace?`<span class="badge">第${p.finishPlace}名</span>`:""}</div><div class="psub">${statusText(p)}</div><div class="player-progress"><i></i></div></div>
+                <div class="player-info">
+                    <div class="player-heading"><span class="pname">${COLORS[p.color].emoji} ${escapeHtml(p.name)}</span>${isCurrent?'<span class="turn-chip">当前回合</span>':""}${p.finishPlace?`<span class="rank-chip">第${p.finishPlace}名</span>`:""}</div>
+                    <div class="psub">${statusText(p)}</div>
+                    <div class="progress-line"><div class="player-progress"><i></i></div><span class="progress-percent">${progress}%</span></div>
+                </div>
                 <b class="progress-pill">${progressText(p)}</b>
-            </div>`).join("");
+            </div>`;
+        }).join("");
+    }
+
+    function logVisualMeta(entry) {
+        const type = typeof entry === "string" ? "" : String(entry?.type || "");
+        const text = typeof entry === "string" ? entry : String(entry?.text || "");
+        if (type === "hot" || /掷出|骰/.test(text)) return {key:"roll", label:"掷骰", icon:"🎲"};
+        if (/国王卡|国王/.test(text)) return {key:"king", label:"国王卡", icon:"👑"};
+        if (type === "task" || /任务/.test(text)) return {key:"task", label:"任务", icon:"🎯"};
+        if (type === "bad") return {key:"warning", label:"提示", icon:"⚠️"};
+        if (/落在|前进|移动|进入直道|飞行航线|起飞|反弹|终点/.test(text)) return {key:"move", label:"移动", icon:"✈️"};
+        if (type === "good") return {key:"reward", label:"进展", icon:"✨"};
+        return {key:"system", label:"系统", icon:"📜"};
+    }
+
+    function logTimeLabel(entry) {
+        const at = typeof entry === "string" ? 0 : Number(entry?.at || 0);
+        if (!at) return "历史记录";
+        const elapsed = Math.max(0, Date.now() - at);
+        if (elapsed < 60000) return "刚刚";
+        if (elapsed < 3600000) return `${Math.floor(elapsed / 60000)}分钟前`;
+        return new Date(at).toLocaleTimeString("zh-CN", {hour:"2-digit", minute:"2-digit"});
     }
 
     function renderLog() {
-        els.log.innerHTML = (state.log || []).map(x => `<p class="${x.type||''}">${escapeHtml(x.text)}</p>`).join("");
+        const logs = state.log || [];
+        els.log.innerHTML = logs.map((entry, index) => {
+            const meta = logVisualMeta(entry);
+            const text = typeof entry === "string" ? entry : String(entry?.text || "");
+            const latest = index === logs.length - 1;
+            return `<p class="event-bubble event-${meta.key}${latest ? " latest" : ""}"><span class="event-icon" aria-hidden="true">${meta.icon}</span><span class="event-content"><span class="event-head"><b class="event-tag">${escapeHtml(meta.label)}</b>${latest ? '<span class="event-latest">最新</span>' : ""}<time class="event-time">${escapeHtml(logTimeLabel(entry))}</time></span><span class="event-text">${escapeHtml(text)}</span></span></p>`;
+        }).join("");
         els.log.scrollTop = els.log.scrollHeight;
     }
 
@@ -2089,6 +2576,167 @@ ${tasks.final}`, sub: "终极惩罚" });
     }
 
     function saveTasks() { localStorage.setItem(TASK_KEY, JSON.stringify(tasks)); }
+    function isCommercialTaskLibrary(source) {
+        return !!(source && source.meta && Array.isArray(source.tasks));
+    }
+    function normalizeCommercialTaskLibrary(source) {
+        if (!isCommercialTaskLibrary(source)) throw new Error("不是商业任务库格式");
+        const cleanTasks = source.tasks
+            .filter(t => t && t.id && t.pack && t.content)
+            .map(t => ({ ...t, content: String(t.content).trim() }));
+        return { ...source, tasks: cleanTasks };
+    }
+    function loadCommercialTaskLibraryFromStorage() {
+        try {
+            const raw = JSON.parse(localStorage.getItem(COMMERCIAL_TASK_LIBRARY_KEY));
+            return isCommercialTaskLibrary(raw) ? normalizeCommercialTaskLibrary(raw) : null;
+        } catch { return null; }
+    }
+    function saveCommercialTaskLibrary() {
+        if (commercialTaskLibrary) localStorage.setItem(COMMERCIAL_TASK_LIBRARY_KEY, JSON.stringify(commercialTaskLibrary));
+    }
+    function loadTaskPackSettings() {
+        try {
+            const raw = JSON.parse(localStorage.getItem(TASK_PACK_SETTINGS_KEY));
+            return {
+                enabled: !!raw?.enabled,
+                mode: raw?.mode || (raw?.enabled ? "party" : "manual"),
+                packs: { ...DEFAULT_PACK_SELECTION, ...(raw?.packs || {}) }
+            };
+        } catch {
+            return { enabled: false, mode: "manual", packs: { ...DEFAULT_PACK_SELECTION } };
+        }
+    }
+    function saveTaskPackSettings() {
+        localStorage.setItem(TASK_PACK_SETTINGS_KEY, JSON.stringify(taskPackSettings));
+    }
+    async function loadCommercialTaskLibrary(options = {}) {
+        try {
+            const response = await fetch(`${TASK_LIBRARY_URL}?v=${APP_VERSION}`, { cache: "no-store" });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            commercialTaskLibrary = normalizeCommercialTaskLibrary(await response.json());
+            saveCommercialTaskLibrary();
+            saveTaskPackSettings();
+            renderTaskPackManager();
+            updateDashboard();
+            if (!options.silent) alert("商业测试任务库已载入。");
+            return true;
+        } catch (err) {
+            if (!options.silent) alert("载入任务失败：" + err.message + "\n请通过 http://localhost:8080/web/index.html 打开游戏，或用“读取任务”导入任务库。");
+            return false;
+        }
+    }
+    function commercialTaskModeActive() {
+        return !!(taskPackSettings.enabled && commercialTaskLibrary && commercialTaskLibrary.modes && Array.isArray(commercialTaskLibrary.tasks));
+    }
+    function packLabel(pack) { return PACK_LABELS[pack] || pack || "任务包"; }
+    function activeModeName() {
+        return TASK_MODE_LABELS[taskPackSettings.mode] || "手动";
+    }
+    function resolveModeCatalog(modeName = taskPackSettings.mode) {
+        if (!commercialTaskLibrary?.modes || !modeName || modeName === "manual") return null;
+        const catalog = commercialTaskLibrary.modes[modeName];
+        if (!catalog) return null;
+        if (!Array.isArray(catalog.inherits)) return catalog;
+        const inherited = catalog.inherits.map(name => resolveModeCatalog(name)).filter(Boolean);
+        return {
+            ...catalog,
+            takeoff: inherited.flatMap(mode => mode.takeoff || []),
+            baseRoll: [2, 3, 4, 5].reduce((result, value) => {
+                result[value] = inherited.flatMap(mode => mode.baseRoll?.[value] || []);
+                return result;
+            }, {}),
+            outer: inherited.flatMap(mode => mode.outer || []),
+            straight: inherited.flatMap(mode => mode.straight || []),
+            king: [...new Set(inherited.flatMap(mode => mode.king || []))],
+            final: inherited.flatMap(mode => mode.final || [])
+        };
+    }
+    function taskById(id) {
+        return commercialTaskLibrary?.tasks?.find(task => task.id === id) || null;
+    }
+    function modeTaskList(type, value) {
+        if (!commercialTaskModeActive()) return [];
+        const catalog = resolveModeCatalog();
+        const entries = type === "baseRoll" ? catalog?.baseRoll?.[value] : catalog?.[type];
+        if (!Array.isArray(entries)) return [];
+        return entries.map(entry => typeof entry === "string" ? taskById(entry) : entry).filter(task => task?.content);
+    }
+    function pickModeTask(type, value) {
+        return pickTask(modeTaskList(type, value));
+    }
+    function enabledCommercialTasks() {
+        if (!commercialTaskModeActive()) return [];
+        return ["takeoff", "outer", "straight"].flatMap(type => modeTaskList(type))
+            .concat([2, 3, 4, 5].flatMap(value => modeTaskList("baseRoll", value)));
+    }
+    function enabledCommercialKingTasks() {
+        return modeTaskList("king");
+    }
+    function pickTask(list) {
+        if (!list?.length) return null;
+        return list[Math.floor(Math.random() * list.length)];
+    }
+    function activeTaskCount() {
+        if (commercialTaskModeActive()) {
+            const contentIds = ["takeoff", "outer", "straight", "king"].flatMap(type => modeTaskList(type).map(task => task.id));
+            contentIds.push(...[2, 3, 4, 5].flatMap(value => modeTaskList("baseRoll", value).map(task => task.id)));
+            contentIds.push(...modeTaskList("final").map(task => task.id));
+            return new Set(contentIds.filter(Boolean)).size;
+        }
+        return taskCount(tasks);
+    }
+    async function selectTaskMode(name) {
+        const preset = TASK_PACK_PRESETS[name];
+        if (!preset) return;
+        if (name !== "manual" && !commercialTaskLibrary) {
+            const loaded = await loadCommercialTaskLibrary();
+            if (!loaded) return;
+        }
+        taskPackSettings = { enabled: preset.enabled, mode: name, packs: { ...DEFAULT_PACK_SELECTION, ...preset.packs } };
+        saveTaskPackSettings();
+        renderTaskPackManager();
+        updateDashboard();
+    }
+    function startGameFromTaskCenter() {
+        if ((taskPackSettings.mode || "manual") === "manual") saveTasksFromEditors();
+        startGame();
+    }
+    function renderTaskPackManager() {
+        if (!els?.taskPackSummary) return;
+        const mode = taskPackSettings.mode || (taskPackSettings.enabled ? "party" : "manual");
+        document.querySelectorAll("[data-task-mode]").forEach(btn => btn.classList.toggle("is-active", btn.dataset.taskMode === mode));
+        els.taskEditorCard?.classList.toggle("is-hidden", mode !== "manual");
+        if (els.taskModeStatus) els.taskModeStatus.textContent = mode === "manual" ? "手动编辑" : "已启用";
+        if (els.taskModePlayerCount) els.taskModePlayerCount.textContent = `${setupPlayers.length} 人`;
+        if (els.taskModeSaveState) els.taskModeSaveState.textContent = getSavedState() ? "可继续" : "无存档";
+        if (els.taskLaunchTitle) els.taskLaunchTitle.textContent = mode === "manual" ? "使用手动任务开始" : `使用${TASK_MODE_LABELS[mode]}开始`;
+        if (els.taskLaunchHint) els.taskLaunchHint.textContent = `${setupPlayers.length} 名玩家 · 点击后创建新游戏`;
+        if (els.taskModeStartBtn) {
+            els.taskModeStartBtn.textContent = mode === "manual" ? "保存并开始游戏" : "开始游戏";
+            els.taskModeStartBtn.disabled = mode !== "manual" && !commercialTaskLibrary;
+        }
+        if (!commercialTaskLibrary) {
+            els.taskPackHint.textContent = "家庭、聚会和情侣任务将在选择时自动载入。";
+            els.taskPackSummary.textContent = mode === "manual" ? "当前使用自己编辑的任务。" : "任务库正在准备。";
+            return;
+        }
+        const catalogCounts = modeCatalogCounts();
+        els.taskPackHint.textContent = "选择一种场景即可开始，模式会自动保存。";
+        els.taskPackSummary.textContent = mode === "manual"
+            ? "当前使用自己编辑的任务。"
+            : `已选择${TASK_MODE_LABELS[mode]}：起飞${catalogCounts.takeoff} · 基地${catalogCounts.baseRoll} · 外圈${catalogCounts.outer} · 直道${catalogCounts.straight} · 国王${catalogCounts.king} · 终局${catalogCounts.final}`;
+    }
+    function modeCatalogCounts() {
+        return {
+            takeoff: modeTaskList("takeoff").length,
+            baseRoll: [2, 3, 4, 5].reduce((sum, value) => sum + modeTaskList("baseRoll", value).length, 0),
+            outer: modeTaskList("outer").length,
+            straight: modeTaskList("straight").length,
+            king: modeTaskList("king").length,
+            final: modeTaskList("final").length
+        };
+    }
     function saveState() { if (state) { localStorage.setItem(STATE_KEY, JSON.stringify(state)); updateDashboard(); } }
     function getSavedState() {
         try { return JSON.parse(localStorage.getItem(STATE_KEY)); }
@@ -2112,6 +2760,20 @@ ${tasks.final}`, sub: "终极惩罚" });
     }
     function taskCheckMessage() {
         saveTasksFromEditors();
+        if (commercialTaskModeActive()) {
+            const counts = modeCatalogCounts();
+            const lines = [
+                `起飞任务：${counts.takeoff}`,
+                `基地任务：${counts.baseRoll}`,
+                `外圈任务：${counts.outer}`,
+                `直道任务：${counts.straight}`,
+                `国王卡：${counts.king}`,
+                `终极任务：${counts.final}`
+            ];
+            const missing = Object.entries(counts).filter(([, count]) => count === 0).map(([type]) => type);
+            updateDashboard();
+            return `${activeModeName()}任务检查\n\n${lines.join("\n")}\n\n${missing.length ? "缺少任务类型：" + missing.join("、") : "六类任务清单完整，可以开始游戏。"}`;
+        }
         const groups = [
             ["起飞任务", [tasks.takeoff]],
             ["基地掷骰任务", [2,3,4,5].map(n => tasks.baseRoll?.[n])],
