@@ -958,7 +958,20 @@
                 border-radius: 0;
             }
             .game-subpage.active {
-                min-height: 100svh; padding: 12px; border-radius: 0; box-shadow: none;
+                height: 100svh; min-height: 0; padding: 12px; border-radius: 0; box-shadow: none;
+                overflow: hidden;
+            }
+            .game-subpage.active > .card {
+                min-height: 0; height: 100%; display: flex; flex-direction: column; overflow: hidden;
+            }
+            .game-subpage.active .page-head { flex: 0 0 auto; gap: 8px; }
+            .game-subpage.active .page-head > div:first-child { min-width: 0; }
+            .game-subpage.active .page-head .actions {
+                flex: 0 0 auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+                width: min(100%, 196px); gap: 6px;
+            }
+            .game-subpage.active .page-head .actions button {
+                min-width: 0; min-height: 38px; padding: .48rem .45rem; white-space: nowrap;
             }
             .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .home-bottom .stat-grid { order: -1; }
@@ -1017,8 +1030,9 @@
             .game-nav-card strong { font-size: 15px; }
             .game-nav-card span { font-size: 10px; line-height: 1.25; }
             .players { max-height: 202px; gap: 7px; padding: 2px 3px 5px 2px; }
-            .game-subpage .players { max-height: none; height: calc(100svh - 184px); }
-            .game-subpage .log { max-height: none; height: calc(100svh - 184px); }
+            .game-subpage .players, .game-subpage .log {
+                flex: 1 1 auto; min-height: 0; max-height: none; height: auto;
+            }
             .panel-title { margin-bottom: 8px; padding: 7px 10px; border-radius: 15px; font-size: 14px; }
             .panel-title::before { width: 26px; height: 26px; border-radius: 10px; font-size: 15px; }
             .player-card { grid-template-columns: 40px minmax(0, 1fr) auto; gap: 8px; padding: .48rem .52rem; border-radius: 15px; }
@@ -1378,7 +1392,7 @@
 
 <script>
 (() => {
-    const APP_VERSION = "2.8.1";
+    const APP_VERSION = "2.8.3";
     const STATE_KEY = "flight_adventure_v66_state";
     const TASK_KEY = "flight_adventure_v66_tasks";
     const AUDIO_SETTINGS_KEY = "flight_adventure_audio_v1";

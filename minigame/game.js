@@ -12,7 +12,7 @@ ctx.scale(dpr, dpr);
 
 const W = systemInfo.windowWidth;
 const H = systemInfo.windowHeight;
-const GAME_VERSION = '2.8.0';
+const GAME_VERSION = '2.8.3';
 const safeTop = systemInfo.safeArea ? systemInfo.safeArea.top : (systemInfo.statusBarHeight || 0);
 const safeBottom = systemInfo.safeArea ? Math.max(0, H - systemInfo.safeArea.bottom) : 0;
 const capsuleBottom = menuButton ? menuButton.bottom : safeTop + 44;
@@ -20,7 +20,7 @@ const capsuleBottom = menuButton ? menuButton.bottom : safeTop + 44;
 const ASSETS = {
   bg: 'assets/minigame/ui/home_bg_mobile.jpg',
   logo: 'assets/minigame/ui/title_logo.png',
-  board: 'assets/minigame/ui/board_traditional_preview.webp',
+  board: 'assets/minigame/ui/board_traditional_preview.jpg',
   continueIcon: 'assets/minigame/ui/icon_continue.png',
   newIcon: 'assets/minigame/ui/icon_new_game.png',
   quickIcon: 'assets/minigame/ui/icon_quick_start.png',
@@ -909,9 +909,8 @@ function drawGame() {
   buttons.push({ x: diceBoxX - 6, y: diceBoxY - 6, w: diceSize + 12, h: diceSize + 12, action: state.gameOver ? 'records' : 'roll' });
 
   const contentW = W - 92;
-  const mainGap = 10;
+  const mainGap = W < 400 ? 7 : 10;
   const firstRowY = diceY + diceH + 9;
-  const halfW = Math.floor((contentW - mainGap) / 2);
   const mainW = Math.floor((contentW - mainGap * 2) / 3);
   drawPanelButton(46, firstRowY, mainW, 42, '任务中心', 'tasks', false);
   drawPanelButton(46 + mainW + mainGap, firstRowY, mainW, 42, '游戏进度', 'progress', false);
@@ -1209,7 +1208,8 @@ function drawPanelButton(x, y, w, h, text, action, primary) {
   }
   ctx.fillStyle = primary ? '#542d0e' : '#493522';
   const compact = w < 48;
-  ctx.font = `900 ${h >= 50 ? 18 : compact ? 12 : 15}px sans-serif`;
+  const narrow = w < 96;
+  ctx.font = `900 ${h >= 50 ? 18 : compact ? 12 : narrow ? 13 : 15}px sans-serif`;
   ctx.textAlign = 'center';
   ctx.fillText(text, x + w / 2, y + h / 2 + (h >= 50 ? 7 : 5));
   ctx.textAlign = 'left';
@@ -1407,7 +1407,7 @@ function drawInfoPageFrame(title, subtitle, summary, drawContent) {
   buttons = [];
   drawTopTitle(title, subtitle);
   const startY = Math.max(safeTop + 124, 138);
-  const panelH = Math.max(320, H - startY - safeBottom - 18);
+  const panelH = Math.max(280, H - startY - safeBottom - 12);
   fillRoundRect(24, startY, W - 48, panelH, 26, 'rgba(255,255,255,.94)', true);
   ctx.fillStyle = '#76593b';
   ctx.font = '800 11px sans-serif';
@@ -1738,7 +1738,7 @@ function selectTaskMode(name) {
 function drawTaskModes() {
   drawTopTitle('任务卡册', `当前：${taskModeLabel()} · 翻开适合本局的任务卡`, 'tasksBg');
   const startY = Math.max(safeTop + 124, 138);
-  const panelH = Math.max(430, H - startY - safeBottom - 18);
+  const panelH = Math.max(320, H - startY - safeBottom - 12);
   fillRoundRect(24, startY, W - 48, panelH, 26, 'rgba(255,252,242,.94)', true);
   fillRoundGradient(28, startY + 26, 8, panelH - 52, 4, [[0, '#f2bd55'], [1, '#9d5b26']], false);
   for (let ringY = startY + 52; ringY < startY + panelH - 42; ringY += 54) {
@@ -1789,7 +1789,7 @@ function drawTaskModes() {
 function drawManualTasks() {
   drawTopTitle('自定义卡册', `${taskTotal()}/37 条已填写 · 读取、保存和逐条编辑`, 'tasksBg');
   const startY = Math.max(safeTop + 124, 138);
-  const panelH = Math.max(430, H - startY - safeBottom - 18);
+  const panelH = Math.max(320, H - startY - safeBottom - 12);
   fillRoundRect(24, startY, W - 48, panelH, 26, 'rgba(255,252,242,.95)', true);
   fillRoundGradient(28, startY + 22, 8, panelH - 44, 4, [[0, '#f2bd55'], [1, '#9d5b26']], false);
   for (let ringY = startY + 48; ringY < startY + panelH - 36; ringY += 54) {
@@ -2387,12 +2387,12 @@ function handleAction(action) {
   if (action === 'setupApply') applySetupAndStart();
   if (action === 'progressPrev') progressPage = Math.max(0, progressPage - 1);
   if (action === 'progressNext') {
-    const panelH = Math.max(320, H - Math.max(safeTop + 124, 138) - safeBottom - 18);
+    const panelH = Math.max(280, H - Math.max(safeTop + 124, 138) - safeBottom - 12);
     progressPage = Math.min(Math.max(0, Math.ceil(state.players.length / progressPageSize(panelH)) - 1), progressPage + 1);
   }
   if (action === 'recordsPrev') recordsPage = Math.max(0, recordsPage - 1);
   if (action === 'recordsNext') {
-    const panelH = Math.max(320, H - Math.max(safeTop + 124, 138) - safeBottom - 18);
+    const panelH = Math.max(280, H - Math.max(safeTop + 124, 138) - safeBottom - 12);
     recordsPage = Math.min(Math.max(0, Math.ceil((state.logs || []).length / gameRecordsPageSize(panelH)) - 1), recordsPage + 1);
   }
   if (action.startsWith('taskCategory:')) {
@@ -2405,7 +2405,7 @@ function handleAction(action) {
   if (action === 'taskPrev') taskPage = Math.max(0, taskPage - 1);
   if (action === 'taskNext') {
     const startY = Math.max(safeTop + 124, 138);
-    const panelH = Math.max(430, H - startY - safeBottom - 18);
+    const panelH = Math.max(320, H - startY - safeBottom - 12);
     const maxPage = Math.max(0, Math.ceil(taskCategoryItems().length / taskEditorPageSize(panelH)) - 1);
     taskPage = Math.min(maxPage, taskPage + 1);
   }
