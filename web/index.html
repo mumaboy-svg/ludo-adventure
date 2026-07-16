@@ -51,6 +51,7 @@
         }
         .home { display: block; }
         .setup { display: none; grid-template-columns: minmax(300px, 1fr) minmax(300px, 1fr); gap: 16px; }
+        .game-subpage { display: none; }
         .setup.active {
             min-height: calc(100svh - 90px); padding: 18px; border-radius: 28px;
             background: linear-gradient(#ffffff2b, #ffffff2b), url('./assets/images/ui/settings_bg_desktop.webp') center / cover no-repeat;
@@ -64,21 +65,21 @@
             box-shadow: inset 0 0 0 8px #ffffff70, 0 16px 40px #34210c18;
         }
         .task-center.active .card { background: #fffdf85c; border-color: #ffffff9c; box-shadow: 0 16px 40px #34210c20; backdrop-filter: blur(5px) saturate(1.08); }
-        .setup.active .card h2, .task-center.active .card h2,
-        .setup.active .page-head, .task-center.active .page-head { text-shadow: 0 2px 0 #fff9, 0 0 12px #fff; }
-        .setup.active .card, .task-center.active .card { position: relative; overflow: hidden; }
-        .setup.active .card::before, .task-center.active .card::before {
+        .setup.active .card h2, .task-center.active .card h2, .game-subpage.active .card h2,
+        .setup.active .page-head, .task-center.active .page-head, .game-subpage.active .page-head { text-shadow: 0 2px 0 #fff9, 0 0 12px #fff; }
+        .setup.active .card, .task-center.active .card, .game-subpage.active .card { position: relative; overflow: hidden; }
+        .setup.active .card::before, .task-center.active .card::before, .game-subpage.active .card::before {
             content: ""; position: absolute; inset: 0; pointer-events: none;
             background: radial-gradient(circle at 18% 0%, #fff8 0 12%, transparent 26%), linear-gradient(180deg, #ffffff80, transparent 38%);
         }
-        .setup.active .card > *, .task-center.active .card > * { position: relative; z-index: 1; }
-        .setup.active .page-head, .task-center.active .page-head {
+        .setup.active .card > *, .task-center.active .card > *, .game-subpage.active .card > * { position: relative; z-index: 1; }
+        .setup.active .page-head, .task-center.active .page-head, .game-subpage.active .page-head {
             align-items: center; padding: 12px 14px; border-radius: 22px;
             background: linear-gradient(135deg, #fff8d9d9, #ffffffb8);
             border: 1px solid #fff9; box-shadow: inset 0 1px 0 #fff, 0 8px 18px #6b44161a;
         }
-        .setup.active .page-head h2, .task-center.active .page-head h2 { margin: 0; color: #4d3115; }
-        .setup.active .page-head .hint, .task-center.active .page-head .hint { margin: 4px 0 0; color: #795630; font-weight: 900; }
+        .setup.active .page-head h2, .task-center.active .page-head h2, .game-subpage.active .page-head h2 { margin: 0; color: #4d3115; }
+        .setup.active .page-head .hint, .task-center.active .page-head .hint, .game-subpage.active .page-head .hint { margin: 4px 0 0; color: #795630; font-weight: 900; }
         .setup.active input, .setup.active select,
         .task-center.active input, .task-center.active select,
         .task-center.active textarea, .setup.active textarea {
@@ -184,7 +185,6 @@
         .task-tool-actions button { min-height: 48px; padding: 8px 6px !important; box-shadow: 0 5px 0 #b8671a, 0 8px 12px #5b2b0b20, inset 0 2px 0 #fff8 !important; }
         .task-tool-actions .secondary { box-shadow: 0 5px 0 #d99a3b, 0 8px 12px #5b2b0b20, inset 0 2px 0 #fff8 !important; }
         .game { display: none; }
-        .game { display: none; }
         .game.active {
             min-height: calc(100svh - 90px); padding: 18px; border-radius: 30px;
             background:
@@ -194,6 +194,15 @@
             box-shadow: inset 0 0 0 8px #ffffff70, 0 20px 48px #34210c1f;
         }
         .setup.active, .task-center.active { display: grid; }
+        .game-subpage.active {
+            display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px;
+            min-height: calc(100svh - 90px); padding: 18px; border-radius: 30px;
+            background:
+                radial-gradient(circle at 16% 16%, #ffffff70 0 12%, transparent 28%),
+                radial-gradient(circle at 82% 76%, #ffe27b5e 0 11%, transparent 26%),
+                linear-gradient(135deg, #8ae2ff 0%, #fff0b5 56%, #ffd191 100%);
+            box-shadow: inset 0 0 0 8px #ffffff70, 0 20px 48px #34210c1f;
+        }
         .home-hero {
             min-height: 100svh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
             gap: clamp(10px, 1.3vw, 18px); padding: clamp(14px, 2vw, 26px); border-radius: 0;
@@ -723,6 +732,18 @@
         }
         .game-tools button:hover { transform: translateY(-1px); background: #fff; }
         .game-tools .warn { background: #fff0ec; color: #9d2f18; }
+        .game-nav-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+        .game-nav-card {
+            min-height: 86px; display: grid; align-content: center; gap: 5px; text-align: left;
+            border-radius: 22px; padding: 14px 16px; border: 2px solid #fff9;
+            background: linear-gradient(135deg, #fffdf0e8, #ffe0a2d9); color: #4b2f14;
+            box-shadow: inset 0 2px 0 #fff9, 0 10px 18px #6b44161d;
+        }
+        .game-nav-card strong { display: block; font-size: 18px; font-weight: 1000; color: #3d2712; }
+        .game-nav-card span { display: block; font-size: 11px; line-height: 1.35; font-weight: 900; color: #76593b; }
+        .game-nav-card:hover { transform: translateY(-2px); filter: brightness(1.03); }
+        .game-nav-card.progress-link { background: linear-gradient(135deg, #eafff0e8, #fff1a8dc); }
+        .game-nav-card.records-link { background: linear-gradient(135deg, #eaf5ffe8, #ffe1c4dc); }
         .players-panel { overflow: hidden; }
         .players-panel .panel-title { margin-bottom: 12px; }
         .players-panel .panel-title-meta {
@@ -732,6 +753,7 @@
         }
         .players-panel .panel-title::after { display: none; }
         .players { display: grid; gap: 10px; max-height: 350px; overflow-y: auto; overflow-x: hidden; padding: 3px 5px 8px 3px; scrollbar-width: thin; }
+        .game-subpage .players { max-height: min(62svh, 620px); }
         .player-card {
             --player-color: #ffcf4a;
             --progress: 0%;
@@ -788,6 +810,7 @@
             font: 12px/1.45 ui-rounded, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             box-shadow: inset 0 2px 8px #7a4a151f, 0 8px 16px #6b44161a;
         }
+        .game-subpage .log { height: min(62svh, 640px); }
         .event-bubble {
             --event-color: #d19a36; --event-ink: #684827;
             position: relative; margin: 0; padding: 8px 10px 9px 38px;
@@ -934,6 +957,9 @@
                 background: linear-gradient(#ffffff42, #ffffff42), url('./assets/images/ui/settings_bg_mobile.webp') center / cover no-repeat;
                 border-radius: 0;
             }
+            .game-subpage.active {
+                min-height: 100svh; padding: 12px; border-radius: 0; box-shadow: none;
+            }
             .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .home-bottom .stat-grid { order: -1; }
             .home-bottom .stat { padding: 8px; text-align: center; }
@@ -947,9 +973,9 @@
             .task-center-start-button { width: 100%; }
             .task-tool-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .task-book-card > * { margin-left: 5px; }
-            .setup.active .page-head, .task-center.active .page-head { padding: 10px; border-radius: 18px; align-items: flex-start; }
-            .setup.active .page-head h2, .task-center.active .page-head h2 { font-size: 20px; }
-            .setup.active .page-head .hint, .task-center.active .page-head .hint { font-size: 12px; }
+            .setup.active .page-head, .task-center.active .page-head, .game-subpage.active .page-head { padding: 10px; border-radius: 18px; align-items: flex-start; }
+            .setup.active .page-head h2, .task-center.active .page-head h2, .game-subpage.active .page-head h2 { font-size: 20px; }
+            .setup.active .page-head .hint, .task-center.active .page-head .hint, .game-subpage.active .page-head .hint { font-size: 12px; }
             .settings-section { padding: 11px; border-radius: 17px; margin-top: 10px; }
             .settings-section-head { margin-bottom: 8px; }
             .settings-section-icon { width: 34px; height: 34px; border-radius: 11px; font-size: 18px; }
@@ -986,7 +1012,13 @@
             .roll-btn { height: 54px; font-size: 18px; margin-left: 3%; }
             .game-tools { justify-content: center; }
             .game-tools button { min-height: 30px; font-size: 11px; padding: .34rem .5rem; }
+            .game-nav-grid { gap: 8px; }
+            .game-nav-card { min-height: 68px; border-radius: 18px; padding: 10px 12px; }
+            .game-nav-card strong { font-size: 15px; }
+            .game-nav-card span { font-size: 10px; line-height: 1.25; }
             .players { max-height: 202px; gap: 7px; padding: 2px 3px 5px 2px; }
+            .game-subpage .players { max-height: none; height: calc(100svh - 184px); }
+            .game-subpage .log { max-height: none; height: calc(100svh - 184px); }
             .panel-title { margin-bottom: 8px; padding: 7px 10px; border-radius: 15px; font-size: 14px; }
             .panel-title::before { width: 26px; height: 26px; border-radius: 10px; font-size: 15px; }
             .player-card { grid-template-columns: 40px minmax(0, 1fr) auto; gap: 8px; padding: .48rem .52rem; border-radius: 15px; }
@@ -1284,18 +1316,52 @@
                         <button class="secondary" id="debugCoordsBtn">点位数字</button>
                         <button class="warn" id="newGameBtn">重开</button>
                     </div>
-                </div>
-
-                <div class="card players-panel">
-                    <h3 class="panel-title"><span>玩家进度</span><span class="panel-title-meta" id="playerProgressMeta">0 位</span></h3>
-                    <div class="players" id="playersList"></div>
-                </div>
-
-                <div class="card log-panel">
-                    <h3 class="panel-title">游戏记录</h3>
-                    <div class="log" id="log"></div>
+                    <div class="game-nav-grid" aria-label="游戏信息页面">
+                        <button class="game-nav-card progress-link" id="gameProgressBtn" type="button">
+                            <strong>游戏进度</strong>
+                            <span id="gameProgressSummary">查看玩家位置与排名</span>
+                        </button>
+                        <button class="game-nav-card records-link" id="gameRecordsBtn" type="button">
+                            <strong>游戏记录</strong>
+                            <span id="gameRecordsSummary">查看掷骰、移动和任务日志</span>
+                        </button>
+                    </div>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <section id="progressPage" class="game-subpage players-panel">
+        <div class="card">
+            <div class="page-head">
+                <div>
+                    <h2>游戏进度</h2>
+                    <div class="hint">查看每位玩家的当前位置、完成状态和当前回合。</div>
+                </div>
+                <div class="actions" style="margin-top:0; justify-content:flex-end;">
+                    <button class="secondary" id="progressBackGameBtn">返回游戏</button>
+                    <button class="secondary" id="progressHomeBtn">返回大厅</button>
+                </div>
+            </div>
+            <h3 class="panel-title"><span>玩家进度</span><span class="panel-title-meta" id="playerProgressMeta">0 位</span></h3>
+            <div class="players" id="playersList"></div>
+        </div>
+    </section>
+
+    <section id="recordsPage" class="game-subpage log-panel">
+        <div class="card">
+            <div class="page-head">
+                <div>
+                    <h2>游戏记录</h2>
+                    <div class="hint">按时间记录掷骰、移动、任务卡和国王卡。</div>
+                </div>
+                <div class="actions" style="margin-top:0; justify-content:flex-end;">
+                    <button class="secondary" id="recordsBackGameBtn">返回游戏</button>
+                    <button class="secondary" id="recordsHomeBtn">返回大厅</button>
+                </div>
+            </div>
+            <h3 class="panel-title">游戏记录</h3>
+            <div class="log" id="log"></div>
         </div>
     </section>
 </div>
@@ -1312,7 +1378,7 @@
 
 <script>
 (() => {
-    const APP_VERSION = "2.7.8";
+    const APP_VERSION = "2.7.9";
     const STATE_KEY = "flight_adventure_v66_state";
     const TASK_KEY = "flight_adventure_v66_tasks";
     const AUDIO_SETTINGS_KEY = "flight_adventure_audio_v1";
@@ -1557,7 +1623,7 @@
 
     const el = id => document.getElementById(id);
     const els = {
-        home: el("home"), setup: el("setup"), taskCenter: el("taskCenter"), game: el("game"), board: el("board"), pieces: el("pieces"),
+        home: el("home"), setup: el("setup"), taskCenter: el("taskCenter"), game: el("game"), progressPage: el("progressPage"), recordsPage: el("recordsPage"), board: el("board"), pieces: el("pieces"),
         playersBox: el("playersBox"), colorCounts: el("colorCounts"),
         outerTasks: el("outerTasks"), straightTasksMerged: el("straightTasksMerged"),
         kingTasks: el("kingTasks"), finalPunish: el("finalPunish"),
@@ -1576,12 +1642,15 @@
         saveTasksBtn: el("saveTasksBtn"), exportTasksBtn: el("exportTasksBtn"),
         importTasksBtn: el("importTasksBtn"), importFileInput: el("importFileInput"),
         fillDemoBtn: el("fillDemoBtn"), clearBtn: el("clearBtn"),
-        currentName: el("currentName"), roundBadge: el("roundBadge"),
+        currentName: el("currentName"), roundBadge: el("roundBadge"), gameProgressSummary: el("gameProgressSummary"), gameRecordsSummary: el("gameRecordsSummary"),
         lastRoll: el("lastRoll"), rollBtn: el("rollBtn"),
         playersList: el("playersList"), playerProgressMeta: el("playerProgressMeta"), log: el("log"), coordTip: el("coordTip"),
         modalBg: el("modalBg"), modal: document.querySelector("#modalBg .modal"), modalClose: el("modalClose"), modalSub: el("modalSub"), modalTitle: el("modalTitle"),
         modalBody: el("modalBody"), modalOk: el("modalOk"),
-        backSetupBtn: el("backSetupBtn"), gameHomeBtn: el("gameHomeBtn"), debugCoordsBtn: el("debugCoordsBtn"), newGameBtn: el("newGameBtn")
+        backSetupBtn: el("backSetupBtn"), gameHomeBtn: el("gameHomeBtn"), debugCoordsBtn: el("debugCoordsBtn"), newGameBtn: el("newGameBtn"),
+        gameProgressBtn: el("gameProgressBtn"), gameRecordsBtn: el("gameRecordsBtn"),
+        progressBackGameBtn: el("progressBackGameBtn"), progressHomeBtn: el("progressHomeBtn"),
+        recordsBackGameBtn: el("recordsBackGameBtn"), recordsHomeBtn: el("recordsHomeBtn")
     };
 
     let tasks = loadTasks();
@@ -1668,6 +1737,12 @@
         document.addEventListener("keydown", (event) => { if (event.key === "Escape" && modalOpen) closeCurrentWebModal(); });
         els.backSetupBtn.onclick = returnToSetupFromGame;
         els.gameHomeBtn.onclick = goHome;
+        els.gameProgressBtn.onclick = showProgressPage;
+        els.gameRecordsBtn.onclick = showRecordsPage;
+        els.progressBackGameBtn.onclick = showGame;
+        els.progressHomeBtn.onclick = goHome;
+        els.recordsBackGameBtn.onclick = showGame;
+        els.recordsHomeBtn.onclick = goHome;
         els.debugCoordsBtn.onclick = toggleDebugCoords;
         els.newGameBtn.onclick = () => { if (confirm("重开游戏？")) { localStorage.removeItem(STATE_KEY); state = null; showSetup(); } };
         els.board.onmousemove = updateCoordTip;
@@ -1733,6 +1808,8 @@
         els.setup.classList.remove("active");
         els.taskCenter.classList.remove("active");
         els.game.classList.remove("active");
+        els.progressPage.classList.remove("active");
+        els.recordsPage.classList.remove("active");
         els.game.style.display = "none";
     }
 
@@ -1743,6 +1820,8 @@
         els.taskCenter.classList.remove("active");
         els.setup.classList.add("active");
         els.game.classList.remove("active");
+        els.progressPage.classList.remove("active");
+        els.recordsPage.classList.remove("active");
         els.game.style.display = "none";
     }
 
@@ -1754,7 +1833,37 @@
         els.setup.classList.remove("active");
         els.taskCenter.classList.add("active");
         els.game.classList.remove("active");
+        els.progressPage.classList.remove("active");
+        els.recordsPage.classList.remove("active");
         els.game.style.display = "none";
+    }
+
+    function showProgressPage() {
+        if (!state) return goHome();
+        persistBeforeNavigation();
+        document.body.classList.remove("home-mode");
+        els.home.style.display = "none";
+        els.setup.classList.remove("active");
+        els.taskCenter.classList.remove("active");
+        els.game.classList.remove("active");
+        els.game.style.display = "none";
+        els.recordsPage.classList.remove("active");
+        els.progressPage.classList.add("active");
+        renderPlayersList();
+    }
+
+    function showRecordsPage() {
+        if (!state) return goHome();
+        persistBeforeNavigation();
+        document.body.classList.remove("home-mode");
+        els.home.style.display = "none";
+        els.setup.classList.remove("active");
+        els.taskCenter.classList.remove("active");
+        els.game.classList.remove("active");
+        els.game.style.display = "none";
+        els.progressPage.classList.remove("active");
+        els.recordsPage.classList.add("active");
+        renderLog();
     }
 
     function updateDashboard() {
@@ -2015,6 +2124,8 @@
         els.home.style.display = "none";
         els.setup.classList.remove("active");
         els.taskCenter.classList.remove("active");
+        els.progressPage.classList.remove("active");
+        els.recordsPage.classList.remove("active");
         els.game.classList.add("active");
         els.game.style.display = "block";
         if (els.modalBg) {
@@ -2355,7 +2466,22 @@ ${finalTask?.content || tasks.final}`, sub: `${activeModeName()} · 终极任务
 
         els.rollBtn.disabled = rolling || modalOpen || state.gameOver;
         if (debugCoords) renderBoardDebugLabels();
-        renderPieces(); renderPlayersList(); renderLog();
+        renderPieces(); renderPlayersList(); renderLog(); renderGameInfoSummaries();
+    }
+
+    function renderGameInfoSummaries() {
+        if (!state) return;
+        const finished = state.players.filter(p => p.status === "finished").length;
+        if (els.gameProgressSummary) {
+            els.gameProgressSummary.textContent = finished
+                ? `${finished}/${state.players.length} 已到终点`
+                : `${state.players.length} 位玩家 · 当前第 ${state.round || 1} 轮`;
+        }
+        if (els.gameRecordsSummary) {
+            const latest = (state.log || []).slice(-1)[0];
+            const text = typeof latest === "string" ? latest : latest?.text;
+            els.gameRecordsSummary.textContent = text ? `最新：${text}` : "暂无记录，开始掷骰后生成";
+        }
     }
 
     function setPiecePosition(piece, pos, flying=false) {
