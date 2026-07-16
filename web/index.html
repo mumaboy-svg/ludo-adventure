@@ -1215,7 +1215,7 @@
                 <textarea id="takeoffTask" data-task="takeoff" style="margin-top:8px;"></textarea>
             </details>
             <details open>
-                <summary>🎲 基地掷骰任务（点数2-5，每人每点数仅一次）</summary>
+                <summary>🎲 基地掷骰任务（点数2-5，每次掷到都触发）</summary>
                 <div class="task-grid" id="baseRollTasks"></div>
             </details>
             <details>
@@ -1378,7 +1378,7 @@
 
 <script>
 (() => {
-    const APP_VERSION = "2.8.0";
+    const APP_VERSION = "2.8.1";
     const STATE_KEY = "flight_adventure_v66_state";
     const TASK_KEY = "flight_adventure_v66_tasks";
     const AUDIO_SETTINGS_KEY = "flight_adventure_audio_v1";
@@ -2195,17 +2195,10 @@
                     takeOff(p);
                     addLog(`${label(p)} 起飞后获得一次额外投掷。`, "good");
                 } else if (value >= 2 && value <= 5) {
-                    // 触发基地掷骰任务（每人每点数只触发一次）
-                    const key = `baseRoll-${p.id}-${value}`;
-                    if (!state.triggered[key]) {
-                        state.triggered[key] = true;
-                        const modeTask = pickModeTask("baseRoll", value);
-                        const taskText = modeTask?.content || tasks.baseRoll[value] || `掷出${value}点任务`;
-                        addLog(`${label(p)} 触发基地掷骰任务（点数${value}）。`, "task");
-                        enqueueModal(`🎲 ${modeTask?.title || `基地任务 ${value}点`}`, taskText, `${label(p)} · ${activeModeName()} · 基地${value}点`);
-                    } else {
-                        addLog(`${label(p)} 掷出${value}点，该点数任务已完成。`);
-                    }
+                    const modeTask = pickModeTask("baseRoll", value);
+                    const taskText = modeTask?.content || tasks.baseRoll[value] || `掷出${value}点任务`;
+                    addLog(`${label(p)} 触发基地掷骰任务（点数${value}）。`, "task");
+                    enqueueModal(`🎲 ${modeTask?.title || `基地任务 ${value}点`}`, taskText, `${label(p)} · ${activeModeName()} · 基地${value}点`);
                     endTurn(p);
                 } else {
                     endTurn(p);
