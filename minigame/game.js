@@ -12,7 +12,7 @@ ctx.scale(dpr, dpr);
 
 const W = systemInfo.windowWidth;
 const H = systemInfo.windowHeight;
-const GAME_VERSION = '2.7.7';
+const GAME_VERSION = '2.7.8';
 const safeTop = systemInfo.safeArea ? systemInfo.safeArea.top : (systemInfo.statusBarHeight || 0);
 const safeBottom = systemInfo.safeArea ? Math.max(0, H - systemInfo.safeArea.bottom) : 0;
 const capsuleBottom = menuButton ? menuButton.bottom : safeTop + 44;
@@ -670,18 +670,22 @@ function drawHomePill(x, y, w, label, value) {
 
 function drawHomeHud() {
   const y = Math.max(8, safeTop + 4);
-  const pillW = Math.min(58, Math.max(46, W * .145));
+  const pillW = Math.min(54, Math.max(44, W * .13));
   const gap = 5;
   drawHomePill(8, y, pillW, '任务', activeTaskTotal());
   drawHomePill(8 + pillW + gap, y, pillW, '玩家', setupPlayers.length);
-  drawHomePill(8 + (pillW + gap) * 2, y, pillW, '存档', hasSavedState() ? '有' : '无');
+  const saveW = Math.min(50, Math.max(42, W * .12));
   const versionText = `v${GAME_VERSION}`;
-  const vw = Math.min(92, Math.max(62, W * .2));
-  fillRoundGradient(W - vw - 8, y, vw, 28, 14, [[0, 'rgba(255,255,255,.9)'], [1, 'rgba(226,242,255,.72)']], false);
+  const vw = Math.min(66, Math.max(54, W * .16));
+  const versionX = W - vw - 8;
+  const saveX = versionX - saveW - gap;
+  drawHomePill(saveX, y, saveW, '存档', hasSavedState() ? '有' : '无');
+  fillRoundGradient(versionX, y + 3, vw, 28, 14, [[0, 'rgba(255,255,255,.88)'], [1, 'rgba(255,245,205,.7)']], false);
+  strokeRoundRect(versionX, y + 3, vw, 28, 14, 'rgba(255,255,255,.78)', 1);
   ctx.fillStyle = '#5f4b35';
-  ctx.font = '900 11px sans-serif';
+  ctx.font = '900 10px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(versionText, W - vw / 2 - 8, y + 18);
+  ctx.fillText(versionText, versionX + vw / 2, y + 21);
   ctx.textAlign = 'left';
 }
 
@@ -757,24 +761,22 @@ function drawMenuButton(x, y, w, h, title, sub, icon, action, primary) {
 
 function drawTool(x, y, title, icon, action) {
   const w = Math.min(100, (W - 52) / 3);
-  const h = 70;
-  const glow = ctx.createRadialGradient(x + 35, y + 31, 4, x + 35, y + 31, 64);
-  glow.addColorStop(0, 'rgba(255,255,255,.98)');
-  glow.addColorStop(.62, 'rgba(255,248,207,.88)');
-  glow.addColorStop(1, 'rgba(255,255,255,.70)');
-  fillRoundRect(x, y, w, h, 22, glow, true);
-  strokeRoundRect(x, y, w, h, 22, 'rgba(255,255,255,.88)', 1.5);
-  if (images[icon]) drawImageContain(images[icon], x + 8, y + 12, 38, 38);
+  const h = 68;
+  fillRoundGradient(x, y, w, h, 18, [[0, 'rgba(255,255,255,.32)'], [1, 'rgba(255,245,202,.18)']], false);
+  strokeRoundRect(x, y, w, h, 18, 'rgba(255,255,255,.5)', 1);
+  if (images[icon]) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(55,34,12,.24)';
+    ctx.shadowBlur = 7;
+    ctx.shadowOffsetY = 3;
+    drawImageContain(images[icon], x + (w - 40) / 2, y + 2, 40, 40);
+    ctx.restore();
+  }
   ctx.shadowBlur = 0;
   ctx.fillStyle = '#30251c';
-  ctx.font = '900 15px sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText(title, x + 49, y + 31);
-  ctx.fillStyle = '#766047';
-  ctx.shadowBlur = 0;
-  ctx.font = '900 10px sans-serif';
-  const sub = action === 'tasks' ? '编辑任务' : action === 'settings' ? '玩家设置' : '飞机预览';
-  ctx.fillText(sub, x + 49, y + 49);
+  ctx.font = '900 13px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(title, x + w / 2, y + 58);
   ctx.shadowBlur = 0;
   ctx.textAlign = 'left';
   buttons.push({ x, y, w, h, action });
@@ -785,8 +787,8 @@ function drawToolBar(y) {
   const w = Math.min(100, (W - 52) / 3);
   const total = w * 3 + gap * 2;
   const x = (W - total) / 2;
-  fillRoundGradient(x - 12, y - 8, total + 24, 86, 26, [[0, 'rgba(255,255,255,.48)'], [1, 'rgba(255,241,175,.38)']], true);
-  strokeRoundRect(x - 12, y - 8, total + 24, 86, 26, 'rgba(255,255,255,.72)', 1);
+  fillRoundGradient(x - 10, y - 7, total + 20, 82, 23, [[0, 'rgba(255,255,255,.28)'], [1, 'rgba(255,241,175,.2)']], false);
+  strokeRoundRect(x - 10, y - 7, total + 20, 82, 23, 'rgba(255,255,255,.48)', 1);
   drawTool(x, y, '任务', 'tasksIcon', 'tasks');
   drawTool(x + w + gap, y, '设置', 'settingsIcon', 'settings');
   drawTool(x + (w + gap) * 2, y, '棋子', 'pieceTestIcon', 'pieces');
