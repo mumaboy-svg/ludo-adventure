@@ -12,7 +12,7 @@ ctx.scale(dpr, dpr);
 
 const W = systemInfo.windowWidth;
 const H = systemInfo.windowHeight;
-const GAME_VERSION = '2.7.8';
+const GAME_VERSION = '2.8.0';
 const safeTop = systemInfo.safeArea ? systemInfo.safeArea.top : (systemInfo.statusBarHeight || 0);
 const safeBottom = systemInfo.safeArea ? Math.max(0, H - systemInfo.safeArea.bottom) : 0;
 const capsuleBottom = menuButton ? menuButton.bottom : safeTop + 44;
@@ -20,7 +20,7 @@ const capsuleBottom = menuButton ? menuButton.bottom : safeTop + 44;
 const ASSETS = {
   bg: 'assets/minigame/ui/home_bg_mobile.jpg',
   logo: 'assets/minigame/ui/title_logo.png',
-  board: 'assets/minigame/ui/board_traditional_preview.jpg',
+  board: 'assets/minigame/ui/board_traditional_preview.webp',
   continueIcon: 'assets/minigame/ui/icon_continue.png',
   newIcon: 'assets/minigame/ui/icon_new_game.png',
   quickIcon: 'assets/minigame/ui/icon_quick_start.png',
@@ -51,7 +51,6 @@ let modalOpenedAt = 0;
 let settingsPage = 0;
 let progressPage = 0;
 let recordsPage = 0;
-let recordsTab = 'players';
 let taskCategory = 'base';
 let taskPage = 0;
 let taskView = 'modes';
@@ -81,7 +80,7 @@ const requestFrame = typeof canvas.requestAnimationFrame === 'function'
   : (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : null);
 const OUTER_PATH_LENGTH = 52;
 const START_INDEX = { R: 22, Y: 48, B: 9, G: 35 };
-const ENTRY_INDEX = { R: 6, Y: 19, B: 32, G: 45 };
+const ENTRY_INDEX = { R: 19, Y: 45, B: 6, G: 32 };
 const FLY_JUMP_RULES = {
   R: { from: 40, to: 52 },
   Y: { from: 14, to: 26 },
@@ -149,10 +148,10 @@ const outerPath = [
   [30.60, 35.47]
 ].map(([x, y]) => ({ x, y }));
 const straightPath = {
-  R: [[49.92, 20.21], [49.90, 25.32], [49.92, 30.45], [49.91, 35.50], [49.90, 40.58], [49.94, 46.34]].map(([x, y]) => ({ x, y })),
-  Y: [[79.60, 50.91], [74.69, 50.92], [69.72, 50.89], [64.91, 50.89], [59.97, 50.92], [54.32, 50.87]].map(([x, y]) => ({ x, y })),
-  B: [[49.88, 81.46], [49.87, 76.37], [49.91, 71.31], [49.94, 66.30], [49.94, 61.18], [49.93, 55.43]].map(([x, y]) => ({ x, y })),
-  G: [[20.32, 50.92], [25.20, 50.93], [30.15, 50.90], [34.92, 50.91], [39.85, 50.87], [45.40, 50.85]].map(([x, y]) => ({ x, y }))
+  R: [[79.60, 50.91], [74.69, 50.92], [69.72, 50.89], [64.91, 50.89], [59.97, 50.92], [54.32, 50.87]].map(([x, y]) => ({ x, y })),
+  Y: [[20.32, 50.92], [25.20, 50.93], [30.15, 50.90], [34.92, 50.91], [39.85, 50.87], [45.40, 50.85]].map(([x, y]) => ({ x, y })),
+  B: [[49.92, 20.21], [49.90, 25.32], [49.92, 30.45], [49.91, 35.50], [49.90, 40.58], [49.94, 46.34]].map(([x, y]) => ({ x, y })),
+  G: [[49.88, 81.46], [49.87, 76.37], [49.91, 71.31], [49.94, 66.30], [49.94, 61.18], [49.93, 55.43]].map(([x, y]) => ({ x, y }))
 };
 let idCounter = 0;
 let setupPlayers = loadSetupPlayers();
@@ -913,8 +912,10 @@ function drawGame() {
   const mainGap = 10;
   const firstRowY = diceY + diceH + 9;
   const halfW = Math.floor((contentW - mainGap) / 2);
-  drawPanelButton(46, firstRowY, halfW, 42, '任务中心', 'tasks', false);
-  drawPanelButton(46 + halfW + mainGap, firstRowY, halfW, 42, '玩家进度', 'records', false);
+  const mainW = Math.floor((contentW - mainGap * 2) / 3);
+  drawPanelButton(46, firstRowY, mainW, 42, '任务中心', 'tasks', false);
+  drawPanelButton(46 + mainW + mainGap, firstRowY, mainW, 42, '游戏进度', 'progress', false);
+  drawPanelButton(46 + (mainW + mainGap) * 2, firstRowY, mainW, 42, '游戏记录', 'records', false);
   const smallGap = 6;
   const smallW = Math.floor((contentW - smallGap * 3) / 4);
   const smallY = firstRowY + 49;
@@ -1258,7 +1259,8 @@ function render() {
   else if (scene === 'game') drawGame();
   else if (scene === 'settings') drawSettings();
   else if (scene === 'tasks') drawTasks();
-  else if (scene === 'records') drawRecords();
+  else if (scene === 'progress') drawProgressPage();
+  else if (scene === 'records') drawRecordsPage();
   else if (scene === 'pieces') drawPieceTest();
   drawModal();
 }
@@ -1401,23 +1403,37 @@ function playerProgressPercent(piece) {
   return 0;
 }
 
-function drawRecords() {
+function drawInfoPageFrame(title, subtitle, summary, drawContent) {
   buttons = [];
-  drawTopTitle('进度记录', `第 ${state.round || 1} 轮 · ${state.players.length} 位玩家`);
+  drawTopTitle(title, subtitle);
   const startY = Math.max(safeTop + 124, 138);
   const panelH = Math.max(320, H - startY - safeBottom - 18);
   fillRoundRect(24, startY, W - 48, panelH, 26, 'rgba(255,255,255,.94)', true);
-  const tabGap = 10;
-  const tabW = Math.floor((W - 102) / 2);
-  drawPanelButton(46, startY + 20, tabW, 42, '玩家进度', 'recordsPlayers', recordsTab === 'players');
-  drawPanelButton(56 + tabW, startY + 20, tabW, 42, '游戏记录', 'recordsLogs', recordsTab === 'logs');
-
-  if (recordsTab === 'players') drawPlayerRecords(startY, panelH);
-  else drawGameRecords(startY, panelH);
-
+  ctx.fillStyle = '#76593b';
+  ctx.font = '800 11px sans-serif';
+  ctx.fillText(summary, 42, startY + 34);
+  drawContent(startY, panelH);
   const footerY = startY + panelH - 52;
   drawPanelButton(46, footerY, 96, 38, '返回游戏', 'game', true);
-  drawPanelButton(W - 142, footerY, 96, 38, '大厅', 'home', false);
+  drawPanelButton(W - 142, footerY, 96, 38, '返回大厅', 'home', false);
+}
+
+function drawProgressPage() {
+  drawInfoPageFrame(
+    '游戏进度',
+    `第 ${state.round || 1} 轮 · ${state.players.length} 位玩家`,
+    '查看所有玩家的位置、排名与完成状态',
+    drawPlayerRecords
+  );
+}
+
+function drawRecordsPage() {
+  drawInfoPageFrame(
+    '游戏记录',
+    `第 ${state.round || 1} 轮 · 最近事件优先`,
+    '掷骰、移动、任务卡与国王卡事件',
+    drawGameRecords
+  );
 }
 
 function drawPlayerRecords(startY, panelH) {
@@ -2331,7 +2347,8 @@ function handleAction(action) {
   if (action === 'home') scene = 'home';
   if (action === 'settings') scene = 'settings';
   if (action === 'tasks') { scene = 'tasks'; taskView = 'modes'; }
-  if (action === 'records') scene = 'records';
+  if (action === 'progress') { scene = 'progress'; progressPage = 0; }
+  if (action === 'records') { scene = 'records'; recordsPage = 0; }
   if (action === 'pieces') scene = 'pieces';
   if (action === 'game') scene = 'game';
   if (action === 'boardDebug') boardDebug = !boardDebug;
@@ -2368,8 +2385,6 @@ function handleAction(action) {
   if (action === 'setupPrev') settingsPage = Math.max(0, settingsPage - 1);
   if (action === 'setupNext') settingsPage = Math.min(Math.max(0, Math.ceil(setupPlayers.length / SETTINGS_PAGE_SIZE) - 1), settingsPage + 1);
   if (action === 'setupApply') applySetupAndStart();
-  if (action === 'recordsPlayers') { recordsTab = 'players'; progressPage = 0; }
-  if (action === 'recordsLogs') { recordsTab = 'logs'; recordsPage = 0; }
   if (action === 'progressPrev') progressPage = Math.max(0, progressPage - 1);
   if (action === 'progressNext') {
     const panelH = Math.max(320, H - Math.max(safeTop + 124, 138) - safeBottom - 18);
