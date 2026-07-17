@@ -219,8 +219,52 @@
         @media(min-width: 861px) and (orientation: landscape) {
             .home-hero { height: 100svh; min-height: 620px; max-height: none; }
             .home-titlebar { padding-top: clamp(4px, 1vw, 10px); }
-            .primary-menu { padding: 0 clamp(36px, 7vw, 160px); align-self: center; }
+            .primary-menu { padding: 0 clamp(36px, 7vw, 160px); align-self: center; background: none; border: none; box-shadow: none; backdrop-filter: none; }
+            .primary-menu::before { display: none; }
             .home-bottom { align-self: end; padding: 0 clamp(44px, 10vw, 210px) clamp(8px, 1vw, 16px); }
+            /* --- 桌面横屏大厅动效（v2.10.0 补齐） --- */
+            .home-effects { display: block; position: absolute; inset: 0; z-index: 1; overflow: hidden; pointer-events: none; }
+            .sparkle, .candy-dot { position: absolute; display: block; }
+            .sparkle { width: var(--size); height: var(--size); opacity: .22; animation: sparkleTwinkle var(--duration) ease-in-out var(--delay) infinite; }
+            .sparkle::before, .sparkle::after { content: ""; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); border-radius: 999px; background: #fff8c9; box-shadow: 0 0 8px #ffe986, 0 0 14px #fff8; }
+            .sparkle::before { width: 28%; height: 100%; }
+            .sparkle::after { width: 100%; height: 28%; }
+            .sparkle.gold::before, .sparkle.gold::after { background: #ffd34f; box-shadow: 0 0 8px #ffcf46, 0 0 13px #fff6; }
+            .sparkle.s1 { left: 14%; top: 22%; --size: 14px; --duration: 3.8s; --delay: -.4s; }
+            .sparkle.s2 { left: 82%; top: 26%; --size: 11px; --duration: 4.7s; --delay: -2.1s; }
+            .sparkle.s3 { left: 20%; top: 52%; --size: 9px; --duration: 3.4s; --delay: -1.2s; }
+            .sparkle.s4 { left: 85%; top: 63%; --size: 15px; --duration: 5.2s; --delay: -3.3s; }
+            .sparkle.s5 { left: 67%; top: 16%; --size: 9px; --duration: 4.1s; --delay: -1.8s; }
+            .candy-dot { width: var(--size); height: var(--size); border-radius: 50%; opacity: .6; border: 2px solid #fff8; box-shadow: inset 3px 3px 3px #fff8, 0 5px 8px #3557842b; animation: candyFloat var(--duration) ease-in-out var(--delay) infinite; }
+            .candy-dot.ring { background: radial-gradient(circle, transparent 0 30%, #8bd54a 32% 62%, #e8ffb4 64% 72%, #65ae36 74%); }
+            .candy-dot.berry { background: radial-gradient(circle at 32% 28%, #fff 0 8%, #ff8fad 10% 38%, #ed406b 70%); }
+            .candy-dot.lemon { border-radius: 38% 62% 45% 55%; background: linear-gradient(135deg,#fff7a3,#ffc42d 58%,#ef8b1b); }
+            .candy-dot.c1 { left: 10%; top: 68%; --size: 18px; --duration: 7.2s; --delay: -1s; }
+            .candy-dot.c2 { left: 88%; top: 48%; --size: 15px; --duration: 6.4s; --delay: -3.2s; }
+            .candy-dot.c3 { left: 74%; top: 74%; --size: 13px; --duration: 8.1s; --delay: -4.6s; }
+            .home-flyby {
+                display: block; position: absolute; z-index: 2; left: 0; top: 34%;
+                width: clamp(90px, 10vw, 130px); height: auto; opacity: 0;
+                filter: drop-shadow(0 8px 8px #315f8c42);
+                animation: homePlaneFlybyDesktop 11s ease-in-out 1.5s infinite;
+                pointer-events: none;
+            }
+            .primary-menu .menu-button { opacity: 0; animation: lobbyButtonInDesktop .52s cubic-bezier(.2,.85,.28,1.18) forwards, lobbyButtonGlowDesktop 4.8s ease-in-out 2s infinite; }
+            .primary-menu .menu-button:nth-child(1) { animation-delay: .12s, 2s; }
+            .primary-menu .menu-button:nth-child(2) { animation-delay: .24s, 2.35s; }
+            .primary-menu .menu-button:nth-child(3) { animation-delay: .36s, 2.7s; }
+            @keyframes lobbyButtonInDesktop { from { opacity: 0; transform: translateY(18px) scale(.94); } to { opacity: 1; transform: translateY(0) scale(1); } }
+            @keyframes lobbyButtonGlowDesktop { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.045) drop-shadow(0 7px 9px #fff4); } }
+            @keyframes homePlaneFlybyDesktop {
+                0%, 11% { opacity: 0; transform: translate3d(-130%, 30px, 0) rotate(-3deg) scale(.88); }
+                16% { opacity: 1; }
+                60% { opacity: 1; }
+                72%, 100% { opacity: 0; transform: translate3d(calc(100vw + 60px), -60px, 0) rotate(2deg) scale(1.06); }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .home-flyby, .home-effects { display: none; animation: none; }
+                .primary-menu .menu-button { opacity: 1; animation: none; }
+            }
         }
         .home-hero::before {
             content: ""; position: absolute; inset: 0; pointer-events: none;
@@ -301,6 +345,40 @@
             .home-bottom { padding-bottom: 2px; }
             .dashboard-grid { padding-top: 5px; padding-bottom: 5px; }
             .tool-card img { width: 68px; height: 68px; }
+        }
+        /* --- 矮横屏降级（844×390 等 max-height: 500px） --- */
+        @media(min-width: 861px) and (orientation: landscape) and (max-height: 500px) {
+            .home-flyby { top: 28%; width: clamp(70px, 8vw, 96px); animation-duration: 9s; }
+            .home-effects { opacity: .55; }
+            .sparkle.s3, .sparkle.s5, .candy-dot.c3 { display: none; }
+            .sparkle.s1 { left: 12%; top: 18%; --size: 10px; }
+            .sparkle.s2 { left: 84%; top: 22%; --size: 8px; }
+            .sparkle.s4 { left: 83%; top: 58%; --size: 11px; }
+            .candy-dot.c1 { left: 8%; top: 62%; --size: 14px; }
+            .candy-dot.c2 { left: 86%; top: 42%; --size: 12px; }
+            .primary-menu .menu-button { animation: lobbyButtonInDesktopShort .4s cubic-bezier(.2,.85,.28,1.18) forwards; }
+            @keyframes lobbyButtonInDesktopShort { from { opacity: 0; transform: translateY(12px) scale(.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+            .primary-menu .menu-button:nth-child(1) { animation-delay: .08s; }
+            .primary-menu .menu-button:nth-child(2) { animation-delay: .16s; }
+            .primary-menu .menu-button:nth-child(3) { animation-delay: .24s; }
+            .hero-copy { display: none; }
+            .title-logo { width: min(22vw, 200px); }
+            .home-hero { min-height: 100svh; gap: 4px; padding-top: 6px; padding-bottom: 6px; }
+            .home-titlebar { padding-top: 2px; gap: 2px; }
+            .home-stats, .home-meta { top: 6px; }
+            .home-stats .stat, .home-meta .stat { min-width: 50px; padding: 3px 5px; }
+            .home-stats .stat b, .home-meta .stat b { font-size: 13px; }
+            .home-stats .stat span, .home-meta .stat span { font-size: 8px; }
+            .version-pill { min-height: 24px; font-size: 9px; padding: .15rem .35rem; }
+            .primary-menu { width: min(100%, 760px); gap: 6px; padding: 0; border-radius: 0; background: none; border: none; box-shadow: none; }
+            .menu-button { min-height: 48px; border-radius: 14px; padding: 6px 8px; }
+            .menu-button .icon { width: clamp(40px, 5vw, 56px); height: clamp(40px, 5vw, 56px); }
+            .menu-title { font-size: clamp(13px, 1.5vw, 16px); }
+            .menu-sub { font-size: 9px; }
+            .home-bottom { padding: 0 12px 2px; }
+            .dashboard-grid { gap: 4px; padding: 2px 6px 3px; border-radius: 12px; }
+            .tool-card img { width: 38px; height: 38px; }
+            .tool-card strong { font-size: 10px; }
         }
         .stat-grid { display: grid; grid-template-columns: repeat(2, 120px); gap: 8px; margin-top: 0; }
         .stat { border: 1px solid var(--line); border-radius: 16px; background: #fffdf8d9; padding: 8px 10px; }
@@ -1120,9 +1198,107 @@
             .tool-card img { width: 38px; height: 38px; }
             .tool-card strong { font-size: 12px; }
         }
+
+        /* 基础隐藏规则位于桌面动效定义之后，因此在层叠末尾重新开启。 */
+        @media (min-width: 861px) and (orientation: landscape) {
+            .home-effects, .home-flyby { display: block; }
+            .home-titlebar, .home-stats, .home-meta, .primary-menu, .home-bottom { z-index: 3; }
+        }
+        @media (orientation: landscape) and (max-height: 500px) {
+            .home-titlebar, .home-stats, .home-meta, .primary-menu, .home-bottom { z-index: 3; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .home-flyby, .home-effects { display: none !important; animation: none !important; }
+            .primary-menu .menu-button { opacity: 1; animation: none !important; }
+        }
+
+        /* v2.10.0 网页启动加载页：只阻塞大厅首屏关键资源。 */
+        .web-loader {
+            position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center;
+            min-height: 100svh; overflow: hidden; color: #fff8d6;
+            background: #4b83ce url('./assets/images/ui/loading_bg_portrait.jpg') center / cover no-repeat;
+            opacity: 1; visibility: visible; transition: opacity .38s ease, visibility .38s ease;
+        }
+        .web-loader::before {
+            content: ""; position: absolute; inset: 0; pointer-events: none;
+            background: linear-gradient(180deg, #163f7626, transparent 32%, #17376238 100%);
+        }
+        .web-loader.is-complete { opacity: 0; visibility: hidden; pointer-events: none; }
+        .web-loader-content {
+            position: relative; z-index: 1; width: min(76vw, 520px); min-width: 250px;
+            display: grid; justify-items: center; align-content: center; gap: 10px;
+            transform: translateY(5vh); text-align: center;
+        }
+        .web-loader-logo {
+            position: fixed; top: max(7vh, env(safe-area-inset-top)); left: 50%;
+            width: min(64vw, 270px); max-height: 23vh; object-fit: contain;
+            transform: translateX(-50%); filter: drop-shadow(0 7px 8px #17365f70);
+        }
+        .web-loader-status { margin: 0; font-size: clamp(15px, 4.4vw, 19px); font-weight: 900; letter-spacing: .08em; text-shadow: 0 2px 5px #17365f; }
+        .web-loader-track {
+            position: relative; width: 100%; height: 20px; padding: 3px; border-radius: 999px;
+            border: 2px solid #fff3b8; background: #173d7196;
+            box-shadow: inset 0 2px 5px #09264c8f, 0 5px 13px #17365f70, 0 0 0 2px #8bd8ff5c;
+        }
+        .web-loader-fill {
+            width: 0%; height: 100%; border-radius: inherit;
+            background: linear-gradient(90deg, #ff6b64 0 25%, #ffd45a 25% 50%, #58b8ff 50% 75%, #72d86c 75%);
+            box-shadow: inset 0 2px 2px #fff9, 0 0 10px #fff3a9; transition: width .18s ease-out;
+        }
+        .web-loader-plane {
+            position: absolute; top: 50%; left: 0%; width: clamp(48px, 13vw, 62px); height: auto;
+            transform: translate(-48%, -55%); filter: drop-shadow(0 5px 5px #17365f80);
+            transition: left .18s ease-out;
+        }
+        .web-loader-percent { min-width: 4ch; font-size: 15px; font-weight: 1000; text-shadow: 0 2px 4px #17365f; }
+        .web-loader-error { margin: 2px 0; max-width: 32em; color: #fff; font-size: 13px; font-weight: 800; text-shadow: 0 2px 4px #7a251f; }
+        .web-loader-retry {
+            min-height: 42px; padding: .6rem 1.4rem; border: 2px solid #fff2bd; border-radius: 999px;
+            color: #6f3514; background: linear-gradient(#fff7c7, #ffc85d); box-shadow: 0 6px 0 #b86622, 0 10px 18px #17365f66;
+        }
+        .web-loader-version {
+            position: fixed; bottom: max(18px, env(safe-area-inset-bottom)); left: 50%;
+            transform: translateX(-50%); padding: 4px 12px; border-radius: 999px;
+            color: #fff9db; background: #173d7175; font-size: 12px; font-weight: 900; white-space: nowrap;
+        }
+        .web-loader-noscript { position: fixed; inset: auto 10% 10%; z-index: 10001; padding: 12px; border-radius: 14px; background: #7a251fe8; color: #fff; text-align: center; }
+        @media (orientation: landscape) {
+            .web-loader { background-image: linear-gradient(180deg, transparent 82%, #3777bfc7), url('./assets/images/ui/loading_bg_landscape.jpg'); }
+            .web-loader-content { width: min(52vw, 620px); transform: translateY(8vh); gap: 7px; }
+            .web-loader-logo { top: max(4vh, env(safe-area-inset-top)); width: min(35vw, 330px); max-height: 34vh; }
+            .web-loader-plane { width: clamp(44px, 7vw, 62px); }
+        }
+        @media (orientation: landscape) and (max-height: 500px) {
+            .web-loader-content { width: min(52vw, 500px); transform: translateY(10vh); gap: 4px; }
+            .web-loader-logo { top: 2vh; width: min(30vw, 220px); max-height: 31vh; }
+            .web-loader-track { height: 17px; }
+            .web-loader-status { font-size: 13px; }
+            .web-loader-percent { font-size: 12px; }
+            .web-loader-version { bottom: max(8px, env(safe-area-inset-bottom)); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .web-loader, .web-loader-fill, .web-loader-plane { transition: none !important; }
+        }
+
     </style>
 </head>
 <body>
+
+<div class="web-loader" id="webLoader" role="status" aria-live="polite" aria-label="游戏资源加载中">
+    <div class="web-loader-content">
+        <img class="web-loader-logo" src="./assets/images/ui/title_logo.webp" alt="飞行棋 大冒险">
+        <p class="web-loader-status" id="webLoaderStatus">正在准备冒险</p>
+        <div class="web-loader-track" aria-hidden="true">
+            <div class="web-loader-fill" id="webLoaderFill"></div>
+            <img class="web-loader-plane" id="webLoaderPlane" src="./assets/images/ui/home_plane_flyby.webp" alt="">
+        </div>
+        <div class="web-loader-percent" id="webLoaderPercent">0%</div>
+        <p class="web-loader-error" id="webLoaderError" hidden></p>
+        <button class="web-loader-retry" id="webLoaderRetry" type="button" hidden>重新加载</button>
+        <div class="web-loader-version" id="webLoaderVersion">v2.10.0</div>
+    </div>
+</div>
+<noscript><div class="web-loader-noscript">请开启 JavaScript 后重新进入游戏。</div></noscript>
 <div class="app">
     <div class="top">
         <div class="brand">
@@ -1452,7 +1628,7 @@
 
 <script>
 (() => {
-    const APP_VERSION = "2.9.4";
+    const APP_VERSION = "2.10.0";
     const STATE_KEY = "flight_adventure_v66_state";
     const TASK_KEY = "flight_adventure_v66_tasks";
     const AUDIO_SETTINGS_KEY = "flight_adventure_audio_v1";
@@ -1746,7 +1922,31 @@
     let pieceMoveTracks = new Map();
     let piecesRenderedOnce = false;
 
-    init();
+    const WEB_CRITICAL_ASSETS = [
+        { type: "image", url: "./assets/images/ui/home_bg_desktop.webp" },
+        { type: "image", url: "./assets/images/ui/home_bg_mobile.webp" },
+        { type: "image", url: "./assets/images/ui/title_logo.webp" },
+        { type: "image", url: "./assets/images/ui/button_continue.webp" },
+        { type: "image", url: "./assets/images/ui/button_new_game.webp" },
+        { type: "image", url: "./assets/images/ui/button_quick_start.webp" },
+        { type: "image", url: "./assets/images/ui/icon_continue.webp" },
+        { type: "image", url: "./assets/images/ui/icon_new_game.webp" },
+        { type: "image", url: "./assets/images/ui/icon_quick_start.webp" },
+        { type: "image", url: "./assets/images/ui/icon_tasks.webp" },
+        { type: "image", url: "./assets/images/ui/icon_settings.webp" },
+        { type: "image", url: "./assets/images/ui/icon_piece_test.webp" },
+        { type: "image", url: "./assets/images/ui/home_plane_flyby.webp" },
+        { type: "json", url: TASK_LIBRARY_URL, networkOnly: true }
+    ];
+    let webLoadingRun = 0;
+
+    try {
+        init();
+        startWebLoading();
+    } catch (error) {
+        console.error("游戏初始化失败", error);
+        showWebLoadingFailure(["游戏初始化"]);
+    }
 
     function init() {
         document.title = `飞行棋 · 大冒险 v${APP_VERSION}`;
@@ -1761,6 +1961,89 @@
         updateDashboard();
         showHome();
         if (!commercialTaskLibrary?.modes) loadCommercialTaskLibrary({ silent: true });
+    }
+
+
+    function preloadWebAsset(asset) {
+        if (asset.networkOnly && location.protocol === "file:") return Promise.resolve(asset.url);
+        if (asset.type === "json") {
+            return fetch(asset.url, { cache: "no-store" }).then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            });
+        }
+        return new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => resolve(asset.url);
+            image.onerror = () => reject(new Error(asset.url));
+            image.src = asset.url;
+            if (image.complete && image.naturalWidth > 0) resolve(asset.url);
+        });
+    }
+
+    function updateWebLoader(progress, status) {
+        const percent = Math.max(0, Math.min(100, Math.round(progress * 100)));
+        const fill = document.getElementById("webLoaderFill");
+        const plane = document.getElementById("webLoaderPlane");
+        const label = document.getElementById("webLoaderPercent");
+        const statusLabel = document.getElementById("webLoaderStatus");
+        if (fill) fill.style.width = `${percent}%`;
+        if (plane) plane.style.left = `${percent}%`;
+        if (label) label.textContent = `${percent}%`;
+        if (statusLabel && status) statusLabel.textContent = status;
+    }
+
+    async function startWebLoading() {
+        const loader = document.getElementById("webLoader");
+        if (!loader) return;
+        const run = ++webLoadingRun;
+        const startedAt = performance.now();
+        const errorLabel = document.getElementById("webLoaderError");
+        const retry = document.getElementById("webLoaderRetry");
+        const version = document.getElementById("webLoaderVersion");
+        loader.classList.remove("is-complete");
+        loader.setAttribute("aria-busy", "true");
+        if (version) version.textContent = `v${APP_VERSION}`;
+        if (errorLabel) { errorLabel.hidden = true; errorLabel.textContent = ""; }
+        if (retry) retry.hidden = true;
+        updateWebLoader(0, "正在准备冒险");
+
+        let completed = 0;
+        const failures = [];
+        await Promise.all(WEB_CRITICAL_ASSETS.map(asset => preloadWebAsset(asset)
+            .catch(() => failures.push(asset.url))
+            .finally(() => {
+                completed += 1;
+                if (run === webLoadingRun) updateWebLoader(completed / WEB_CRITICAL_ASSETS.length, "正在装载游戏大厅");
+            })));
+        if (run !== webLoadingRun) return;
+        if (failures.length) {
+            showWebLoadingFailure(failures, completed / WEB_CRITICAL_ASSETS.length);
+            return;
+        }
+        const remaining = Math.max(0, 450 - (performance.now() - startedAt));
+        window.setTimeout(() => {
+            if (run !== webLoadingRun) return;
+            updateWebLoader(1, "冒险准备完成");
+            loader.setAttribute("aria-busy", "false");
+            window.setTimeout(() => loader.classList.add("is-complete"), 180);
+        }, remaining);
+    }
+
+    function showWebLoadingFailure(failures, progress = 0) {
+        const loader = document.getElementById("webLoader");
+        const errorLabel = document.getElementById("webLoaderError");
+        const retry = document.getElementById("webLoaderRetry");
+        if (loader) { loader.classList.remove("is-complete"); loader.setAttribute("aria-busy", "false"); }
+        updateWebLoader(progress, "有资源暂时没有准备好");
+        if (errorLabel) {
+            errorLabel.hidden = false;
+            errorLabel.textContent = `请检查网络后重试（${failures.length} 项）`;
+        }
+        if (retry) {
+            retry.hidden = false;
+            retry.onclick = startWebLoading;
+        }
     }
 
     function bind() {

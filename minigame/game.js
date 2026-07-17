@@ -12,7 +12,7 @@ ctx.scale(dpr, dpr);
 
 const W = systemInfo.windowWidth;
 const H = systemInfo.windowHeight;
-const GAME_VERSION = '2.8.3';
+const GAME_VERSION = '2.10.0';
 const safeTop = systemInfo.safeArea ? systemInfo.safeArea.top : (systemInfo.statusBarHeight || 0);
 const safeBottom = systemInfo.safeArea ? Math.max(0, H - systemInfo.safeArea.bottom) : 0;
 const capsuleBottom = menuButton ? menuButton.bottom : safeTop + 44;
@@ -20,28 +20,41 @@ const capsuleBottom = menuButton ? menuButton.bottom : safeTop + 44;
 const ASSETS = {
   bg: 'assets/minigame/ui/home_bg_mobile.jpg',
   logo: 'assets/minigame/ui/title_logo.png',
-  board: 'assets/minigame/ui/board_traditional_preview.jpg',
+  loadingBgPortrait: 'assets/minigame/ui/loading_bg_portrait.jpg',
+  loadingBgLandscape: 'assets/minigame/ui/loading_bg_landscape.jpg',
+  board: 'packages/game-assets/assets/minigame/ui/board_traditional_preview.jpg',
   continueIcon: 'assets/minigame/ui/icon_continue.png',
   newIcon: 'assets/minigame/ui/icon_new_game.png',
   quickIcon: 'assets/minigame/ui/icon_quick_start.png',
+  continueButton: 'assets/minigame/ui/button_continue.png',
+  newButton: 'assets/minigame/ui/button_new_game.png',
+  quickButton: 'assets/minigame/ui/button_quick_start.png',
+  homePlane: 'assets/minigame/ui/home_plane_flyby.png',
   tasksIcon: 'assets/minigame/ui/icon_tasks.png',
   settingsIcon: 'assets/minigame/ui/icon_settings.png',
   pieceTestIcon: 'assets/minigame/ui/icon_piece_test.png',
-  settingsBg: 'assets/images/ui/settings_bg_mobile.webp',
-  tasksBg: 'assets/images/ui/task_center_bg_mobile.webp',
-  userHud: 'assets/images/ui/user_hud.webp',
-  dicePanel: 'assets/images/ui/dice_panel.webp',
-  taskCard: 'assets/minigame/ui/modal_task_card.png',
-  kingCard: 'assets/minigame/ui/modal_king_card.png',
-  planeR: 'assets/minigame/images/plane_R.png',
-  planeY: 'assets/minigame/images/plane_Y.png',
-  planeB: 'assets/minigame/images/plane_B.png',
-  planeG: 'assets/minigame/images/plane_G.png'
+  importExportIcon: 'assets/minigame/ui/icon_import_export.png',
+  settingsBg: 'packages/game-assets/assets/images/ui/settings_bg_mobile.webp',
+  tasksBg: 'packages/game-assets/assets/images/ui/task_center_bg_mobile.webp',
+  userHud: 'packages/game-assets/assets/images/ui/user_hud.webp',
+  dicePanel: 'packages/game-assets/assets/images/ui/dice_panel.webp',
+  taskCard: 'packages/game-assets/assets/minigame/ui/modal_task_card.png',
+  kingCard: 'packages/game-assets/assets/minigame/ui/modal_king_card.png',
+  planeR: 'packages/game-assets/assets/minigame/images/plane_R.png',
+  planeY: 'packages/game-assets/assets/minigame/images/plane_Y.png',
+  planeB: 'packages/game-assets/assets/minigame/images/plane_B.png',
+  planeG: 'packages/game-assets/assets/minigame/images/plane_G.png'
 };
 
 const images = {};
 let scene = 'home';
 let loaded = false;
+let loadingProgress = 0;
+let loadingStatus = '准备游戏资源';
+let loadingError = '';
+let loadingStarted = false;
+let loadingVisualsPromise = null;
+let loadingNonCriticalError = '';
 let lastRoll = '-';
 let buttons = [];
 let logText = '掷出 6 才能起飞';
@@ -63,6 +76,7 @@ let deferModals = false;
 let backgroundMusic = null;
 let backgroundMusicRequested = false;
 let backgroundMusicEnabled = wx.getStorageSync('ludo_minigame_bgm_enabled_v1') !== false;
+let visualAnimationLoopStarted = false;
 const TASK_PACK_LABELS = { safe_family: '家庭安全', party_light: '聚会轻松', party_fun: '聚会搞笑', couple_light: '情侣互动', king: '国王卡' };
 const DEFAULT_TASK_PACKS = { safe_family: true, party_light: true, party_fun: true, couple_light: false, king: true };
 const TASK_PACK_PRESETS = {
@@ -78,6 +92,7 @@ const bootTime = Date.now();
 const requestFrame = typeof canvas.requestAnimationFrame === 'function'
   ? callback => canvas.requestAnimationFrame(callback)
   : (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : null);
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const OUTER_PATH_LENGTH = 52;
 const START_INDEX = { R: 22, Y: 48, B: 9, G: 35 };
 const ENTRY_INDEX = { R: 19, Y: 45, B: 6, G: 32 };
@@ -483,30 +498,134 @@ function drawWrappedText(text, x, y, maxWidth, lineHeight, maxLines = 4) {
   lines.slice(0, maxLines).forEach((ln, i) => ctx.fillText(ln, x, y + i * lineHeight));
 }
 
+function modalTextLines(text, maxWidth, maxLines) {
+  const paragraphs = String(text || '').replace(/\r/g, '').split('\n');
+  const lines = [];
+  paragraphs.forEach((paragraph) => {
+    if (!paragraph) {
+      if (lines.length && lines[lines.length - 1] !== '') lines.push('');
+      return;
+    }
+    let line = '';
+    Array.from(paragraph).forEach((char) => {
+      const candidate = line + char;
+      if (line && ctx.measureText(candidate).width > maxWidth) {
+        lines.push(line);
+        line = char;
+      } else line = candidate;
+    });
+    if (line) lines.push(line);
+  });
+  while (lines.length && lines[lines.length - 1] === '') lines.pop();
+  if (lines.length <= maxLines) return lines;
+  const visible = lines.slice(0, maxLines);
+  let last = visible[maxLines - 1].replace(/\s+$/, '');
+  while (last && ctx.measureText(`${last}…`).width > maxWidth) last = last.slice(0, -1);
+  visible[maxLines - 1] = `${last}…`;
+  return visible;
+}
+
+function fitModalText(text, maxWidth, maxLines, preferredSize) {
+  for (let size = preferredSize; size >= 13; size -= 1) {
+    ctx.font = `800 ${size}px sans-serif`;
+    const lines = modalTextLines(text, maxWidth, maxLines);
+    if (!lines[maxLines - 1]?.endsWith('…')) return { size, lines };
+  }
+  ctx.font = '800 13px sans-serif';
+  return { size: 13, lines: modalTextLines(text, maxWidth, maxLines) };
+}
+
 
 
 function loadImage(key, src) {
   return new Promise((resolve) => {
     const image = wx.createImage();
-    image.onload = () => { images[key] = image; resolve(); };
-    image.onerror = (err) => { console.warn('image load failed', key, src, err); resolve(); };
+    image.onload = () => { images[key] = image; resolve(true); };
+    image.onerror = (err) => { console.warn('image load failed', key, src, err); resolve(false); };
     image.src = src;
   });
 }
 
-function init() {
-  Promise.all(Object.entries(ASSETS).map(([key, src]) => loadImage(key, src))).then(() => {
+function preloadLoadingVisuals() {
+  if (loadingVisualsPromise) return loadingVisualsPromise;
+  const keys = ['loadingBgPortrait', 'loadingBgLandscape', 'logo', 'homePlane'];
+  loadingVisualsPromise = Promise.all(keys.map(key => loadImage(key, ASSETS[key]).then(() => render())));
+  return loadingVisualsPromise;
+}
+
+function preloadImages() {
+  loadingStatus = '正在整理游戏画面';
+  loadingProgress = Math.max(loadingProgress, 86);
+  render();
+  const entries = Object.entries(ASSETS);
+  let completed = 0;
+  return Promise.all(entries.map(([key, src]) => loadImage(key, src).then((ok) => {
+    completed += 1;
+    if (!ok && !key.startsWith('loadingBg')) loadingNonCriticalError = '部分装饰稍后补充，不影响游戏';
+    loadingProgress = 86 + Math.round((completed / entries.length) * 14);
+    render();
+  })));
+}
+
+function finishInit() {
+  return preloadImages().then(() => {
     loaded = true;
+    loadingProgress = 100;
+    loadingStatus = '加载完成';
     playBackgroundMusic();
     render();
     startHomeAnimationLoop();
   });
 }
 
+function init() {
+  if (loadingStarted) return;
+  loadingStarted = true;
+  loadingError = '';
+  loadingNonCriticalError = '';
+  loadingProgress = 2;
+  loadingStatus = '正在下载游戏资源';
+  preloadLoadingVisuals();
+  startHomeAnimationLoop();
+  render();
+  if (typeof wx.loadSubpackage !== 'function') {
+    try {
+      require('./packages/game-assets/game.js');
+      loadingProgress = 86;
+      finishInit();
+    } catch (error) {
+      loadingStarted = false;
+      loadingError = '资源加载失败，请点击重试';
+      console.warn('subpackage fallback failed', error);
+      render();
+    }
+    return;
+  }
+  const task = wx.loadSubpackage({
+    name: 'gameAssets',
+    success() {
+      loadingProgress = 86;
+      finishInit();
+    },
+    fail(error) {
+      loadingStarted = false;
+      loadingError = '资源加载失败，请点击重试';
+      console.warn('subpackage load failed', error);
+      render();
+    }
+  });
+  if (task && typeof task.onProgressUpdate === 'function') {
+    task.onProgressUpdate((result) => {
+      loadingProgress = Math.max(2, Math.min(85, Math.round((result.progress || 0) * .85)));
+      render();
+    });
+  }
+}
+
 function ensureBackgroundMusic() {
   if (backgroundMusic || typeof wx.createInnerAudioContext !== 'function') return backgroundMusic;
   backgroundMusic = wx.createInnerAudioContext();
-  backgroundMusic.src = 'assets/audio/background_music.mp3';
+  backgroundMusic.src = 'packages/game-assets/assets/audio/background_music.mp3';
   backgroundMusic.loop = true;
   backgroundMusic.autoplay = false;
   backgroundMusic.volume = 0.22;
@@ -551,10 +670,13 @@ if (typeof wx.onAudioInterruptionEnd === 'function') wx.onAudioInterruptionEnd((
 });
 
 function startHomeAnimationLoop() {
-  if (!requestFrame) return;
+  if (!requestFrame || visualAnimationLoopStarted) return;
+  visualAnimationLoopStarted = true;
   let previous = 0;
   const tick = (now) => {
-    if (scene === 'home' && loaded && !pieceAnimation && now - previous >= 42) {
+    const shouldAnimateLoading = !loaded && !loadingError;
+    const shouldAnimateHome = scene === 'home' && loaded && !pieceAnimation;
+    if ((shouldAnimateLoading || shouldAnimateHome) && now - previous >= 42) {
       previous = now;
       render();
     }
@@ -688,11 +810,81 @@ function drawHomeHud() {
   ctx.textAlign = 'left';
 }
 
+function drawHomeSparkle(x, y, size, phase, gold = false) {
+  const alpha = .18 + .72 * Math.pow((Math.sin(phase) + 1) / 2, 2);
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(phase * .12);
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = gold ? '#ffd34f' : '#fff8cf';
+  ctx.shadowColor = gold ? '#ffcf46' : '#fffbd8';
+  ctx.shadowBlur = 7;
+  ctx.lineWidth = Math.max(2, size * .2);
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(0, -size / 2); ctx.lineTo(0, size / 2);
+  ctx.moveTo(-size / 2, 0); ctx.lineTo(size / 2, 0);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawHomeCandy(x, y, size, type, phase) {
+  const floatY = Math.sin(phase) * 5;
+  ctx.save();
+  ctx.translate(x, y + floatY);
+  ctx.rotate(Math.sin(phase * .7) * .12);
+  ctx.globalAlpha = .76;
+  ctx.shadowColor = 'rgba(38,62,103,.25)';
+  ctx.shadowBlur = 6;
+  ctx.shadowOffsetY = 4;
+  if (type === 'ring') {
+    ctx.fillStyle = '#8bd54a'; ctx.beginPath(); ctx.arc(0, 0, size / 2, 0, Math.PI * 2); ctx.fill();
+    ctx.globalCompositeOperation = 'destination-out'; ctx.beginPath(); ctx.arc(0, 0, size * .18, 0, Math.PI * 2); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+  } else {
+    const gradient = ctx.createRadialGradient(-size * .15, -size * .18, 1, 0, 0, size * .6);
+    gradient.addColorStop(0, '#fff5d5');
+    gradient.addColorStop(.18, type === 'berry' ? '#ff8fad' : '#fff07a');
+    gradient.addColorStop(1, type === 'berry' ? '#e83d69' : '#f2a11d');
+    ctx.fillStyle = gradient; ctx.beginPath(); ctx.arc(0, 0, size / 2, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawHomeDecorations(now) {
+  const t = now - bootTime;
+  drawHomeSparkle(W * .12, H * .27, 13, t / 620, true);
+  drawHomeSparkle(W * .81, H * .31, 10, t / 760 + 1.4, false);
+  drawHomeSparkle(W * .18, H * .58, 8, t / 560 + 2.2, true);
+  drawHomeSparkle(W * .86, H * .67, 14, t / 840 + 3.1, false);
+  drawHomeSparkle(W * .69, H * .19, 8, t / 690 + 4.3, true);
+  drawHomeCandy(W * .08, H * .72, 18, 'ring', t / 1050);
+  drawHomeCandy(W * .89, H * .53, 15, 'berry', t / 930 + 2.1);
+  drawHomeCandy(W * .76, H * .78, 13, 'lemon', t / 1180 + 4.2);
+  if (images.homePlane) {
+    const cycle = ((t - 1200) % 9000 + 9000) % 9000;
+    if (t >= 1200 && cycle < 6800) {
+      const progress = cycle / 6800;
+      const ease = progress < .5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      const size = Math.min(112, Math.max(82, W * .24));
+      const x = -size * 1.18 + (W + size * 1.55) * ease;
+      const y = H * .43 - H * .12 * ease + Math.sin(progress * Math.PI) * -8;
+      const alpha = Math.min(1, progress / .08, (1 - progress) / .1);
+      ctx.save(); ctx.globalAlpha = Math.max(0, alpha);
+      ctx.shadowColor = 'rgba(49,95,140,.28)'; ctx.shadowBlur = 9; ctx.shadowOffsetY = 5;
+      drawImageContain(images.homePlane, x, y, size, size);
+      ctx.restore();
+    }
+  }
+}
+
 function drawHome() {
   buttons = [];
   if (images.bg) drawImageCover(images.bg, 0, 0, W, H);
   else drawWarmBackground();
   fillHomeOverlay();
+  const now = Date.now();
+  drawHomeDecorations(now);
   drawHomeHud();
   const heroTop = Math.max(capsuleBottom - 2, Math.round(H * 0.045));
   const logoSize = Math.min(W * 0.78, H * 0.30, 330);
@@ -713,48 +905,61 @@ function drawHome() {
   drawImageContain(images.logo, (W - animatedSize) / 2, heroTop + floatY, animatedSize, animatedSize);
   ctx.restore();
 
-  const bw = Math.min(334, W - 44);
+  const bw = Math.min(304, W * .76);
   const bx = (W - bw) / 2;
-  const bh = H < 700 ? 62 : 70;
-  const gap = H < 700 ? 9 : 12;
-  const toolY = H - safeBottom - (H < 700 ? 96 : 112);
+  const bh = bw / 3;
+  const gap = H < 700 ? 4 : 6;
+  const toolY = H - safeBottom - (H < 700 ? 88 : 102);
   const buttonBlockH = bh * 3 + gap * 2;
-  const preferredY = Math.max(heroTop + logoSize + 16, Math.round(H * 0.405));
-  const startY = Math.min(preferredY, toolY - buttonBlockH - 24);
-  fillRoundGradient(bx - 10, startY - 10, bw + 20, buttonBlockH + 20, 28, [[0, 'rgba(255,255,255,.46)'], [1, 'rgba(255,243,189,.28)']], true);
-  strokeRoundRect(bx - 10, startY - 10, bw + 20, buttonBlockH + 20, 28, 'rgba(255,255,255,.72)', 1);
-  drawMenuButton(bx, startY, bw, bh, '继续上局', savedGameSummary(), 'continueIcon', 'continue', false);
-  drawMenuButton(bx, startY + bh + gap, bw, bh, '新游戏', '选择玩家后开始', 'newIcon', 'new', true);
-  drawMenuButton(bx, startY + (bh + gap) * 2, bw, bh, '快速开始', '默认配置开局', 'quickIcon', 'quick', false);
+  const preferredY = Math.round(H * .535);
+  const startY = Math.min(preferredY, toolY - buttonBlockH - 10);
+  drawMenuButton(bx, startY, bw, bh, '继续上局', '', 'continueIcon', 'continue', false, 0);
+  drawMenuButton(bx, startY + bh + gap, bw, bh, '新游戏', '', 'newIcon', 'new', true, 1);
+  drawMenuButton(bx, startY + (bh + gap) * 2, bw, bh, '快速开始', '', 'quickIcon', 'quick', false, 2);
 
   drawToolBar(toolY);
 }
 
-function drawMenuButton(x, y, w, h, title, sub, icon, action, primary) {
+function drawMenuButton(x, y, w, h, title, sub, icon, action, primary, order = 0) {
   const palette = action === 'new'
     ? [[0, 'rgba(255,244,142,.98)'], [1, 'rgba(255,193,53,.96)']]
     : action === 'quick'
       ? [[0, 'rgba(225,255,205,.97)'], [1, 'rgba(91,210,104,.94)']]
       : [[0, 'rgba(255,255,255,.97)'], [1, 'rgba(225,242,255,.92)']];
-  fillRoundGradient(x, y, w, h, 23, palette, true);
-  strokeRoundRect(x, y, w, h, 23, 'rgba(255,255,255,.92)', 2);
-  if (images[icon]) {
-    ctx.save();
-    ctx.shadowColor = 'rgba(70,42,14,.32)';
-    ctx.shadowBlur = 9;
-    ctx.shadowOffsetY = 4;
-    drawImageContain(images[icon], x + 15, y + 7, h - 14, h - 14);
-    ctx.restore();
+  const buttonAsset = action === 'new' ? images.newButton : action === 'quick' ? images.quickButton : images.continueButton;
+  const elapsed = Date.now() - bootTime - 80 - order * 100;
+  const entrance = Math.max(0, Math.min(1, elapsed / 520));
+  const eased = 1 - Math.pow(1 - entrance, 3);
+  const drawY = y + (1 - eased) * 18;
+  const scale = .94 + eased * .06;
+  const drawW = w * scale;
+  const drawH = h * scale;
+  const drawX = x + (w - drawW) / 2;
+  const glow = 1 + Math.sin((Date.now() - bootTime) / 760 + order * 1.1) * .025;
+  ctx.save();
+  ctx.globalAlpha = entrance;
+  ctx.translate(x + w / 2, drawY + h / 2);
+  ctx.scale(glow, glow);
+  ctx.translate(-(x + w / 2), -(drawY + h / 2));
+  if (buttonAsset) {
+    ctx.shadowColor = 'rgba(70,42,14,.25)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 5;
+    drawImageContain(buttonAsset, drawX, drawY, drawW, drawH);
+  } else {
+    fillRoundGradient(drawX, drawY, drawW, drawH, 23, palette, true);
+    strokeRoundRect(drawX, drawY, drawW, drawH, 23, 'rgba(255,255,255,.92)', 2);
   }
-  const textX = x + h + 4 + (w - h - 4) / 2;
+  if (images[icon]) {
+    const iconSize = drawH * (action === 'quick' ? .64 : .6);
+    ctx.shadowColor = 'rgba(70,42,14,.30)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 3;
+    drawImageContain(images[icon], drawX + drawW * .075, drawY + (drawH - iconSize) / 2, iconSize, iconSize);
+  }
+  ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
   ctx.textAlign = 'center';
-  ctx.fillStyle = action === 'quick' ? '#174d24' : action === 'new' ? '#754510' : '#30251c';
-  ctx.font = '900 23px sans-serif';
-  ctx.fillText(title, textX, y + h * .45);
-  ctx.fillStyle = action === 'quick' ? '#387442' : '#76593b';
-  ctx.font = '800 12px sans-serif';
-  ctx.fillText(sub, textX, y + h * .73);
+  ctx.fillStyle = action === 'quick' ? '#174d24' : action === 'new' ? '#754510' : '#ffffff';
+  ctx.font = `900 ${Math.max(19, Math.min(23, drawH * .29))}px sans-serif`;
+  ctx.fillText(title, x + w / 2, drawY + drawH * .59);
   ctx.textAlign = 'left';
+  ctx.restore();
   buttons.push({ x, y, w, h, action });
 }
 
@@ -1006,34 +1211,62 @@ function drawModal() {
   if (cardImage) drawImageContain(cardImage, cx, cy, cardSize, cardSize);
   else fillRoundRect(cx, cy, cardSize, cardSize, 28, '#fff7df', false);
   ctx.shadowBlur = 0;
-  ctx.textBaseline = 'alphabetic';
+  const layout = isKing
+    ? { titleY: .365, actorY: .425, reasonY: .465, bodyY: .505, bodyW: .52, bodyLines: 4, buttonY: .71, closeY: .175 }
+    : { titleY: .347, actorY: .417, bodyY: .497, bodyW: .56, bodyLines: 4, buttonY: .71, closeY: .205 };
+  ctx.textBaseline = 'middle';
   ctx.fillStyle = isKing ? '#4a2406' : '#241b14';
-  ctx.font = '900 23px sans-serif';
+  ctx.font = `900 ${Math.max(19, Math.round(cardSize * .06))}px sans-serif`;
   ctx.textAlign = 'center';
-  ctx.fillText(modal.title, W / 2, Math.round(cy + cardSize * 0.30));
-  ctx.textAlign = 'left';
+  ctx.fillText(String(modal.title || (isKing ? '国王卡' : '任务卡')), W / 2, Math.round(cy + cardSize * layout.titleY), cardSize * .54);
+
+  if (modal.actor) {
+    ctx.fillStyle = isKing ? '#8a4c14' : '#846247';
+    ctx.font = `800 ${Math.max(11, Math.round(cardSize * .035))}px sans-serif`;
+    ctx.fillText(String(modal.actor), W / 2, Math.round(cy + cardSize * layout.actorY), cardSize * .54);
+  }
+
+  let bodyText = String(modal.body || '').trim();
+  let reason = '';
+  if (isKing) {
+    const parts = bodyText.split(/\n+/);
+    if (parts.length > 1 && /触发|掷出/.test(parts[0])) reason = parts.shift();
+    bodyText = parts.join('\n').trim();
+  }
+  if (reason) {
+    ctx.fillStyle = '#a35a14';
+    ctx.font = `900 ${Math.max(11, Math.round(cardSize * .034))}px sans-serif`;
+    ctx.fillText(reason, W / 2, Math.round(cy + cardSize * layout.reasonY), cardSize * .50);
+  }
+
+  const bodyWidth = Math.round(cardSize * layout.bodyW);
+  const fitted = fitModalText(bodyText, bodyWidth, layout.bodyLines, Math.max(14, Math.round(cardSize * .043)));
   ctx.fillStyle = isKing ? '#4a2406' : '#3a2a1d';
-  ctx.font = '800 16px sans-serif';
-  drawWrappedText(modal.body, Math.round(cx + cardSize * 0.23), Math.round(cy + cardSize * 0.44), Math.round(cardSize * 0.54), 25, 5);
+  ctx.font = `800 ${fitted.size}px sans-serif`;
+  const lineHeight = Math.round(fitted.size * 1.48);
+  const bodyStartY = Math.round(cy + cardSize * layout.bodyY);
+  fitted.lines.forEach((line, index) => {
+    if (line) ctx.fillText(line, W / 2, bodyStartY + index * lineHeight, bodyWidth);
+  });
   const confirmX = Math.round(cx + cardSize * 0.31);
-  const confirmY = Math.round(cy + cardSize * 0.78);
+  const confirmY = Math.round(cy + cardSize * layout.buttonY);
   const confirmW = Math.round(cardSize * 0.38);
   fillRoundGradient(confirmX, confirmY, confirmW, 42, 21, [[0, '#ffe66a'], [.55, '#ffb631'], [1, '#ed7628']], true);
   strokeRoundRect(confirmX, confirmY, confirmW, 42, 21, 'rgba(255,255,255,.9)', 2);
   ctx.fillStyle = '#542d0e';
   ctx.font = '900 14px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('完成，继续', confirmX + confirmW / 2, confirmY + 27);
+  ctx.fillText('完成，继续', confirmX + confirmW / 2, confirmY + 21);
   ctx.textAlign = 'left';
   const closeSize = 36;
   const closeX = Math.round(cx + cardSize * .77);
-  const closeY = Math.round(cy + cardSize * .14);
+  const closeY = Math.round(cy + cardSize * layout.closeY);
   fillRoundGradient(closeX, closeY, closeSize, closeSize, 18, [[0, '#fffdf4'], [1, '#f4c879']], true);
   strokeRoundRect(closeX, closeY, closeSize, closeSize, 18, 'rgba(255,255,255,.9)', 2);
   ctx.fillStyle = '#6b3e1a';
   ctx.font = '900 23px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('×', closeX + closeSize / 2, closeY + 25);
+  ctx.fillText('×', closeX + closeSize / 2, closeY + closeSize / 2 + 1);
   ctx.textAlign = 'left';
   ctx.restore();
   buttons.push({ x: confirmX, y: confirmY, w: confirmW, h: 42, action: 'closeModal' });
@@ -1244,14 +1477,127 @@ function drawDangerButton(x, y, w, h, text, action) {
   buttons.push({ x, y, w, h, action });
 }
 
+function drawLoadingProgressBar(x, y, w, h, progress) {
+  fillRoundRect(x, y, w, h, h / 2, 'rgba(255,255,255,.62)');
+  strokeRoundRect(x - 2, y - 2, w + 4, h + 4, h / 2 + 2, loadingError ? '#ff6b64' : '#fff4cf', 2);
+  const filled = clamp(w * progress / 100, 0, w);
+  if (filled > 0) {
+    ctx.save();
+    roundRect(x, y, filled, h, h / 2);
+    ctx.clip();
+    const colors = ['#ff6b64', '#ffd45a', '#58b8ff', '#72d86c'];
+    const segmentW = w / colors.length;
+    colors.forEach((color, index) => {
+      ctx.fillStyle = color;
+      ctx.fillRect(x + segmentW * index, y, segmentW + 1, h);
+    });
+    ctx.restore();
+  }
+}
+
+function drawLoadingDecoration(now) {
+  const t = now - bootTime;
+  drawHomeSparkle(W * .18, H * .33, 10, t / 700, true);
+  drawHomeSparkle(W * .82, H * .38, 8, t / 820 + 1.5, false);
+  drawHomeSparkle(W * .76, H * .68, 7, t / 760 + 2.4, true);
+  drawHomeCandy(W * .14, H * .70, 12, 'lemon', t / 1100 + 1);
+}
+
+function drawLoadingScreen() {
+  buttons = [];
+  const landscape = W > H;
+  const bgKey = landscape ? 'loadingBgLandscape' : 'loadingBgPortrait';
+  if (images[bgKey]) drawImageCover(images[bgKey], 0, 0, W, H);
+  else drawWarmBackground();
+  if (landscape) {
+    const fade = ctx.createLinearGradient(0, H * .94, 0, H);
+    fade.addColorStop(0, 'rgba(83,45,18,0)');
+    fade.addColorStop(1, 'rgba(83,45,18,.34)');
+    ctx.fillStyle = fade;
+    ctx.fillRect(0, H * .94, W, H * .06);
+  }
+  drawLoadingDecoration(Date.now());
+
+  const top = landscape ? Math.max(safeTop + 6, H * .075) : H * .105;
+  const logoW = landscape ? Math.min(W * .30, H < 440 ? 220 : 330) : Math.min(W * .64, 270);
+  if (images.logo) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(255,255,255,.78)';
+    ctx.shadowBlur = 12;
+    drawImageContain(images.logo, (W - logoW) / 2, top, logoW, logoW);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = '#6b421e';
+    ctx.font = `900 ${landscape ? 24 : 28}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('冒险小飞行家', W / 2, top + 42);
+  }
+
+  const textY = landscape ? H * .42 : H * .425;
+  const status = loadingError
+    ? '关键资源加载失败'
+    : (loadingProgress >= 100 ? '准备完成，马上出发！' : `正在准备冒险 ${Math.round(loadingProgress)}%`);
+  ctx.textAlign = 'center';
+  ctx.font = `900 ${landscape ? (H < 440 ? 17 : 21) : 20}px sans-serif`;
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = 'rgba(255,255,255,.78)';
+  ctx.strokeText(status, W / 2, textY);
+  ctx.fillStyle = loadingError ? '#a52e24' : '#6b421e';
+  ctx.fillText(status, W / 2, textY);
+
+  const barH = clamp(H * .022, 16, 20);
+  const barX = landscape ? W * (H < 440 ? .22 : .24) : W * .12;
+  const barW = landscape ? W * (H < 440 ? .56 : .52) : W * .76;
+  const barY = landscape ? H * .54 : H * .49;
+  drawLoadingProgressBar(barX, barY, barW, barH, loadingProgress);
+
+  if (images.homePlane) {
+    const planeSize = landscape ? clamp(W * .062, 44, 64) : clamp(W * .14, 48, 62);
+    const progressX = barX + barW * clamp(loadingProgress, 0, 100) / 100;
+    const lift = loadingProgress >= 100 ? -8 : 0;
+    ctx.save();
+    ctx.shadowColor = 'rgba(49,95,140,.30)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetY = 4;
+    drawImageContain(images.homePlane, progressX - planeSize / 2, barY + barH / 2 - planeSize / 2 + lift, planeSize, planeSize);
+    ctx.restore();
+  }
+
+  ctx.font = `800 ${landscape ? 16 : 17}px sans-serif`;
+  ctx.fillStyle = '#5f3a17';
+  ctx.fillText(`${Math.round(loadingProgress)}%`, W / 2, barY + barH + (landscape ? 28 : 32));
+
+  if (loadingError) {
+    const summary = loadingError || '请检查网络后重试';
+    ctx.font = `700 ${landscape ? 14 : 15}px sans-serif`;
+    ctx.fillStyle = '#8a3a2a';
+    ctx.fillText(summary, W / 2, landscape ? H * .62 : H * .60);
+    const retryW = landscape ? 156 : 168;
+    const retryH = landscape ? 44 : 48;
+    const retryX = (W - retryW) / 2;
+    const retryY = landscape ? H * .68 : H * .66;
+    fillRoundGradient(retryX, retryY, retryW, retryH, retryH / 2, [[0, '#ffe48a'], [1, '#f3a62b']], true);
+    strokeRoundRect(retryX, retryY, retryW, retryH, retryH / 2, 'rgba(255,255,255,.88)', 2);
+    ctx.fillStyle = '#4f2d0c';
+    ctx.font = '900 16px sans-serif';
+    ctx.fillText('重新加载', W / 2, retryY + retryH / 2 + 6);
+    buttons.push({ x: retryX, y: retryY, w: retryW, h: retryH, action: 'retryLoading' });
+  } else if (loadingNonCriticalError) {
+    ctx.font = `700 ${landscape ? 12 : 13}px sans-serif`;
+    ctx.fillStyle = 'rgba(95,58,23,.76)';
+    ctx.fillText(loadingNonCriticalError, W / 2, barY + barH + (landscape ? 48 : 54));
+  }
+
+  ctx.fillStyle = landscape ? 'rgba(255,255,255,.86)' : 'rgba(95,58,23,.70)';
+  ctx.font = '800 12px sans-serif';
+  ctx.fillText(`v${GAME_VERSION}`, W / 2, H - Math.max(safeBottom + 12, 18));
+  ctx.textAlign = 'left';
+}
+
 function render() {
   if (!loaded) {
     clear();
-    ctx.fillStyle = '#fff7df';
-    ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#30251c';
-    ctx.font = '900 18px sans-serif';
-    ctx.fillText('加载中...', 24, 48);
+    drawLoadingScreen();
     return;
   }
   clear();
@@ -2183,7 +2529,7 @@ function applyFlyJump(piece) {
 function playFlyBoostSound() {
   if (typeof wx.createInnerAudioContext !== 'function') return;
   const audio = wx.createInnerAudioContext();
-  audio.src = 'assets/audio/fly_boost.mp3';
+  audio.src = 'packages/game-assets/assets/audio/fly_boost.mp3';
   audio.volume = 0.65;
   audio.onEnded(() => audio.destroy());
   audio.onError(() => audio.destroy());
@@ -2300,7 +2646,7 @@ function rollDice() {
   rolling = true;
   rollingDiceValue = Math.floor(Math.random() * 6) + 1;
   const audio = wx.createInnerAudioContext();
-  audio.src = 'assets/audio/dice_roll.mp3';
+  audio.src = 'packages/game-assets/assets/audio/dice_roll.mp3';
   audio.onEnded(() => audio.destroy());
   audio.onError(() => audio.destroy());
   audio.play();
@@ -2341,6 +2687,7 @@ function continueSavedGame() {
   scene = 'game';
 }
 function handleAction(action) {
+  if (action === 'retryLoading') init();
   if (action === 'new') scene = 'settings';
   if (action === 'quick') startFreshGame('快速开始：掷出 6 才能起飞');
   if (action === 'continue') continueSavedGame();

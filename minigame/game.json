@@ -1,6 +1,12 @@
 {
   "deviceOrientation": "portrait",
   "showStatusBar": false,
+  "subpackages": [
+    {
+      "name": "gameAssets",
+      "root": "packages/game-assets/"
+    }
+  ],
   "networkTimeout": {
     "request": 10000,
     "connectSocket": 10000,
