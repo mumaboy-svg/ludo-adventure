@@ -12,7 +12,7 @@ ctx.scale(dpr, dpr);
 
 const W = systemInfo.windowWidth;
 const H = systemInfo.windowHeight;
-const GAME_VERSION = '2.10.0';
+const GAME_VERSION = '2.10.1';
 const safeTop = systemInfo.safeArea ? systemInfo.safeArea.top : (systemInfo.statusBarHeight || 0);
 const safeBottom = systemInfo.safeArea ? Math.max(0, H - systemInfo.safeArea.bottom) : 0;
 const capsuleBottom = menuButton ? menuButton.bottom : safeTop + 44;
@@ -1518,8 +1518,11 @@ function drawLoadingScreen() {
   }
   drawLoadingDecoration(Date.now());
 
-  const top = landscape ? Math.max(safeTop + 6, H * .075) : H * .105;
-  const logoW = landscape ? Math.min(W * .30, H < 440 ? 220 : 330) : Math.min(W * .64, 270);
+  const textY = landscape ? H * .42 : H * .425;
+  const statusFontSize = landscape ? (H < 440 ? 17 : 21) : 20;
+  const logoGap = landscape ? (H < 440 ? 8 : 12) : 12;
+  const logoW = landscape ? Math.min(W * .30, H * .34, 330) : Math.min(W * .64, 270);
+  const top = Math.max(safeTop, textY - statusFontSize - logoGap - logoW);
   if (images.logo) {
     ctx.save();
     ctx.shadowColor = 'rgba(255,255,255,.78)';
@@ -1530,15 +1533,14 @@ function drawLoadingScreen() {
     ctx.fillStyle = '#6b421e';
     ctx.font = `900 ${landscape ? 24 : 28}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText('冒险小飞行家', W / 2, top + 42);
+    ctx.fillText('冒险小飞行家', W / 2, top + logoW * .55);
   }
 
-  const textY = landscape ? H * .42 : H * .425;
   const status = loadingError
     ? '关键资源加载失败'
     : (loadingProgress >= 100 ? '准备完成，马上出发！' : `正在准备冒险 ${Math.round(loadingProgress)}%`);
   ctx.textAlign = 'center';
-  ctx.font = `900 ${landscape ? (H < 440 ? 17 : 21) : 20}px sans-serif`;
+  ctx.font = `900 ${statusFontSize}px sans-serif`;
   ctx.lineWidth = 4;
   ctx.strokeStyle = 'rgba(255,255,255,.78)';
   ctx.strokeText(status, W / 2, textY);

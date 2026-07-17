@@ -1230,8 +1230,8 @@
             transform: translateY(5vh); text-align: center;
         }
         .web-loader-logo {
-            position: fixed; top: max(7vh, env(safe-area-inset-top)); left: 50%;
-            width: min(64vw, 270px); max-height: 23vh; object-fit: contain;
+            position: absolute; bottom: calc(100% + 16px); left: 50%;
+            width: min(64vw, 270px); height: auto;
             transform: translateX(-50%); filter: drop-shadow(0 7px 8px #17365f70);
         }
         .web-loader-status { margin: 0; font-size: clamp(15px, 4.4vw, 19px); font-weight: 900; letter-spacing: .08em; text-shadow: 0 2px 5px #17365f; }
@@ -1265,12 +1265,12 @@
         @media (orientation: landscape) {
             .web-loader { background-image: linear-gradient(180deg, transparent 82%, #3777bfc7), url('./assets/images/ui/loading_bg_landscape.jpg'); }
             .web-loader-content { width: min(52vw, 620px); transform: translateY(8vh); gap: 7px; }
-            .web-loader-logo { top: max(4vh, env(safe-area-inset-top)); width: min(35vw, 330px); max-height: 34vh; }
+            .web-loader-logo { bottom: calc(100% + 10px); width: min(35vw, 34vh, 330px); }
             .web-loader-plane { width: clamp(44px, 7vw, 62px); }
         }
         @media (orientation: landscape) and (max-height: 500px) {
             .web-loader-content { width: min(52vw, 500px); transform: translateY(10vh); gap: 4px; }
-            .web-loader-logo { top: 2vh; width: min(30vw, 220px); max-height: 31vh; }
+            .web-loader-logo { bottom: calc(100% + 8px); width: min(27vw, 34vh, 180px); }
             .web-loader-track { height: 17px; }
             .web-loader-status { font-size: 13px; }
             .web-loader-percent { font-size: 12px; }
@@ -1295,7 +1295,7 @@
         <div class="web-loader-percent" id="webLoaderPercent">0%</div>
         <p class="web-loader-error" id="webLoaderError" hidden></p>
         <button class="web-loader-retry" id="webLoaderRetry" type="button" hidden>重新加载</button>
-        <div class="web-loader-version" id="webLoaderVersion">v2.10.0</div>
+        <div class="web-loader-version" id="webLoaderVersion">v2.10.1</div>
     </div>
 </div>
 <noscript><div class="web-loader-noscript">请开启 JavaScript 后重新进入游戏。</div></noscript>
@@ -1628,7 +1628,7 @@
 
 <script>
 (() => {
-    const APP_VERSION = "2.10.0";
+    const APP_VERSION = "2.10.1";
     const STATE_KEY = "flight_adventure_v66_state";
     const TASK_KEY = "flight_adventure_v66_tasks";
     const AUDIO_SETTINGS_KEY = "flight_adventure_audio_v1";
