@@ -12,10 +12,22 @@ ctx.scale(dpr, dpr);
 
 const W = systemInfo.windowWidth;
 const H = systemInfo.windowHeight;
-const GAME_VERSION = '2.11.1';
+const GAME_VERSION = '2.12.0';
 const safeTop = systemInfo.safeArea ? systemInfo.safeArea.top : (systemInfo.statusBarHeight || 0);
 const safeBottom = systemInfo.safeArea ? Math.max(0, H - systemInfo.safeArea.bottom) : 0;
+const safeLeft = systemInfo.safeArea ? Math.max(0, systemInfo.safeArea.left || 0) : 0;
+const safeRight = systemInfo.safeArea ? Math.max(0, W - (systemInfo.safeArea.right || W)) : 0;
 const capsuleBottom = menuButton ? menuButton.bottom : safeTop + 44;
+const CONTENT_SECURITY_FUNCTION = 'msgSecCheck';
+let contentSecurityReady = false;
+try {
+  if (wx.cloud?.init && wx.cloud?.callFunction) {
+    wx.cloud.init();
+    contentSecurityReady = true;
+  }
+} catch (error) {
+  contentSecurityReady = false;
+}
 
 const ASSETS = {
   bg: 'assets/minigame/ui/home_bg_mobile.jpg',
@@ -62,6 +74,7 @@ let modal = null;
 let modalQueue = [];
 let modalOpenedAt = 0;
 let settingsPage = 0;
+let settingsCategory = 'players';
 let progressPage = 0;
 let recordsPage = 0;
 let taskCategory = 'base';
@@ -76,6 +89,7 @@ let deferModals = false;
 let backgroundMusic = null;
 let backgroundMusicRequested = false;
 let backgroundMusicEnabled = wx.getStorageSync('ludo_minigame_bgm_enabled_v1') !== false;
+let reducedMotionEnabled = wx.getStorageSync('ludo_minigame_reduced_motion_v1') === true;
 let visualAnimationLoopStarted = false;
 const TASK_PACK_LABELS = { safe_family: '家庭安全', party_light: '聚会轻松', party_fun: '聚会搞笑', couple_light: '情侣互动', king: '国王卡' };
 const DEFAULT_TASK_PACKS = { safe_family: true, party_light: true, party_fun: true, couple_light: false, king: true };
@@ -87,7 +101,6 @@ const TASK_PACK_PRESETS = {
   manual: { enabled: false, packs: DEFAULT_TASK_PACKS }
 };
 let taskPackSettings = loadTaskPackSettings();
-const SETTINGS_PAGE_SIZE = H < 700 ? 3 : 4;
 const bootTime = Date.now();
 const requestFrame = typeof canvas.requestAnimationFrame === 'function'
   ? callback => canvas.requestAnimationFrame(callback)
@@ -169,8 +182,6 @@ const straightPath = {
   G: [[49.88, 81.46], [49.87, 76.37], [49.91, 71.31], [49.94, 66.30], [49.94, 61.18], [49.93, 55.43]].map(([x, y]) => ({ x, y }))
 };
 let idCounter = 0;
-let setupPlayers = loadSetupPlayers();
-let state = normalizeState(loadState()) || newGameState();
 function makeId() {
   idCounter += 1;
   return `${Date.now().toString(36)}-${idCounter.toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
@@ -182,13 +193,68 @@ function defaultSetupPlayers() {
   ];
 }
 function imgForColor(color) { return { R: 'planeR', Y: 'planeY', B: 'planeB', G: 'planeG' }[color] || 'planeR'; }
+const RESTRICTED_NAME_TOKENS = [
+  '习近平', '习近', 'xijinping', '毛泽东', '邓小平', '江泽民', '胡锦涛', '李鹏', '朱镕基',
+  '温家宝', '李克强', '胡耀邦', '赵紫阳', '薄熙来', '王岐山', '孙中山', '蒋介石',
+  '蔡英文', '赖清德', '马英九', '特朗普', 'trump', '拜登', 'biden', '奥巴马', 'obama',
+  '普京', 'putin', '泽连斯基', 'zelensky', '金正恩', 'kimjongun', '共产党', '国民党',
+  '台独', '港独', '藏独', '疆独', '法轮功', '天安门', '六四'
+];
+let setupPlayers = loadSetupPlayers();
+let state = loadState() || newGameState();
+function normalizeRestrictedText(value) {
+  let text = String(value ?? '');
+  try { text = text.normalize('NFKC'); } catch (error) {}
+  return text
+    .replace(/[\u200B-\u200F\u2060\uFEFF\u00AD]/g, '')
+    .replace(/[\s\u3000]+/g, '')
+    .replace(/[~!@#$%^&*()_+\-=[\]{}|\\:;'",.<>/?`，。！？；：、“”‘’（）【】《》〈〉…—·]/g, '')
+    .toLowerCase();
+}
+function containsRestrictedName(value) {
+  const normalized = normalizeRestrictedText(value);
+  return !!normalized && RESTRICTED_NAME_TOKENS.some(token => normalized.includes(token));
+}
+function cleanPlayerName(value) {
+  return String(value ?? '').replace(/[\u200B-\u200F\u2060\uFEFF\u00AD]/g, '').trim();
+}
+function fallbackPlayerName(index) { return `玩家${index + 1}`; }
+function sanitizePlayerName(value, index) {
+  const name = cleanPlayerName(value);
+  return name && !containsRestrictedName(name) ? name : fallbackPlayerName(index);
+}
+async function reviewPlayerNameWithCloud(name) {
+  if (!contentSecurityReady) return { approved: false, reason: 'unavailable' };
+  try {
+    const response = await wx.cloud.callFunction({
+      name: CONTENT_SECURITY_FUNCTION,
+      data: { content: name, scene: 'nickname' }
+    });
+    const result = response?.result || {};
+    if (result.decision === 'pass') return { approved: true, reason: 'pass' };
+    return { approved: false, reason: result.decision || 'review' };
+  } catch (error) {
+    return { approved: false, reason: 'unavailable' };
+  }
+}
+function contentReviewMessage(result) {
+  return result?.reason === 'unavailable'
+    ? '内容审核服务暂不可用，请稍后再试。'
+    : '您输入的内容可能包含不适宜的表述，请修改后重新填写。';
+}
 function loadSetupPlayers() {
   const saved = wx.getStorageSync('ludo_minigame_setup_v1');
   if (!Array.isArray(saved) || saved.length < 2) return defaultSetupPlayers();
-  return saved.slice(0, 16).map((player, index) => ({
-    name: String(player.name || `玩家${index + 1}`),
-    color: ['R', 'Y', 'B', 'G'].includes(player.color) ? player.color : ['R', 'Y', 'B', 'G'][index % 4]
-  }));
+  let changed = false;
+  const players = saved.slice(0, 16).map((player, index) => {
+    const rawName = String(player?.name || '');
+    const name = sanitizePlayerName(rawName, index);
+    const color = ['R', 'Y', 'B', 'G'].includes(player?.color) ? player.color : ['R', 'Y', 'B', 'G'][index % 4];
+    changed ||= name !== rawName || color !== player?.color;
+    return { name, color };
+  });
+  if (changed) wx.setStorageSync('ludo_minigame_setup_v1', players);
+  return players;
 }
 function saveSetupPlayers() { wx.setStorageSync('ludo_minigame_setup_v1', setupPlayers); }
 function newGameState() {
@@ -217,8 +283,18 @@ function newGameState() {
   };
 }
 function saveState() { wx.setStorageSync('ludo_minigame_state_v3', state); }
-function loadState() { return wx.getStorageSync('ludo_minigame_state_v3') || null; }
-function hasSavedState() { return !!wx.getStorageSync('ludo_minigame_state_v3'); }
+function loadState() {
+  const saved = wx.getStorageSync('ludo_minigame_state_v3') || null;
+  if (!saved) return null;
+  const before = JSON.stringify(saved);
+  const normalized = normalizeState(saved);
+  if (normalized && JSON.stringify(normalized) !== before) wx.setStorageSync('ludo_minigame_state_v3', normalized);
+  return normalized;
+}
+function hasSavedState() {
+  const saved = wx.getStorageSync('ludo_minigame_state_v3');
+  return !!(saved && Array.isArray(saved.players) && saved.players.length);
+}
 function savedGameSummary() {
   const saved = normalizeState(loadState());
   if (!saved) return '暂无本地进度';
@@ -229,10 +305,12 @@ function savedGameSummary() {
 function normalizeState(saved) {
   if (!saved || !Array.isArray(saved.players) || !saved.players.length) return null;
   const nameIds = {};
-  saved.players.forEach((piece) => {
+  saved.players.forEach((piece, index) => {
     piece.id = piece.id || makeId();
-    if (!nameIds[piece.name]) nameIds[piece.name] = [];
-    nameIds[piece.name].push(piece.id);
+    const rawName = String(piece.name || '');
+    if (!nameIds[rawName]) nameIds[rawName] = [];
+    nameIds[rawName].push(piece.id);
+    piece.name = sanitizePlayerName(rawName, index);
   });
   const usedByName = {};
   saved.finishOrder = (saved.finishOrder || []).map((entry) => {
@@ -240,8 +318,8 @@ function normalizeState(saved) {
     const ids = nameIds[entry] || [];
     const offset = usedByName[entry] || 0;
     usedByName[entry] = offset + 1;
-    return ids[offset] || entry;
-  });
+    return ids[offset] || (containsRestrictedName(entry) ? '' : entry);
+  }).filter(Boolean);
   saved.currentPlayer = Number.isInteger(saved.currentPlayer) ? saved.currentPlayer : 0;
   saved.currentPlayer = Math.max(0, Math.min(saved.currentPlayer, saved.players.length - 1));
   saved.triggered = saved.triggered || {};
@@ -251,7 +329,7 @@ function normalizeState(saved) {
     typeof entry === 'string'
       ? { text: entry, type: '', at: Date.now() }
       : { text: String(entry.text || ''), type: entry.type || '', at: entry.at || Date.now() }
-  )).slice(-180) : [];
+  )).filter(entry => !containsRestrictedName(entry.text)).slice(-180) : [];
   const used = { R: 0, Y: 0, B: 0, G: 0 };
   saved.players.forEach((piece) => {
     piece.slot = Number.isInteger(piece.slot) ? piece.slot : (Number.isInteger(piece.colorSlot) ? piece.colorSlot : used[piece.color]);
@@ -660,6 +738,12 @@ function setBackgroundMusicEnabled(enabled) {
   }
 }
 
+function setReducedMotionEnabled(enabled) {
+  reducedMotionEnabled = !!enabled;
+  wx.setStorageSync('ludo_minigame_reduced_motion_v1', reducedMotionEnabled);
+  render();
+}
+
 if (typeof wx.onShow === 'function') wx.onShow(() => {
   if (backgroundMusicRequested) playBackgroundMusic();
 });
@@ -674,8 +758,8 @@ function startHomeAnimationLoop() {
   visualAnimationLoopStarted = true;
   let previous = 0;
   const tick = (now) => {
-    const shouldAnimateLoading = !loaded && !loadingError;
-    const shouldAnimateHome = scene === 'home' && loaded && !pieceAnimation;
+    const shouldAnimateLoading = !reducedMotionEnabled && !loaded && !loadingError;
+    const shouldAnimateHome = !reducedMotionEnabled && scene === 'home' && loaded && !pieceAnimation;
     if ((shouldAnimateLoading || shouldAnimateHome) && now - previous >= 42) {
       previous = now;
       render();
@@ -884,14 +968,14 @@ function drawHome() {
   if (images.bg) drawImageCover(images.bg, 0, 0, W, H);
   else drawWarmBackground();
   fillHomeOverlay();
-  const now = Date.now();
+  const now = reducedMotionEnabled ? bootTime : Date.now();
   drawHomeDecorations(now);
   drawHomeHud();
   const heroTop = Math.max(capsuleBottom - 2, Math.round(H * 0.045));
   const logoSize = Math.min(W * 0.78, H * 0.30, 330);
-  const pulse = 1 + Math.sin((Date.now() - bootTime) / 650) * 0.028;
-  const floatY = Math.sin((Date.now() - bootTime) / 900) * 6;
-  const glow = 14 + Math.sin((Date.now() - bootTime) / 520) * 6;
+  const pulse = reducedMotionEnabled ? 1 : 1 + Math.sin((Date.now() - bootTime) / 650) * 0.028;
+  const floatY = reducedMotionEnabled ? 0 : Math.sin((Date.now() - bootTime) / 900) * 6;
+  const glow = reducedMotionEnabled ? 14 : 14 + Math.sin((Date.now() - bootTime) / 520) * 6;
   const haloSize = Math.min(W * 0.84, 350);
   const halo = ctx.createRadialGradient(W / 2, heroTop + logoSize * .48, 10, W / 2, heroTop + logoSize * .48, haloSize * .48);
   halo.addColorStop(0, 'rgba(255,255,255,.92)');
@@ -929,14 +1013,14 @@ function drawMenuButton(x, y, w, h, title, sub, icon, action, primary, order = 0
       : [[0, 'rgba(255,255,255,.97)'], [1, 'rgba(225,242,255,.92)']];
   const buttonAsset = action === 'new' ? images.newButton : action === 'quick' ? images.quickButton : images.continueButton;
   const elapsed = Date.now() - bootTime - 80 - order * 100;
-  const entrance = Math.max(0, Math.min(1, elapsed / 520));
+  const entrance = reducedMotionEnabled ? 1 : Math.max(0, Math.min(1, elapsed / 520));
   const eased = 1 - Math.pow(1 - entrance, 3);
   const drawY = y + (1 - eased) * 18;
   const scale = .94 + eased * .06;
   const drawW = w * scale;
   const drawH = h * scale;
   const drawX = x + (w - drawW) / 2;
-  const glow = 1 + Math.sin((Date.now() - bootTime) / 760 + order * 1.1) * .025;
+  const glow = reducedMotionEnabled ? 1 : 1 + Math.sin((Date.now() - bootTime) / 760 + order * 1.1) * .025;
   ctx.save();
   ctx.globalAlpha = entrance;
   ctx.translate(x + w / 2, drawY + h / 2);
@@ -1518,7 +1602,7 @@ function drawLoadingScreen() {
     ctx.fillStyle = fade;
     ctx.fillRect(0, H * .94, W, H * .06);
   }
-  drawLoadingDecoration(Date.now());
+  if (!reducedMotionEnabled) drawLoadingDecoration(Date.now());
 
   const textY = landscape ? H * .42 : H * .425;
   const statusFontSize = landscape ? (H < 440 ? 17 : 21) : 20;
@@ -1628,75 +1712,186 @@ function hitTest(x, y) {
 function drawTopTitle(title, sub, backgroundAsset = '') {
   if (backgroundAsset) drawPageBackground(backgroundAsset);
   else drawWarmBackground();
-  fillRoundRect(24, Math.max(safeTop + 14, 34), W - 48, 74, 24, 'rgba(255,255,255,.82)', true);
+  const titleX = Math.max(24, safeLeft + 12);
+  const titleRight = Math.max(24, safeRight + 12);
+  fillRoundRect(titleX, Math.max(safeTop + 14, 34), W - titleX - titleRight, 74, 24, 'rgba(255,255,255,.82)', true);
   ctx.fillStyle = '#30251c';
   ctx.font = '900 24px sans-serif';
-  ctx.fillText(title, 46, Math.max(safeTop + 14, 34) + 32);
+  ctx.fillText(title, titleX + 22, Math.max(safeTop + 14, 34) + 32);
   ctx.fillStyle = '#76593b';
   ctx.font = '800 13px sans-serif';
-  ctx.fillText(sub, 46, Math.max(safeTop + 14, 34) + 56);
+  ctx.fillText(sub, titleX + 22, Math.max(safeTop + 14, 34) + 56);
+}
+
+function settingsPageSize() {
+  if (W > H) return 4;
+  return H < 700 ? 3 : 4;
 }
 
 function drawSettings() {
   buttons = [];
-  drawTopTitle('游戏设置', '玩家、声音、视觉与本地数据', 'settingsBg');
-  const titleY = Math.max(safeTop + 14, 34);
-  drawSwitchControl(W - 126, titleY + 18, 78, 38, backgroundMusicEnabled, 'toggleMusic');
+  drawTopTitle('游戏设置', '玩家配置 · 声音画面 · 数据管理', 'settingsBg');
+  const landscape = W > H;
+  const panelX = Math.max(24, safeLeft + 12);
+  const panelRight = Math.max(24, safeRight + 12);
+  const panelY = landscape ? Math.max(safeTop + 112, 112) : Math.max(safeTop + 124, 138);
+  const panelW = W - panelX - panelRight;
+  const panelH = Math.max(210, H - panelY - safeBottom - 8);
+  fillRoundRect(panelX, panelY, panelW, panelH, 24, 'rgba(255,255,255,.94)', true);
 
-  const startY = Math.max(safeTop + 124, 138);
-  const panelH = Math.min(520, H - startY - safeBottom - 18);
-  fillRoundRect(24, startY, W - 48, panelH, 26, 'rgba(255,255,255,.94)', true);
-
-  const counts = countColors(setupPlayers);
-  ctx.fillStyle = '#30251c';
-  ctx.font = '900 18px sans-serif';
-  ctx.fillText(`🎮 游戏设置 · 玩家 ${setupPlayers.length}/16`, 42, startY + 32);
-  ctx.fillStyle = '#806344';
-  ctx.font = '800 10px sans-serif';
-  ctx.textAlign = 'right';
-  ctx.fillText(`红${counts.R}/4  黄${counts.Y}/4  蓝${counts.B}/4  绿${counts.G}/4`, W - 42, startY + 32);
-  ctx.textAlign = 'left';
-
-  ctx.fillStyle = 'rgba(255,244,211,.94)';
-  roundRect(40, startY + 42, W - 80, 28, 12);
-  ctx.fill();
-  ctx.fillStyle = '#755334';
-  ctx.font = '800 10px sans-serif';
-  ctx.fillText(`🔊 背景音乐：${backgroundMusicEnabled ? '已开启' : '已关闭'}    ✨ 视觉：自动适配屏幕`, 52, startY + 60);
-
-  const maxPage = Math.max(0, Math.ceil(setupPlayers.length / SETTINGS_PAGE_SIZE) - 1);
-  settingsPage = Math.min(settingsPage, maxPage);
-  const pagePlayers = setupPlayers.slice(settingsPage * SETTINGS_PAGE_SIZE, (settingsPage + 1) * SETTINGS_PAGE_SIZE);
-  pagePlayers.forEach((player, offset) => {
-    const index = settingsPage * SETTINGS_PAGE_SIZE + offset;
-    const y = startY + 78 + offset * 60;
-    fillRoundGradient(40, y, W - 80, 50, 16, [[0, '#fffdf8'], [1, '#fff0c9']], false);
-    drawColorDot(57, y + 25, player.color);
-    ctx.fillStyle = '#493522';
-    ctx.font = '900 14px sans-serif';
-    ctx.fillText(`${index + 1}. ${shortText(player.name, 9)}`, 91, y + 30);
-    drawPanelButton(W - 184, y + 7, 48, 36, '改名', `setupName:${index}`, false);
-    drawPanelButton(W - 130, y + 7, 48, 36, '颜色', `setupColor:${index}`, false);
-    drawPanelButton(W - 76, y + 7, 36, 36, '×', `setupDelete:${index}`, false);
+  const innerX = panelX + 16;
+  const innerW = panelW - 32;
+  const tabY = panelY + 10;
+  const tabGap = 6;
+  const tabW = (innerW - tabGap * 2) / 3;
+  [
+    ['players', '玩家配置'],
+    ['visual', '声音画面'],
+    ['data', '数据管理']
+  ].forEach(([key, label], index) => {
+    drawPanelButton(innerX + index * (tabW + tabGap), tabY, tabW, 34, label, `settingsCategory:${key}`, settingsCategory === key);
   });
 
-  const pagerY = startY + 82 + SETTINGS_PAGE_SIZE * 60;
-  drawPanelButton(46, pagerY, 70, 34, '上一页', 'setupPrev', false);
-  ctx.fillStyle = '#76593b';
-  ctx.font = '900 13px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(`${settingsPage + 1}/${maxPage + 1}`, W / 2, pagerY + 22);
-  ctx.textAlign = 'left';
-  drawPanelButton(W - 116, pagerY, 70, 34, '下一页', 'setupNext', false);
+  const footerH = landscape ? 34 : 40;
+  const footerY = panelY + panelH - footerH - 10;
+  const contentY = tabY + 43;
+  const contentH = Math.max(100, footerY - contentY - 7);
+  if (settingsCategory === 'visual') drawSettingsVisualSection(innerX, contentY, innerW, contentH, landscape);
+  else if (settingsCategory === 'data') drawSettingsDataSection(innerX, contentY, innerW, contentH, landscape);
+  else drawSettingsPlayersSection(innerX, contentY, innerW, contentH, landscape);
 
-  const toolsY = pagerY + 43;
-  drawPanelButton(46, toolsY, 104, 38, '+ 添加玩家', 'setupAdd', false);
-  drawDangerButton(160, toolsY, 92, 38, '清空数据', 'clearAllData');
-  const footerY = Math.min(startY + panelH - 54, toolsY + 48);
-  const footerW = Math.floor((W - 116) / 3);
-  drawPanelButton(46, footerY, footerW, 42, '保存开局', 'setupApply', true);
-  drawPanelButton(58 + footerW, footerY, footerW, 42, '大厅', 'home', false);
-  drawPanelButton(70 + footerW * 2, footerY, footerW, 42, '继续', hasSavedState() ? 'continue' : 'quick', false);
+  const footerGap = 6;
+  const footerW = (innerW - footerGap * 3) / 4;
+  const hasSave = hasSavedState();
+  drawPanelButton(innerX, footerY, footerW, footerH, '任务中心', 'tasks', false);
+  drawPanelButton(innerX + footerW + footerGap, footerY, footerW, footerH, '返回大厅', 'home', false);
+  drawPanelButton(innerX + (footerW + footerGap) * 2, footerY, footerW, footerH,
+    hasSave ? '继续上局' : '暂无存档', hasSave ? 'continue' : 'noSavedContinue', false);
+  drawPanelButton(innerX + (footerW + footerGap) * 3, footerY, footerW, footerH, '开始新局', 'setupApply', true);
+}
+
+function drawSettingsPlayersSection(x, y, w, h, landscape) {
+  const pageSize = settingsPageSize();
+  const maxPage = Math.max(0, Math.ceil(setupPlayers.length / pageSize) - 1);
+  settingsPage = Math.min(settingsPage, maxPage);
+  const counts = countColors(setupPlayers);
+  ctx.fillStyle = '#30251c';
+  ctx.font = `900 ${landscape ? 13 : 15}px sans-serif`;
+  ctx.fillText(`玩家 ${setupPlayers.length}/16 · 第 ${settingsPage + 1}/${maxPage + 1} 页`, x + 2, y + 20);
+  ctx.fillStyle = '#806344';
+  ctx.font = `800 ${landscape ? 9 : 10}px sans-serif`;
+  ctx.fillText(`红${counts.R}/4  黄${counts.Y}/4  蓝${counts.B}/4  绿${counts.G}/4`, x + 2, y + (landscape ? 35 : 38));
+
+  if (landscape) {
+    const controlY = y + 1;
+    const controlGap = 5;
+    const widths = [46, 46, 62, 68];
+    const totalW = widths.reduce((sum, width) => sum + width, 0) + controlGap * 3;
+    let controlX = x + w - totalW;
+    drawPanelButton(controlX, controlY, widths[0], 30, '上页', 'setupPrev', false);
+    controlX += widths[0] + controlGap;
+    drawPanelButton(controlX, controlY, widths[1], 30, '下页', 'setupNext', false);
+    controlX += widths[1] + controlGap;
+    drawPanelButton(controlX, controlY, widths[2], 30, '添加', 'setupAdd', false);
+    controlX += widths[2] + controlGap;
+    drawPanelButton(controlX, controlY, widths[3], 30, '保存设置', 'saveSetupPreferences', true);
+  }
+
+  const players = setupPlayers.slice(settingsPage * pageSize, (settingsPage + 1) * pageSize);
+  const cardGap = landscape ? 8 : 6;
+  const cardW = landscape ? (w - cardGap) / 2 : w;
+  const cardH = landscape ? 44 : 50;
+  const cardsY = y + (landscape ? 43 : 48);
+  players.forEach((player, offset) => {
+    const index = settingsPage * pageSize + offset;
+    const col = landscape ? offset % 2 : 0;
+    const row = landscape ? Math.floor(offset / 2) : offset;
+    const cardX = x + col * (cardW + cardGap);
+    const cardY = cardsY + row * (cardH + 6);
+    drawSettingsPlayerCard(cardX, cardY, cardW, cardH, player, index);
+  });
+
+  if (!landscape) {
+    const toolsY = Math.min(y + h - 38, cardsY + players.length * (cardH + 6) + 4);
+    const toolGap = 7;
+    const toolW = (w - toolGap * 3) / 4;
+    drawPanelButton(x, toolsY, toolW, 34, '上一页', 'setupPrev', false);
+    drawPanelButton(x + toolW + toolGap, toolsY, toolW, 34, '下一页', 'setupNext', false);
+    drawPanelButton(x + (toolW + toolGap) * 2, toolsY, toolW, 34, '添加', 'setupAdd', false);
+    drawPanelButton(x + (toolW + toolGap) * 3, toolsY, toolW, 34, '保存设置', 'saveSetupPreferences', true);
+  }
+}
+
+function drawSettingsPlayerCard(x, y, w, h, player, index) {
+  fillRoundGradient(x, y, w, h, 14, [[0, '#fffdf8'], [1, '#fff0c9']], false);
+  drawColorDot(x + 17, y + h / 2, player.color);
+  const buttonH = h - 12;
+  const deleteW = 32;
+  const actionW = 46;
+  const gap = 5;
+  const deleteX = x + w - deleteW - 6;
+  const colorX = deleteX - actionW - gap;
+  const nameX = colorX - actionW - gap;
+  const labelX = x + 50;
+  const prefix = `${index + 1}. `;
+  ctx.fillStyle = '#493522';
+  ctx.font = `900 ${h < 48 ? 12 : 13}px sans-serif`;
+  ctx.fillText(`${prefix}${truncateTextToWidth(player.name, nameX - labelX - 8 - ctx.measureText(prefix).width)}`, labelX, y + h / 2 + 5);
+  drawPanelButton(nameX, y + 6, actionW, buttonH, '改名', `setupName:${index}`, false);
+  drawPanelButton(colorX, y + 6, actionW, buttonH, '颜色', `setupColor:${index}`, false);
+  drawPanelButton(deleteX, y + 6, deleteW, buttonH, '×', `setupDelete:${index}`, false);
+}
+
+function drawSettingsVisualSection(x, y, w, h, landscape) {
+  const gap = landscape ? 10 : 12;
+  const cardW = landscape ? (w - gap) / 2 : w;
+  const cardH = landscape ? Math.min(82, h - 8) : Math.min(92, (h - gap - 26) / 2);
+  drawSettingsPreferenceCard(x, y + 4, cardW, cardH, '背景音乐',
+    backgroundMusicEnabled ? '已开启 · 循环播放大厅音乐' : '已关闭 · 保留骰子音效',
+    backgroundMusicEnabled, 'toggleMusic');
+  drawSettingsPreferenceCard(landscape ? x + cardW + gap : x, landscape ? y + 4 : y + cardH + gap + 4,
+    cardW, cardH, '低动态模式',
+    reducedMotionEnabled ? '已开启 · 减少大厅与加载装饰' : '已关闭 · 展示完整轻量动画',
+    reducedMotionEnabled, 'toggleMotion');
+  ctx.fillStyle = '#806344';
+  ctx.font = `800 ${landscape ? 9 : 10}px sans-serif`;
+  ctx.fillText('低动态不会改变骰子结果、棋子位置、任务触发或回合推进。', x + 2, y + h - 7);
+}
+
+function drawSettingsPreferenceCard(x, y, w, h, title, detail, enabled, action) {
+  fillRoundGradient(x, y, w, h, 17, [[0, '#fffef9'], [1, '#eaf7ff']], false);
+  ctx.fillStyle = '#30251c';
+  ctx.font = `900 ${h < 80 ? 13 : 15}px sans-serif`;
+  ctx.fillText(title, x + 14, y + 24);
+  ctx.fillStyle = '#76593b';
+  ctx.font = `800 ${w < 300 ? 9 : 10}px sans-serif`;
+  drawWrappedText(detail, x + 14, y + 43, w - 112, 14, 2);
+  drawSwitchControl(x + w - 86, y + (h - 36) / 2, 72, 36, enabled, action);
+}
+
+function drawSettingsDataSection(x, y, w, h, landscape) {
+  const gap = landscape ? 10 : 12;
+  const cardW = landscape ? (w - gap) / 2 : w;
+  const cardH = landscape ? Math.min(72, h - 48) : Math.min(74, (h - 62) / 2);
+  drawSettingsStatusCard(x, y + 4, cardW, cardH, '游戏存档', savedGameSummary(), '#5aaee8');
+  drawSettingsStatusCard(landscape ? x + cardW + gap : x, landscape ? y + 4 : y + cardH + gap + 4,
+    cardW, cardH, '任务数据', `${taskModeLabel()} · ${activeTaskTotal()} 条`, '#8e65d3');
+  const actionsY = y + h - 39;
+  const actionGap = 10;
+  const actionW = (w - actionGap) / 2;
+  drawPanelButton(x, actionsY, actionW, 36, '恢复默认设置', 'restoreSettingsDefaults', false);
+  drawDangerButton(x + actionW + actionGap, actionsY, actionW, 36, '清空全部数据', 'clearAllData');
+}
+
+function drawSettingsStatusCard(x, y, w, h, title, detail, accent) {
+  fillRoundGradient(x, y, w, h, 16, [[0, '#fffefb'], [1, '#fff1cf']], false);
+  fillRoundRect(x, y, 6, h, 3, accent);
+  ctx.fillStyle = '#30251c';
+  ctx.font = `900 ${h < 68 ? 12 : 14}px sans-serif`;
+  ctx.fillText(title, x + 16, y + 23);
+  ctx.fillStyle = '#76593b';
+  ctx.font = `800 ${w < 300 ? 9 : 10}px sans-serif`;
+  drawWrappedText(detail, x + 16, y + 43, w - 28, 14, 2);
 }
 
 function drawColorDot(x, y, color) {
@@ -1713,6 +1908,18 @@ function drawColorDot(x, y, color) {
 function shortText(text, maxChars) {
   const chars = Array.from(String(text || ''));
   return chars.length <= maxChars ? chars.join('') : `${chars.slice(0, Math.max(1, maxChars - 1)).join('')}…`;
+}
+
+function truncateTextToWidth(text, maxWidth) {
+  const chars = Array.from(String(text || ''));
+  if (ctx.measureText(chars.join('')).width <= maxWidth) return chars.join('');
+  const ellipsisWidth = ctx.measureText('…').width;
+  let visible = '';
+  for (const char of chars) {
+    if (ctx.measureText(visible + char).width + ellipsisWidth > maxWidth) break;
+    visible += char;
+  }
+  return `${visible || chars[0] || ''}…`;
 }
 
 function countColors(players) {
@@ -2290,7 +2497,7 @@ function showTaskTools() {
       } else if (res.tapIndex === 1) {
         confirmClearAllData();
       } else if (res.tapIndex === 2) {
-        startFreshGame('任务已保存，新局开始');
+        confirmStartFreshGame('任务已保存，新局开始');
       }
       render();
     },
@@ -2325,22 +2532,24 @@ function showTaskManageMenu() {
 function confirmClearAllData() {
   wx.showModal({
     title: '清空全部数据？',
-    content: '这会删除游戏存档、玩家设置和自定义任务，操作不能撤销。',
+    content: '这会删除游戏存档、玩家设置、声音与动态偏好、自定义任务和任务模式，操作不能撤销。',
     confirmText: '确认清空',
     confirmColor: '#d94b3d',
     success(res) {
       if (!res.confirm) return;
-      ['ludo_minigame_state_v3', 'ludo_minigame_setup_v1', 'ludo_minigame_tasks_v1', 'ludo_minigame_bgm_enabled_v1', 'ludo_minigame_task_packs_v1']
+      ['ludo_minigame_state_v3', 'ludo_minigame_setup_v1', 'ludo_minigame_tasks_v1', 'ludo_minigame_bgm_enabled_v1', 'ludo_minigame_reduced_motion_v1', 'ludo_minigame_task_packs_v1']
         .forEach(key => wx.removeStorageSync(key));
       setupPlayers = defaultSetupPlayers();
       tasks = clone(DEFAULT_TASKS);
       backgroundMusicEnabled = true;
+      reducedMotionEnabled = false;
       taskPackSettings = loadTaskPackSettings();
       playBackgroundMusic();
       state = newGameState();
       lastRoll = '-';
       logText = '掷出 6 才能起飞';
       settingsPage = 0;
+      settingsCategory = 'players';
       progressPage = 0;
       recordsPage = 0;
       clearModals();
@@ -2350,6 +2559,29 @@ function confirmClearAllData() {
     },
     fail(err) {
       showTask('清空失败', err.errMsg || '当前环境无法清空数据。');
+      render();
+    }
+  });
+}
+
+function restoreDefaultPreferences() {
+  wx.showModal({
+    title: '恢复默认设置？',
+    content: '只重置玩家配置、背景音乐和低动态偏好；游戏存档、任务内容与任务模式都会保留。',
+    confirmText: '恢复默认',
+    success(res) {
+      if (!res.confirm) return;
+      setupPlayers = defaultSetupPlayers();
+      saveSetupPlayers();
+      setBackgroundMusicEnabled(true);
+      setReducedMotionEnabled(false);
+      settingsPage = 0;
+      settingsCategory = 'players';
+      showTask('设置已恢复', '玩家、背景音乐和动态偏好已恢复默认；存档与任务数据未改变。');
+      render();
+    },
+    fail(err) {
+      showTask('恢复失败', err.errMsg || '当前环境无法恢复设置。');
       render();
     }
   });
@@ -2452,14 +2684,23 @@ function editSetupName(index) {
     editable: true,
     placeholderText: '输入玩家名',
     content: player.name,
-    success(res) {
+    async success(res) {
       if (!res.confirm) return;
-      const name = String(res.content || '').trim();
+      const name = cleanPlayerName(res.content);
       if (!name) {
         showTask('名字不能为空', '请填写玩家名后再保存。');
+      } else if (containsRestrictedName(name)) {
+        showTask('内容不可使用', '您输入的内容可能包含不适宜的表述，请修改后重新填写。');
       } else {
-        player.name = name;
-        saveSetupPlayers();
+        wx.showLoading({ title: '内容审核中', mask: true });
+        const result = await reviewPlayerNameWithCloud(name);
+        wx.hideLoading();
+        if (!result.approved) {
+          showTask('内容不可使用', contentReviewMessage(result));
+        } else {
+          player.name = name;
+          saveSetupPlayers();
+        }
       }
       render();
     }
@@ -2469,20 +2710,43 @@ function editSetupName(index) {
 function validateSetupPlayers() {
   if (setupPlayers.length < 2 || setupPlayers.length > 16) return '玩家人数必须是 2–16 人。';
   if (setupPlayers.some((player) => !String(player.name || '').trim())) return '请填写所有玩家名。';
+  if (setupPlayers.some((player) => containsRestrictedName(player.name))) return '玩家名包含不适宜的表述，请修改后再试。';
   const counts = countColors(setupPlayers);
   if (Object.values(counts).some((count) => count > 4)) return '每种颜色最多 4 位玩家。';
   return '';
 }
 
-function applySetupAndStart() {
+function saveSetupPreferences() {
+  const error = validateSetupPlayers();
+  if (error) {
+    showTask('无法保存', error);
+    return;
+  }
+  setupPlayers = setupPlayers.map((player, index) => ({
+    name: sanitizePlayerName(player.name, index),
+    color: player.color
+  }));
+  saveSetupPlayers();
+  showTask('设置已保存', `${setupPlayers.length} 位玩家的名称和颜色已保存。`);
+}
+
+async function applySetupAndStart() {
   const error = validateSetupPlayers();
   if (error) {
     showTask('无法开始', error);
     return;
   }
-  setupPlayers = setupPlayers.map((player) => ({ name: String(player.name).trim(), color: player.color }));
+  wx.showLoading({ title: '内容审核中', mask: true });
+  const results = await Promise.all(setupPlayers.map(player => reviewPlayerNameWithCloud(cleanPlayerName(player.name))));
+  wx.hideLoading();
+  const rejected = results.find(result => !result.approved);
+  if (rejected) {
+    showTask('无法开始', contentReviewMessage(rejected));
+    return;
+  }
+  setupPlayers = setupPlayers.map((player, index) => ({ name: sanitizePlayerName(player.name, index), color: player.color }));
   saveSetupPlayers();
-  startFreshGame('设置已保存，新局开始');
+  confirmStartFreshGame('设置已保存，新局开始');
 }
 
 
@@ -2678,6 +2942,30 @@ function startFreshGame(message) {
   saveState();
   scene = 'game';
 }
+
+function confirmStartFreshGame(message) {
+  if (!hasSavedState()) {
+    startFreshGame(message);
+    render();
+    return;
+  }
+  wx.showModal({
+    title: '开始新游戏？',
+    content: '开始后会覆盖当前游戏进度。玩家设置和任务数据会保留。',
+    confirmText: '开始新局',
+    confirmColor: '#d98b22',
+    success(res) {
+      if (!res.confirm) return;
+      startFreshGame(message);
+      render();
+    },
+    fail(err) {
+      showTask('无法开始', err.errMsg || '当前环境无法确认新游戏。');
+      render();
+    }
+  });
+}
+
 function continueSavedGame() {
   const saved = normalizeState(loadState());
   if (!saved) {
@@ -2693,8 +2981,9 @@ function continueSavedGame() {
 function handleAction(action) {
   if (action === 'retryLoading') init();
   if (action === 'new') scene = 'settings';
-  if (action === 'quick') startFreshGame('快速开始：掷出 6 才能起飞');
+  if (action === 'quick') confirmStartFreshGame('快速开始：掷出 6 才能起飞');
   if (action === 'continue') continueSavedGame();
+  if (action === 'noSavedContinue') showTask('暂无存档', '请先设置玩家并开始新游戏，或从大厅选择快速开始。');
   if (action === 'home') scene = 'home';
   if (action === 'settings') scene = 'settings';
   if (action === 'tasks') { scene = 'tasks'; taskView = 'modes'; }
@@ -2704,12 +2993,19 @@ function handleAction(action) {
   if (action === 'game') scene = 'game';
   if (action === 'boardDebug') boardDebug = !boardDebug;
   if (action === 'toggleMusic') setBackgroundMusicEnabled(!backgroundMusicEnabled);
+  if (action === 'toggleMotion') setReducedMotionEnabled(!reducedMotionEnabled);
+  if (action === 'restoreSettingsDefaults') restoreDefaultPreferences();
+  if (action === 'saveSetupPreferences') saveSetupPreferences();
+  if (action.startsWith('settingsCategory:')) {
+    const category = action.split(':')[1];
+    if (['players', 'visual', 'data'].includes(category)) settingsCategory = category;
+  }
   if (action === 'clearAllData') confirmClearAllData();
   if (action.startsWith('taskPreset:')) selectTaskMode(action.split(':')[1]);
   if (action === 'taskModes') taskView = 'modes';
   if (action === 'saveManualTasks') { setTaskPackPreset('manual'); saveTasks(); showTask('任务已保存', '手动任务已保存到本机。'); }
-  if (action === 'saveManualStart') { setTaskPackPreset('manual'); saveTasks(); startFreshGame('手动任务已保存，新局开始'); }
-  if (action === 'restart') startFreshGame('游戏已重开：掷出 6 才能起飞');
+  if (action === 'saveManualStart') { setTaskPackPreset('manual'); saveTasks(); confirmStartFreshGame('手动任务已保存，新局开始'); }
+  if (action === 'restart') confirmStartFreshGame('游戏已重开：掷出 6 才能起飞');
   if (action === 'setupAdd') {
     if (setupPlayers.length >= 16) showTask('人数已满', '最多支持 16 位玩家。');
     else {
@@ -2717,7 +3013,7 @@ function handleAction(action) {
       if (!color) showTask('颜色已满', '红、黄、蓝、绿每种颜色最多 4 位玩家。');
       else {
         setupPlayers.push({ name: `玩家${setupPlayers.length + 1}`, color });
-        settingsPage = Math.floor((setupPlayers.length - 1) / SETTINGS_PAGE_SIZE);
+        settingsPage = Math.floor((setupPlayers.length - 1) / settingsPageSize());
         saveSetupPlayers();
       }
     }
@@ -2734,7 +3030,7 @@ function handleAction(action) {
   if (action.startsWith('setupName:')) editSetupName(Number(action.split(':')[1]));
   if (action.startsWith('setupColor:')) cycleSetupColor(Number(action.split(':')[1]));
   if (action === 'setupPrev') settingsPage = Math.max(0, settingsPage - 1);
-  if (action === 'setupNext') settingsPage = Math.min(Math.max(0, Math.ceil(setupPlayers.length / SETTINGS_PAGE_SIZE) - 1), settingsPage + 1);
+  if (action === 'setupNext') settingsPage = Math.min(Math.max(0, Math.ceil(setupPlayers.length / settingsPageSize()) - 1), settingsPage + 1);
   if (action === 'setupApply') applySetupAndStart();
   if (action === 'progressPrev') progressPage = Math.max(0, progressPage - 1);
   if (action === 'progressNext') {

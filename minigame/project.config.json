@@ -3,12 +3,12 @@
   "packOptions": {
     "ignore": [
       {
-        "type": "file",
-        "value": "project.private.config.json"
+        "value": "project.private.config.json",
+        "type": "file"
       },
       {
-        "type": "file",
-        "value": "sitemap.json"
+        "value": "sitemap.json",
+        "type": "file"
       }
     ],
     "include": []
@@ -39,11 +39,13 @@
       "outputPath": ""
     }
   },
+  "cloudfunctionRoot": "cloudfunctions/",
   "compileType": "minigame",
-  "libVersion": "latest",
+  "libVersion": "3.15.2",
   "appid": "wx03730ae0403a92d3",
   "projectname": "ludo-adventure-minigame",
   "condition": {},
   "simulatorPluginLibVersion": {},
-  "editorSetting": {}
+  "editorSetting": {},
+  "isGameTourist": false
 }
