@@ -12,7 +12,7 @@ ctx.scale(dpr, dpr);
 
 const W = systemInfo.windowWidth;
 const H = systemInfo.windowHeight;
-const GAME_VERSION = '2.10.1';
+const GAME_VERSION = '2.11.1';
 const safeTop = systemInfo.safeArea ? systemInfo.safeArea.top : (systemInfo.statusBarHeight || 0);
 const safeBottom = systemInfo.safeArea ? Math.max(0, H - systemInfo.safeArea.bottom) : 0;
 const capsuleBottom = menuButton ? menuButton.bottom : safeTop + 44;
@@ -798,7 +798,8 @@ function drawHomeHud() {
   const saveW = Math.min(50, Math.max(42, W * .12));
   const versionText = `v${GAME_VERSION}`;
   const vw = Math.min(66, Math.max(54, W * .16));
-  const versionX = W - vw - 8;
+  const hudRight = menuButton ? Math.max(8, menuButton.left - 10) : W - 8;
+  const versionX = hudRight - vw;
   const saveX = versionX - saveW - gap;
   drawHomePill(saveX, y, saveW, '存档', hasSavedState() ? '有' : '无');
   fillRoundGradient(versionX, y + 3, vw, 28, 14, [[0, 'rgba(255,255,255,.88)'], [1, 'rgba(255,245,205,.7)']], false);
@@ -1007,8 +1008,9 @@ function drawGame() {
   const hudH = compact ? 50 : Math.min(68, (W - 48) / 5);
   const panelH = compact ? 194 : 206;
   const bottomPad = Math.max(16, safeBottom + 10);
+  const boardPanelGap = compact ? 28 : 32;
   const boardY = topPad + hudH + 12;
-  const maxBoardH = H - boardY - panelH - bottomPad - 22;
+  const maxBoardH = H - boardY - panelH - bottomPad - boardPanelGap - 22;
   const boardSize = Math.min(W - 52, maxBoardH, 330);
   const boardX = (W - boardSize) / 2;
 
@@ -1077,7 +1079,7 @@ function drawGame() {
   if (boardDebug) drawBoardDebugLabels(boardX, boardY, boardSize);
   state.players.forEach((piece) => drawPiece(piece, boardX, boardY, boardSize));
 
-  const panelY = boardY + boardSize + 18;
+  const panelY = boardY + boardSize + boardPanelGap;
   fillRoundGradient(24, panelY, W - 48, panelH, 28,
     [[0, 'rgba(255,255,255,.98)'], [.55, 'rgba(255,248,226,.97)'], [1, 'rgba(255,230,170,.94)']], true);
   strokeRoundRect(24, panelY, W - 48, panelH, 28, 'rgba(255,255,255,.94)', 2);
