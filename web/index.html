@@ -186,6 +186,171 @@
         .task-tool-actions .secondary { box-shadow: 0 5px 0 #d99a3b, 0 8px 12px #5b2b0b20, inset 0 2px 0 #fff8 !important; }
         .asset-tool-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
         .asset-tool-button img { width: 30px; height: 30px; object-fit: contain; filter: drop-shadow(0 3px 4px #0002); }
+        /* v2.12.0 C3: complete task-book presentation */
+        .task-center.active {
+            grid-template-columns: minmax(360px, .92fr) minmax(420px, 1.08fr);
+            align-items: start;
+        }
+        .task-center.active.is-library-mode {
+            grid-template-columns: minmax(0, 920px);
+            justify-content: center;
+        }
+        .task-center.active.is-library-mode .task-book-card { width: 100%; }
+        .task-book-card {
+            padding: 18px 18px 18px 24px;
+            background:
+                linear-gradient(90deg, #8c4c22 0 8px, #d6923e 8px 11px, transparent 11px),
+                linear-gradient(145deg, #fffaf0ee, #ffe8a9e8) !important;
+        }
+        .task-book-card::after {
+            left: 8px; top: 20px; bottom: 20px; width: 7px;
+            background: repeating-linear-gradient(180deg, #7d431f 0 8px, #f5c967 8px 14px);
+            box-shadow: 2px 0 0 #fff5a8, 4px 0 8px #5c2d171f;
+        }
+        .task-book-card > * { margin-left: 0; }
+        .task-book-eyebrow {
+            margin-bottom: 5px; padding: 4px 9px; letter-spacing: 0;
+            background: linear-gradient(180deg, #8f69d6, #6847ac);
+        }
+        .task-overview {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            margin: 12px 0 0;
+        }
+        .task-center.active .task-overview .stat {
+            min-height: 62px; padding: 11px 10px 10px 48px;
+            border: 1px solid #fff9; border-radius: 14px;
+        }
+        .task-center.active .task-overview .stat::before {
+            left: 14px; width: 26px; height: 26px; display: grid; place-items: center;
+            border-radius: 9px; background: #fff9; font-size: 18px;
+        }
+        .task-center.active .task-overview .stat b { font-size: 19px; }
+        .task-pack-panel {
+            margin-top: 12px; padding: 14px;
+            border: 1px solid #fff9; border-radius: 18px;
+            background:
+                linear-gradient(180deg, #ffffffb8, #fff4c6c9),
+                repeating-linear-gradient(0deg, transparent 0 29px, #d8ad6522 29px 30px);
+            box-shadow: inset 0 1px 0 #fff, 0 10px 20px #63340f1a;
+        }
+        .task-pack-panel::after { display: none; }
+        .task-pack-head {
+            display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center;
+            gap: 10px; padding-bottom: 11px; border-bottom: 1px dashed #b57c3e66;
+        }
+        .task-pack-head::before {
+            content: "📚"; width: 44px; height: 44px; border-radius: 12px;
+            background: linear-gradient(145deg, #fff, #ffd875);
+            box-shadow: 0 4px 0 #cc842e, 0 7px 12px #67340e26; font-size: 22px;
+        }
+        .task-pack-kicker {
+            display: block; margin-bottom: 2px; color: #8a5d2a; font-size: 10px;
+            font-weight: 1000; letter-spacing: 0;
+        }
+        .task-mode-grid {
+            grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px; margin-top: 12px;
+        }
+        .task-mode-button {
+            display: grid; grid-template-rows: 34px auto auto; align-content: center; justify-items: center;
+            min-width: 0; min-height: 104px; padding: 9px 7px 8px; border: 1px solid #fff;
+            border-radius: 14px; color: #553917; text-align: center;
+            background: linear-gradient(160deg, #fffdf7e8, #ffe8acd9);
+            box-shadow: 0 5px 0 #c48a47, 0 9px 16px #67340e1c, inset 0 1px 0 #fff;
+        }
+        .task-mode-button::after { border-radius: inherit; }
+        .task-mode-button .task-mode-icon {
+            display: grid; place-items: center; width: 34px; height: 34px; margin: 0;
+            border-radius: 11px; background: #fff9; font-size: 21px;
+            box-shadow: inset 0 1px 0 #fff, 0 3px 8px #60340f18;
+        }
+        .task-mode-button strong {
+            min-width: 0; margin-top: 5px; color: inherit; font-size: 14px; line-height: 1.1;
+        }
+        .task-mode-button small {
+            min-width: 0; margin-top: 3px; color: #7a5a36; font-size: 9px; font-weight: 800;
+            line-height: 1.2;
+        }
+        .task-mode-button[data-task-mode="family"] { background: linear-gradient(160deg, #fffdf6, #dff6c5); box-shadow: 0 5px 0 #79a953, 0 9px 16px #3c68151c, inset 0 1px 0 #fff; }
+        .task-mode-button[data-task-mode="party"] { background: linear-gradient(160deg, #fffaf1, #ffd19a); box-shadow: 0 5px 0 #d07b36, 0 9px 16px #71360f1c, inset 0 1px 0 #fff; }
+        .task-mode-button[data-task-mode="couple"] { background: linear-gradient(160deg, #fff8fb, #ffc4d8); box-shadow: 0 5px 0 #cb6f92, 0 9px 16px #7023461c, inset 0 1px 0 #fff; }
+        .task-mode-button[data-task-mode="all-light"] { background: linear-gradient(160deg, #f9f8ff, #d9ccff); box-shadow: 0 5px 0 #8069c0, 0 9px 16px #3d26711c, inset 0 1px 0 #fff; }
+        .task-mode-button[data-task-mode="manual"] { background: linear-gradient(160deg, #f5fcff, #bfe9ff); box-shadow: 0 5px 0 #4e91b8, 0 9px 16px #174c6c1c, inset 0 1px 0 #fff; }
+        .task-mode-button:hover { transform: translateY(-2px); filter: saturate(1.08) brightness(1.02); }
+        .task-mode-button:active { transform: translateY(3px); box-shadow: 0 2px 0 #9c6b35, 0 4px 8px #67340e1c; }
+        .task-mode-button.is-active {
+            color: #45260e; border-color: #fffbd0;
+            outline: 3px solid #ffd64a; outline-offset: 1px;
+            filter: saturate(1.08);
+        }
+        .task-mode-button.is-active::before {
+            content: "使用中"; right: 5px; top: 5px; padding: 2px 5px;
+            border-radius: 7px; background: #6443a5; font-size: 8px; box-shadow: 0 2px 0 #432878;
+        }
+        .task-pack-summary {
+            position: relative; margin: 12px 0 0; padding: 10px 12px 10px 38px; border-radius: 12px;
+            background: #fffaf0c9; border: 1px solid #fff; color: #65431d !important;
+            box-shadow: inset 0 1px 0 #fff, 0 5px 12px #67340e12;
+        }
+        .task-pack-summary::before {
+            content: "✓"; position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+            display: grid; place-items: center; width: 19px; height: 19px; border-radius: 50%;
+            background: #6fbb59; color: #fff; font-size: 12px; box-shadow: 0 2px 0 #468a36;
+        }
+        .task-mode-status { gap: 7px; margin-top: 9px; }
+        .task-mode-status-item {
+            min-height: 54px; padding: 8px 6px; border-radius: 12px;
+            background: linear-gradient(180deg, #fff, #fff0c5); border: 1px solid #fff;
+        }
+        .task-mode-status-item b { font-size: 13px; }
+        .task-mode-status-item span { font-size: 9px; }
+        .task-center-launch {
+            grid-template-columns: minmax(0, 1fr) minmax(150px, auto); margin-top: 10px; padding: 11px;
+            border: 1px solid #fff9; border-radius: 14px; background: linear-gradient(135deg, #fff8d2, #ffe098);
+            box-shadow: inset 0 1px 0 #fff, 0 7px 14px #60310d18;
+        }
+        .task-center-launch-copy strong { font-size: 15px; }
+        .task-center-start-button {
+            min-width: 150px; min-height: 48px; border-radius: 13px;
+            background: linear-gradient(180deg, #ffbd3f, #ef7f22);
+            box-shadow: 0 6px 0 #a94e16, 0 10px 16px #68300d2b, inset 0 2px 0 #fff8;
+        }
+        .task-editor-card {
+            padding: 16px;
+            background: linear-gradient(145deg, #f8fcffe8, #d9efffea) !important;
+        }
+        .task-editor-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .task-editor-head::before {
+            content: "🗂️"; display: grid; place-items: center; flex: 0 0 40px; width: 40px; height: 40px;
+            border-radius: 12px; background: linear-gradient(145deg,#fff,#ffd46a); box-shadow: 0 4px 0 #d58c2a; font-size: 20px;
+        }
+        .task-editor-head h2 { margin: 0; color: #4d3115; }
+        .task-editor-head p { margin: 2px 0 0; }
+        .task-editor-card > h2 { display: none; }
+        .task-editor-card details {
+            margin-top: 9px; padding: 10px !important; border: 1px solid #fff !important;
+            border-left: 5px solid #d79335 !important; border-radius: 12px !important;
+            background: linear-gradient(135deg, #fffdf8dd, #ffe9aad9) !important;
+        }
+        .task-editor-card details:nth-of-type(2n) { border-left-color: #7c5ad0 !important; }
+        .task-editor-card summary { min-height: 30px; padding: 2px 0 6px !important; }
+        .task-tool-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .task-tool-actions button {
+            min-width: 0; min-height: 50px; border-radius: 12px !important;
+            white-space: normal; line-height: 1.15;
+        }
+        .task-editor-danger {
+            display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
+            gap: 10px; margin-top: 10px; padding: 10px 11px; border: 1px solid #ffb5a9;
+            border-radius: 12px; background: linear-gradient(135deg, #fff8f5, #ffd9d1);
+        }
+        .task-editor-danger strong { display: block; color: #8e2f22; font-size: 12px; }
+        .task-editor-danger span { display: block; margin-top: 2px; color: #a75548; font-size: 9px; font-weight: 800; }
+        .task-editor-danger button {
+            min-height: 40px; padding: 8px 12px !important; border-radius: 10px !important;
+            box-shadow: 0 4px 0 #7f281d, 0 7px 10px #59180f24 !important;
+        }
+        .task-editor-footer { margin-top: 12px; }
+        .task-editor-footer button { min-height: 44px; border-radius: 12px !important; }
         .game { display: none; }
         .game.active {
             min-height: calc(100svh - 90px); padding: 18px; border-radius: 30px;
@@ -1164,12 +1329,26 @@
             .home-bottom .stat b { font-size: 18px; }
             .home-bottom .stat span { font-size: 11px; }
             .task-grid { grid-template-columns: 1fr; }
-            .task-mode-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .task-center.active, .task-center.active.is-library-mode {
+                grid-template-columns: minmax(0, 1fr); align-content: start; justify-content: stretch;
+            }
+            .task-center.active .page-head { flex-wrap: wrap; }
+            .task-center.active .page-head > div:first-child { min-width: 0; flex: 1 1 210px; }
+            .task-center.active .page-head > button { flex: 0 0 auto; min-height: 38px; padding: .5rem .7rem; }
+            .task-book-card { padding: 12px 12px 12px 19px; }
+            .task-mode-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+            .task-mode-button { min-height: 88px; grid-template-rows: 30px auto auto; padding: 7px 5px; }
+            .task-mode-button[data-task-mode="manual"] { grid-column: 1 / -1; }
+            .task-mode-button .task-mode-icon { width: 30px; height: 30px; font-size: 18px; }
+            .task-mode-button strong { font-size: 13px; }
+            .task-mode-button small { font-size: 8px; }
             .task-mode-status { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
             .task-mode-status-item { padding: 7px 5px; }
             .task-center-launch { grid-template-columns: 1fr; }
             .task-center-start-button { width: 100%; }
             .task-tool-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .task-editor-danger { grid-template-columns: 1fr; }
+            .task-editor-danger button { width: 100%; }
             .task-book-card > * { margin-left: 5px; }
             .setup.active .page-head, .task-center.active .page-head, .game-subpage.active .page-head { padding: 10px; border-radius: 18px; align-items: flex-start; }
             .setup.active .page-head h2, .task-center.active .page-head h2, .game-subpage.active .page-head h2 { font-size: 20px; }
@@ -1253,6 +1432,42 @@
             .player-progress { height: 7px; }
             .progress-percent { min-width: 27px; font-size: 9px; }
             .progress-pill { min-width: 44px; font-size: 10px; padding: .28rem .38rem; }
+        }
+        @media (min-width: 700px) and (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
+            .task-center.active {
+                grid-template-columns: minmax(300px, .9fr) minmax(380px, 1.1fr);
+                gap: 10px; padding: 10px; align-items: start;
+            }
+            .task-center.active.is-library-mode {
+                grid-template-columns: minmax(0, 780px);
+                justify-content: center;
+            }
+            .task-center.active .page-head { flex-wrap: nowrap; padding: 8px 10px; }
+            .task-center.active .page-head .hint { display: none; }
+            .task-overview { margin-top: 8px; }
+            .task-center.active .task-overview .stat { min-height: 48px; padding-top: 8px; padding-bottom: 7px; }
+            .task-pack-panel { margin-top: 8px; padding: 10px; }
+            .task-pack-head { grid-template-columns: 36px minmax(0, 1fr); padding-bottom: 7px; }
+            .task-pack-head::before { width: 36px; height: 36px; font-size: 18px; box-shadow: 0 3px 0 #cc842e; }
+            .task-pack-head .hint { display: none; }
+            .task-mode-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+            .task-mode-button, .task-mode-button[data-task-mode="manual"] {
+                grid-column: auto; min-height: 72px; grid-template-rows: 24px auto; padding: 5px 3px;
+            }
+            .task-mode-button:hover { transform: none; }
+            .task-mode-button.is-active { outline-width: 2px; outline-offset: 0; }
+            .task-mode-button .task-mode-icon { width: 24px; height: 24px; font-size: 15px; }
+            .task-mode-button strong { margin-top: 3px; font-size: 11px; }
+            .task-mode-button small { display: none; }
+            .task-pack-summary { margin-top: 8px; padding-top: 7px; padding-bottom: 7px; font-size: 10px; }
+            .task-mode-status { margin-top: 6px; }
+            .task-mode-status-item { min-height: 44px; padding: 5px 4px; }
+            .task-center-launch {
+                grid-template-columns: minmax(0, 1fr) 132px; gap: 8px; margin-top: 7px; padding: 8px;
+            }
+            .task-center-launch-copy strong { font-size: 12px; }
+            .task-center-launch-copy span { font-size: 9px; }
+            .task-center-start-button { min-width: 132px; min-height: 40px; }
         }
         @media(max-width: 860px) and (max-height: 720px) {
             .home-hero { gap: 5px; padding-bottom: 8px; }
@@ -1353,6 +1568,517 @@
             .status.turn-changed .current-player-avatar img { animation: none !important; }
         }
 
+        /* v2.13.0 C4: complete settings menu */
+        .setup.active {
+            display: block;
+            padding: 14px;
+        }
+        .settings-shell {
+            width: min(100%, 1120px);
+            height: calc(100svh - 126px);
+            min-height: 600px;
+            margin: 0 auto;
+            padding: 12px;
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr) auto;
+            gap: 10px;
+            overflow: hidden !important;
+            border: 2px solid #fff9 !important;
+            border-radius: 26px;
+            background: linear-gradient(145deg, #fffaf0e8, #eaf6ffe0) !important;
+            box-shadow: 0 22px 48px #50300f2b, inset 0 1px 0 #fff !important;
+        }
+        .settings-shell::before {
+            background:
+                radial-gradient(circle at 8% 0%, #fff 0 7%, transparent 24%),
+                linear-gradient(115deg, #ffffff73, transparent 35% 72%, #ffd47b26) !important;
+        }
+        .settings-page-head {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto auto;
+            align-items: center !important;
+            gap: 12px;
+            min-height: 72px;
+            margin: 0 !important;
+            padding: 10px 12px !important;
+            border-radius: 18px !important;
+            background: linear-gradient(135deg, #fff7d8e8, #fffef7d6) !important;
+        }
+        .settings-page-head h2 { font-size: 23px; line-height: 1.05; }
+        .settings-eyebrow, .settings-panel-kicker {
+            display: block;
+            margin-bottom: 3px;
+            color: #99611e;
+            font-size: 9px;
+            font-weight: 1000;
+            letter-spacing: .12em;
+        }
+        .settings-head-status {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .settings-head-status span {
+            min-width: 84px;
+            padding: 7px 9px;
+            border: 1px solid #fff;
+            border-radius: 12px;
+            color: #76502b;
+            background: #ffffffa8;
+            font-size: 11px;
+            font-weight: 850;
+            text-align: center;
+            box-shadow: inset 0 1px 0 #fff, 0 4px 10px #6b441611;
+        }
+        .settings-head-status b { color: #4f3218; font-size: 14px; }
+        .settings-back-button { min-height: 40px; padding: .58rem .85rem; border-radius: 12px; }
+        .settings-layout {
+            min-height: 0;
+            display: grid;
+            grid-template-columns: 214px minmax(0, 1fr);
+            gap: 10px;
+        }
+        .settings-nav {
+            min-height: 0;
+            display: grid;
+            align-content: start;
+            gap: 7px;
+            padding: 8px;
+            border: 1px solid #ffffffd6;
+            border-radius: 18px;
+            background: linear-gradient(180deg, #6ea9dbe6, #4d7fb6e8);
+            box-shadow: inset 0 1px 0 #fff6, 0 8px 18px #31547d26;
+        }
+        .settings-nav-button {
+            width: 100%;
+            min-height: 64px;
+            display: grid;
+            grid-template-columns: 38px minmax(0, 1fr);
+            align-items: center;
+            gap: 9px;
+            padding: 8px 9px;
+            border: 1px solid transparent;
+            border-radius: 14px;
+            color: #eff8ff;
+            background: transparent;
+            box-shadow: none;
+            text-align: left;
+            transition: background .16s ease, transform .16s ease, box-shadow .16s ease;
+        }
+        .settings-nav-button:hover { background: #ffffff18; transform: translateX(2px); }
+        .settings-nav-button.is-active {
+            color: #523619;
+            background: linear-gradient(180deg, #fff7d0, #ffd779);
+            border-color: #fff8d8;
+            box-shadow: 0 4px 0 #c7832b, 0 7px 12px #294d7224, inset 0 1px 0 #fff;
+        }
+        .settings-nav-button > span:last-child { min-width: 0; }
+        .settings-nav-button strong, .settings-nav-button small { display: block; }
+        .settings-nav-button strong { font-size: 14px; white-space: nowrap; }
+        .settings-nav-button small {
+            margin-top: 2px;
+            overflow: hidden;
+            color: currentColor;
+            font-size: 9px;
+            font-weight: 750;
+            opacity: .76;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .settings-nav-icon {
+            width: 36px;
+            height: 36px;
+            display: grid;
+            place-items: center;
+            border-radius: 11px;
+            color: #fff;
+            background: #ffffff20;
+            font-size: 20px;
+            line-height: 1;
+            box-shadow: inset 0 1px 0 #fff5;
+        }
+        .settings-nav-button.is-active .settings-nav-icon {
+            color: #83501c;
+            background: #fff9df;
+            box-shadow: inset 0 1px 0 #fff, 0 3px 7px #9c5b1d22;
+        }
+        .settings-content {
+            min-width: 0;
+            min-height: 0;
+            overflow: hidden;
+            border: 1px solid #ffffffd6;
+            border-radius: 18px;
+            background: linear-gradient(145deg, #fffdf8d9, #f3f8ffd1);
+            box-shadow: inset 0 1px 0 #fff, 0 8px 18px #6b441615;
+        }
+        .settings-panel {
+            height: 100%;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 16px;
+            scrollbar-width: thin;
+            scrollbar-color: #d8a55d transparent;
+        }
+        .settings-panel[hidden] { display: none; }
+        .settings-panel.is-active { display: block; }
+        .settings-panel-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 13px;
+            padding-bottom: 11px;
+            border-bottom: 1px solid #cfa65b54;
+        }
+        .settings-panel-head h3 { margin: 0; color: #4d3115; font-size: 20px; }
+        .settings-panel-head p { margin: 4px 0 0; color: #806344; font-size: 11px; font-weight: 800; }
+        .compact-button {
+            flex: 0 0 auto;
+            min-height: 40px;
+            padding: .55rem .85rem;
+            border-radius: 12px;
+        }
+        .player-list { display: grid; gap: 7px; }
+        .settings-panel .player-row {
+            grid-template-columns: minmax(150px, 1fr) 118px 44px;
+            gap: 8px;
+            margin: 0;
+            padding: 7px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #ffffffd9, #fff0c8c7);
+            box-shadow: 0 5px 12px #6b441611;
+        }
+        .setup.active .settings-panel .player-row input,
+        .setup.active .settings-panel .player-row select,
+        .setup.active .settings-panel .player-row button { min-height: 40px; border-radius: 11px; }
+        .setup.active .settings-panel .player-row button {
+            font-size: 20px;
+            box-shadow: none;
+        }
+        .color-capacity { margin: 10px 0 0; }
+        .color-capacity .chip { padding: .32rem .58rem; font-size: 11px; }
+        .settings-inline-note, .settings-device-note {
+            margin-top: 11px;
+            padding: 10px 12px;
+            border: 1px solid #ffffffcf;
+            border-radius: 13px;
+            color: #6b4b28;
+            background: #fff9e8a8;
+            font-size: 11px;
+            font-weight: 800;
+        }
+        .preference-list { display: grid; gap: 9px; }
+        .preference-row {
+            min-height: 66px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 11px 13px;
+            border: 1px solid #fff;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #fffdf4e8, #eaf7ffe8);
+            box-shadow: inset 0 1px 0 #fff, 0 5px 12px #5b3a1612;
+        }
+        .preference-row strong, .preference-row small { display: block; }
+        .preference-row strong { color: #49321c; font-size: 14px; }
+        .preference-row small { margin-top: 3px; color: #806344; font-size: 10px; font-weight: 800; }
+        .preference-toggle {
+            position: relative;
+            width: 76px;
+            min-width: 76px;
+            height: 38px;
+            min-height: 38px;
+            padding: 0;
+            overflow: hidden;
+            border: 2px solid #fff;
+            border-radius: 999px;
+            color: transparent;
+            background: linear-gradient(#77dc8c, #36ad58);
+            box-shadow: 0 4px 0 #218940, 0 7px 12px #164f2928, inset 0 2px 0 #ffffff80;
+            font-size: 0;
+        }
+        .preference-toggle::before {
+            content: "开";
+            position: absolute;
+            left: 13px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 1000;
+        }
+        .preference-toggle::after {
+            content: "";
+            position: absolute;
+            right: 3px;
+            top: 3px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(180deg, #fff, #fff2d5);
+            box-shadow: 0 3px 7px #1f4f2c4d;
+            transition: transform .18s ease;
+        }
+        .preference-toggle[aria-pressed="false"] {
+            background: linear-gradient(#c8c8c8, #8d9298);
+            box-shadow: 0 4px 0 #686d72, 0 7px 12px #26313d20, inset 0 2px 0 #fff8;
+        }
+        .preference-toggle[aria-pressed="false"]::before { content: "关"; left: auto; right: 13px; }
+        .preference-toggle[aria-pressed="false"]::after { transform: translateX(-38px); }
+        .settings-device-note { display: grid; gap: 3px; background: linear-gradient(135deg, #eef8ffe8, #fff9dfe8); }
+        .settings-device-note strong { color: #426482; font-size: 13px; }
+        .settings-data-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 9px;
+        }
+        .settings-data-card {
+            min-width: 0;
+            padding: 14px 12px;
+            border: 1px solid #fff;
+            border-radius: 15px;
+            text-align: center;
+            background: linear-gradient(180deg, #fff, #ffe8ad);
+            box-shadow: inset 0 1px 0 #fff, 0 6px 13px #6b441615;
+        }
+        .settings-data-card b, .settings-data-card span { display: block; }
+        .settings-data-card b { color: #5c3510; font-size: 22px; }
+        .settings-data-card span { margin-top: 2px; color: #806344; font-size: 10px; font-weight: 850; }
+        .settings-data-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .settings-data-actions button { min-height: 43px; border-radius: 12px; }
+        .settings-danger-zone {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 14px;
+            margin-top: 12px;
+        }
+        .settings-danger-zone p { margin-bottom: 0; }
+        .settings-danger-zone .warn { width: auto; min-width: 138px; min-height: 42px; border-radius: 12px; }
+        .settings-action-bar {
+            display: grid;
+            grid-template-columns: minmax(180px, 1fr) repeat(3, minmax(108px, auto));
+            align-items: center;
+            gap: 8px;
+            min-height: 62px;
+            padding: 9px 10px;
+            border: 1px solid #ffffffd6;
+            border-radius: 17px;
+            background: linear-gradient(135deg, #fff8d9e8, #ffffffd9);
+            box-shadow: inset 0 1px 0 #fff, 0 7px 15px #6b441615;
+        }
+        .settings-action-bar > div { min-width: 0; }
+        .settings-action-bar strong, .settings-action-bar span { display: block; }
+        .settings-action-bar strong { color: #446d4d; font-size: 12px; }
+        .settings-action-bar strong.is-warning { color: #a14e25; }
+        .settings-action-bar span {
+            margin-top: 2px;
+            overflow: hidden;
+            color: #806344;
+            font-size: 9px;
+            font-weight: 800;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .settings-action-bar button {
+            min-width: 0;
+            min-height: 42px;
+            padding: .6rem .75rem;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+        .settings-action-bar #startBtn {
+            background: linear-gradient(180deg, #ffc85e, #ed8b28);
+            box-shadow: 0 4px 0 #ad5b18, 0 7px 12px #5b2b0b22, inset 0 1px 0 #fff8;
+        }
+        html.reduced-motion .home-flyby,
+        html.reduced-motion .home-effects { display: none !important; animation: none !important; }
+        html.reduced-motion .primary-menu .menu-button {
+            opacity: 1;
+            animation: none !important;
+        }
+        html.reduced-motion .status.turn-changed,
+        html.reduced-motion .status.turn-changed .current-player-avatar img,
+        html.reduced-motion .piece.current::before,
+        html.reduced-motion .piece.current .piece-img,
+        html.reduced-motion .player-card.current .player-avatar {
+            animation: none !important;
+        }
+        html.reduced-motion .settings-nav-button,
+        html.reduced-motion .task-mode-button,
+        html.reduced-motion .preference-toggle::after { transition: none !important; }
+
+        @media(max-width: 860px), (orientation: portrait) {
+            .setup.active { display: block; padding: 8px; }
+            .settings-shell {
+                width: 100%;
+                height: calc(100svh - 16px);
+                min-height: 0;
+                padding: 8px;
+                gap: 7px;
+                border-radius: 20px;
+            }
+            .settings-page-head {
+                grid-template-columns: minmax(0, 1fr) auto;
+                min-height: 54px;
+                padding: 7px 9px !important;
+                border-radius: 14px !important;
+            }
+            .settings-page-head h2 { font-size: 19px !important; }
+            .settings-page-head .hint { margin-top: 2px !important; font-size: 9px !important; }
+            .settings-eyebrow, .settings-head-status { display: none; }
+            .settings-back-button { min-height: 36px; padding: .42rem .58rem; font-size: 11px; }
+            .settings-layout {
+                grid-template-columns: minmax(0, 1fr);
+                grid-template-rows: auto minmax(0, 1fr);
+                gap: 7px;
+            }
+            .settings-nav {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 5px;
+                padding: 5px;
+                border-radius: 14px;
+            }
+            .settings-nav-button {
+                min-width: 0;
+                min-height: 44px;
+                grid-template-columns: 24px minmax(0, 1fr);
+                gap: 5px;
+                padding: 5px;
+                border-radius: 11px;
+            }
+            .settings-nav-button:hover { transform: none; }
+            .settings-nav-button strong {
+                overflow: hidden;
+                font-size: clamp(10px, 3vw, 12px);
+                text-overflow: ellipsis;
+            }
+            .settings-nav-button small { display: none; }
+            .settings-nav-icon { width: 24px; height: 24px; border-radius: 8px; font-size: 14px; }
+            .settings-content { border-radius: 14px; }
+            .settings-panel { padding: 10px; }
+            .settings-panel-head { gap: 8px; margin-bottom: 9px; padding-bottom: 8px; }
+            .settings-panel-head h3 { font-size: 16px; }
+            .settings-panel-head p { font-size: 9px; }
+            .settings-panel-kicker { font-size: 8px; }
+            .compact-button { min-height: 36px; padding: .42rem .58rem; font-size: 11px; }
+            .settings-panel .player-row {
+                grid-template-columns: minmax(0, 1fr) 88px 44px;
+                gap: 5px;
+                padding: 5px;
+            }
+            .setup.active .settings-panel .player-row input,
+            .setup.active .settings-panel .player-row select,
+            .setup.active .settings-panel .player-row button { min-height: 40px; padding: .45rem; font-size: 12px; }
+            .setup.active .settings-panel .player-row button { padding: 0; font-size: 19px; }
+            .color-capacity { gap: 5px; margin-top: 7px; }
+            .color-capacity .chip { padding: .25rem .4rem; font-size: 9px; }
+            .settings-inline-note, .settings-device-note { margin-top: 8px; padding: 8px 9px; font-size: 9px; }
+            .preference-list { gap: 7px; }
+            .preference-row { min-height: 57px; padding: 8px 9px; border-radius: 12px; }
+            .preference-row strong { font-size: 12px; }
+            .preference-row small { font-size: 9px; }
+            .preference-toggle { width: 68px; min-width: 68px; height: 34px; min-height: 34px; }
+            .preference-toggle::before { left: 11px; font-size: 10px; }
+            .preference-toggle::after { width: 24px; height: 24px; }
+            .preference-toggle[aria-pressed="false"]::before { right: 11px; }
+            .preference-toggle[aria-pressed="false"]::after { transform: translateX(-32px); }
+            .settings-data-card { padding: 10px 8px; border-radius: 12px; }
+            .settings-data-card b { font-size: 18px; }
+            .settings-data-actions { gap: 6px; margin-top: 8px; }
+            .settings-data-actions button { min-height: 39px; padding: .48rem .35rem; font-size: 11px; }
+            .settings-danger-zone {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 7px;
+                margin-top: 8px;
+                padding: 9px;
+            }
+            .settings-danger-zone .warn { width: 100%; min-height: 39px; }
+            .settings-action-bar {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 5px;
+                min-height: 73px;
+                padding: 7px;
+                border-radius: 14px;
+            }
+            .settings-action-bar > div { grid-column: 1 / -1; }
+            .settings-action-bar strong { font-size: 10px; }
+            .settings-action-bar span { font-size: 8px; }
+            .settings-action-bar button { min-height: 38px; padding: .46rem .25rem; font-size: 10px; }
+        }
+
+        @media (min-width: 700px) and (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
+            .setup.active { padding: 6px; }
+            .settings-shell {
+                height: calc(100svh - 12px);
+                padding: 6px;
+                gap: 6px;
+                border-radius: 17px;
+            }
+            .settings-page-head {
+                grid-template-columns: minmax(0, 1fr) auto auto;
+                min-height: 46px;
+                padding: 5px 8px !important;
+            }
+            .settings-page-head h2 { font-size: 17px !important; }
+            .settings-page-head .hint, .settings-eyebrow { display: none; }
+            .settings-head-status { display: flex; }
+            .settings-head-status span { min-width: 68px; padding: 4px 6px; font-size: 8px; }
+            .settings-head-status b { font-size: 11px; }
+            .settings-back-button { min-height: 32px; }
+            .settings-layout {
+                grid-template-columns: 148px minmax(0, 1fr);
+                grid-template-rows: minmax(0, 1fr);
+                gap: 6px;
+            }
+            .settings-nav {
+                grid-template-columns: minmax(0, 1fr);
+                align-content: start;
+                gap: 4px;
+                padding: 5px;
+            }
+            .settings-nav-button {
+                min-height: 48px;
+                grid-template-columns: 28px minmax(0, 1fr);
+                gap: 6px;
+                padding: 5px 6px;
+            }
+            .settings-nav-button strong { font-size: 11px; }
+            .settings-nav-button small { display: block; font-size: 7px; }
+            .settings-nav-icon { width: 28px; height: 28px; }
+            .settings-panel { padding: 8px 10px; }
+            .settings-panel-head { margin-bottom: 7px; padding-bottom: 6px; }
+            .settings-panel-head h3 { font-size: 15px; }
+            .settings-panel-head p, .settings-panel-kicker { display: none; }
+            .compact-button { min-height: 32px; }
+            .settings-panel .player-row {
+                grid-template-columns: minmax(0, 1fr) 96px 40px;
+                padding: 4px;
+            }
+            .setup.active .settings-panel .player-row input,
+            .setup.active .settings-panel .player-row select,
+            .setup.active .settings-panel .player-row button { min-height: 34px; }
+            .color-capacity { margin-top: 5px; }
+            .settings-inline-note { display: none; }
+            .preference-row { min-height: 50px; padding: 6px 9px; }
+            .settings-data-card { padding: 7px; }
+            .settings-danger-zone { grid-template-columns: minmax(0, 1fr) 128px; }
+            .settings-danger-zone p { display: none; }
+            .settings-action-bar {
+                grid-template-columns: minmax(150px, 1fr) repeat(3, 104px);
+                min-height: 45px;
+                padding: 5px 7px;
+            }
+            .settings-action-bar > div { grid-column: auto; }
+            .settings-action-bar button { min-height: 34px; font-size: 9px; }
+        }
+
         /* v2.10.0 网页启动加载页：只阻塞大厅首屏关键资源。 */
         .web-loader {
             position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center;
@@ -1436,7 +2162,7 @@
         <div class="web-loader-percent" id="webLoaderPercent">0%</div>
         <p class="web-loader-error" id="webLoaderError" hidden></p>
         <button class="web-loader-retry" id="webLoaderRetry" type="button" hidden>重新加载</button>
-        <div class="web-loader-version" id="webLoaderVersion">v2.10.1</div>
+        <div class="web-loader-version" id="webLoaderVersion">v2.13.0</div>
     </div>
 </div>
 <noscript><div class="web-loader-noscript">请开启 JavaScript 后重新进入游戏。</div></noscript>
@@ -1497,50 +2223,112 @@
     </section>
 
     <section id="setup" class="setup">
-        <div class="card">
-            <div class="page-head">
+        <div class="card settings-shell">
+            <div class="page-head settings-page-head">
                 <div>
+                    <span class="settings-eyebrow">GAME OPTIONS</span>
                     <h2>游戏设置</h2>
-                    <p class="hint">配置本局玩家与棋子颜色。</p>
+                    <p class="hint">玩家、声音、画面和本地数据集中管理。</p>
                 </div>
-                <button class="secondary" id="setupBackHomeBtn">返回大厅</button>
-            </div>
-            <div class="settings-section">
-                <div class="settings-section-head"><span class="settings-section-icon">🎮</span><div><h3>玩家与颜色</h3><p>2–16 人，每种颜色最多 4 位玩家</p></div></div>
-                <div id="playersBox"></div>
-                <div class="chips" id="colorCounts"></div>
-                <div class="actions">
-                    <button class="secondary" id="addPlayerBtn">+ 添加玩家</button>
-                    <button id="startBtn">开始游戏</button>
-                    <button class="secondary" id="setupTaskBtn">任务中心</button>
+                <div class="settings-head-status" aria-label="当前设置状态">
+                    <span><b id="setupPlayerCount">2</b> 位玩家</span>
+                    <span><b id="setupSaveBadge">无</b> 存档</span>
                 </div>
+                <button class="secondary settings-back-button" id="setupBackHomeBtn">返回大厅</button>
             </div>
-        </div>
 
-        <div class="card">
-            <div class="settings-section">
-                <div class="settings-section-head"><span class="settings-section-icon">🔊</span><div><h3>声音设置</h3><p>控制大厅与游戏中的背景音乐</p></div></div>
-                <div class="sound-setting">
-                    <div><strong>背景音乐</strong><small id="musicStatusText">进入游戏后循环播放</small></div>
-                    <button type="button" class="music-toggle" id="musicToggleBtn" aria-pressed="true" aria-label="背景音乐开关">音乐：开</button>
+            <div class="settings-layout">
+                <nav class="settings-nav" role="tablist" aria-label="设置分类">
+                    <button class="settings-nav-button is-active" type="button" role="tab" aria-selected="true" data-settings-tab="players">
+                        <span class="settings-nav-icon" aria-hidden="true">♟</span>
+                        <span><strong>玩家配置</strong><small>人数、姓名与颜色</small></span>
+                    </button>
+                    <button class="settings-nav-button" type="button" role="tab" aria-selected="false" data-settings-tab="experience">
+                        <span class="settings-nav-icon" aria-hidden="true">♪</span>
+                        <span><strong>声音与画面</strong><small>音乐和界面动效</small></span>
+                    </button>
+                    <button class="settings-nav-button" type="button" role="tab" aria-selected="false" data-settings-tab="data">
+                        <span class="settings-nav-icon" aria-hidden="true">▣</span>
+                        <span><strong>数据管理</strong><small>任务、存档与重置</small></span>
+                    </button>
+                </nav>
+
+                <div class="settings-content">
+                    <section class="settings-panel is-active" role="tabpanel" data-settings-panel="players">
+                        <div class="settings-panel-head">
+                            <div>
+                                <span class="settings-panel-kicker">PLAYER SETUP</span>
+                                <h3>玩家与棋子颜色</h3>
+                                <p>支持 2–16 人，每种颜色最多 4 位玩家。</p>
+                            </div>
+                            <button class="secondary compact-button" id="addPlayerBtn">添加玩家</button>
+                        </div>
+                        <div class="player-list" id="playersBox"></div>
+                        <div class="chips color-capacity" id="colorCounts"></div>
+                        <div class="settings-inline-note">
+                            玩家配置会在点击“保存配置”或“开始新游戏”时保存到本机。
+                        </div>
+                    </section>
+
+                    <section class="settings-panel" role="tabpanel" data-settings-panel="experience" hidden>
+                        <div class="settings-panel-head">
+                            <div>
+                                <span class="settings-panel-kicker">EXPERIENCE</span>
+                                <h3>声音与画面</h3>
+                                <p>按设备性能和使用环境调整游戏反馈。</p>
+                            </div>
+                        </div>
+                        <div class="preference-list">
+                            <div class="preference-row">
+                                <div><strong>背景音乐</strong><small id="musicStatusText">进入游戏后循环播放</small></div>
+                                <button type="button" class="preference-toggle" id="musicToggleBtn" aria-pressed="true" aria-label="背景音乐开关">音乐：开</button>
+                            </div>
+                            <div class="preference-row">
+                                <div><strong>界面动效</strong><small id="motionStatusText">保留大厅、按钮和状态切换动效</small></div>
+                                <button type="button" class="preference-toggle" id="motionToggleBtn" aria-pressed="true" aria-label="界面动效开关">动效：开</button>
+                            </div>
+                        </div>
+                        <div class="settings-device-note">
+                            <strong>自动适配已开启</strong>
+                            <span>界面会自动匹配电脑横屏、手机竖屏和矮横屏，无需手动选择分辨率。</span>
+                        </div>
+                    </section>
+
+                    <section class="settings-panel" role="tabpanel" data-settings-panel="data" hidden>
+                        <div class="settings-panel-head">
+                            <div>
+                                <span class="settings-panel-kicker">LOCAL DATA</span>
+                                <h3>存档与任务</h3>
+                                <p>查看本机数据状态，进入任务中心或恢复设置默认值。</p>
+                            </div>
+                        </div>
+                        <div class="settings-data-grid">
+                            <div class="settings-data-card"><b id="setupTaskTotal">-</b><span>当前任务</span></div>
+                            <div class="settings-data-card"><b id="setupSaveState">-</b><span>游戏存档</span></div>
+                        </div>
+                        <div class="settings-data-actions">
+                            <button class="secondary" id="setupTaskBtn">打开任务中心</button>
+                            <button class="secondary" id="restoreDefaultsBtn">恢复默认设置</button>
+                        </div>
+                        <div class="danger-zone settings-danger-zone">
+                            <div>
+                                <strong>清空全部数据</strong>
+                                <p>会删除游戏存档、自定义任务、玩家配置和声音偏好，操作不可撤销。</p>
+                            </div>
+                            <button class="warn" id="setupClearDataBtn">清空全部数据</button>
+                        </div>
+                    </section>
                 </div>
             </div>
-            <div class="settings-section">
-                <div class="settings-section-head"><span class="settings-section-icon">✨</span><div><h3>视觉设置</h3><p>界面会自动适配电脑横屏和手机竖屏</p></div></div>
-                <div class="settings-note"><span>📱</span><span>当前使用自适应布局，无需手动调整分辨率。</span></div>
-            </div>
-            <div class="settings-section">
-                <div class="settings-section-head"><span class="settings-section-icon">💾</span><div><h3>数据管理</h3><p>检查任务与本地存档状态</p></div></div>
-                <div class="stat-grid">
-                    <div class="stat"><b id="setupTaskTotal">-</b><span>任务总数</span></div>
-                    <div class="stat"><b id="setupSaveState">-</b><span>存档状态</span></div>
+
+            <div class="settings-action-bar">
+                <div>
+                    <strong id="settingsFeedback" role="status" aria-live="polite">设置已载入</strong>
+                    <span id="setupOverwriteHint">开始新游戏会创建一局新的冒险。</span>
                 </div>
-                <div class="actions"><button class="secondary" id="setupContinueBtn">继续上局</button></div>
-                <div class="danger-zone">
-                    <strong>危险操作</strong>
-                    <p>清除游戏存档、玩家设置、自定义任务与音频偏好，操作不可撤销。</p>
-                    <button class="warn" id="setupClearDataBtn">🗑 清空全部数据</button>
-                </div>
+                <button class="secondary" id="setupContinueBtn">继续上局</button>
+                <button class="secondary" id="saveSettingsBtn">保存配置</button>
+                <button id="startBtn">开始新游戏</button>
             </div>
         </div>
     </section>
@@ -1549,31 +2337,32 @@
         <div class="card task-book-card">
             <div class="page-head">
                 <div>
-                    <span class="task-book-eyebrow">ADVENTURE TASKS</span>
+                    <span class="task-book-eyebrow">冒险任务卡册</span>
                     <h2>任务卡册</h2>
-                    <p class="hint">翻开卡册，选择适合本局的任务模式。</p>
+                    <p class="hint">选择一套任务牌组，马上开始这一局冒险。</p>
                 </div>
                 <button class="secondary" id="taskBackHomeBtn">返回大厅</button>
             </div>
-            <div class="stat-grid">
+            <div class="stat-grid task-overview">
                 <div class="stat"><b id="taskCenterTotal">-</b><span>任务总数</span></div>
                 <div class="stat"><b id="taskCenterStatus">-</b><span>任务状态</span></div>
             </div>
             <div class="task-pack-panel">
                 <div class="task-pack-head">
                     <div>
-                        <h3>选择游戏模式</h3>
+                        <span class="task-pack-kicker">本局牌组</span>
+                        <h3>选择冒险场景</h3>
                         <p class="hint" id="taskPackHint">选择后直接使用对应任务。</p>
                     </div>
                 </div>
                 <div class="task-mode-grid">
-                    <button class="task-mode-button" data-task-mode="family"><span>🏠</span>家庭</button>
-                    <button class="task-mode-button" data-task-mode="party"><span>🎉</span>聚会</button>
-                    <button class="task-mode-button" data-task-mode="couple"><span>💕</span>情侣</button>
-                    <button class="task-mode-button" data-task-mode="all-light"><span>🎴</span>轻松全集</button>
-                    <button class="task-mode-button" data-task-mode="manual"><span>✏️</span>手动任务</button>
+                    <button class="task-mode-button" data-task-mode="family"><span class="task-mode-icon">🏠</span><strong>家庭</strong><small>温和互动</small></button>
+                    <button class="task-mode-button" data-task-mode="party"><span class="task-mode-icon">🎉</span><strong>聚会</strong><small>热闹搞笑</small></button>
+                    <button class="task-mode-button" data-task-mode="couple"><span class="task-mode-icon">💕</span><strong>情侣</strong><small>双人互动</small></button>
+                    <button class="task-mode-button" data-task-mode="all-light"><span class="task-mode-icon">🎴</span><strong>轻松全集</strong><small>多场景混合</small></button>
+                    <button class="task-mode-button" data-task-mode="manual"><span class="task-mode-icon">✏️</span><strong>手动任务</strong><small>自定义牌组</small></button>
                 </div>
-                <p class="hint" id="taskPackSummary">当前使用下方手动任务表。</p>
+                <p class="hint task-pack-summary" id="taskPackSummary">当前使用下方手动任务表。</p>
                 <div class="task-mode-status" aria-label="当前任务模式状态">
                     <div class="task-mode-status-item"><b id="taskModeStatus">待选择</b><span>模式状态</span></div>
                     <div class="task-mode-status-item"><b id="taskModePlayerCount">2 人</b><span>当前玩家</span></div>
@@ -1587,6 +2376,12 @@
         </div>
 
         <div class="card task-editor-card" id="taskEditorCard">
+            <div class="task-editor-head">
+                <div>
+                    <h2>任务工坊</h2>
+                    <p class="hint">编辑自己的任务牌组，保存后可重复使用。</p>
+                </div>
+            </div>
             <h2>任务编辑</h2>
             <details>
                 <summary>手动任务工具</summary>
@@ -1597,7 +2392,10 @@
                     <button class="secondary asset-tool-button" id="exportTasksBtn"><img src="./assets/images/ui/icon_import_export.webp" alt=""><span>导出任务</span></button>
                     <button class="secondary" id="fillDemoBtn">✨<br>示例任务</button>
                     <button class="secondary" id="checkTasksBtn">✅<br>任务检查</button>
-                    <button class="warn" id="clearBtn">🗑<br>清空数据</button>
+                </div>
+                <div class="task-editor-danger">
+                    <div><strong>危险操作</strong><span>会清除存档、玩家设置、自定义任务和声音偏好。</span></div>
+                    <button class="warn" id="clearBtn">清空全部数据</button>
                 </div>
                 <input type="file" id="importFileInput" accept=".json" style="display:none;">
             </details>
@@ -1625,7 +2423,7 @@
                 <summary>终极惩罚</summary>
                 <textarea id="finalPunish"></textarea>
             </details>
-            <div class="actions">
+            <div class="actions task-editor-footer">
                 <button id="taskStartBtn">保存并开始游戏</button>
                 <button class="secondary" id="taskSetupBtn">玩家设置</button>
             </div>
@@ -1773,10 +2571,12 @@
 
 <script>
 (() => {
-    const APP_VERSION = "2.11.1";
+    const APP_VERSION = "2.13.0";
     const STATE_KEY = "flight_adventure_v66_state";
     const TASK_KEY = "flight_adventure_v66_tasks";
     const AUDIO_SETTINGS_KEY = "flight_adventure_audio_v1";
+    const PLAYER_SETTINGS_KEY = "flight_adventure_players_v1";
+    const VISUAL_SETTINGS_KEY = "flight_adventure_visual_v1";
     const TASK_LIBRARY_URL = "./assets/tasks/commercial_v2_3_tasks.json";
     const COMMERCIAL_TASK_LIBRARY_KEY = "flight_adventure_commercial_tasks_v1";
     const TASK_PACK_SETTINGS_KEY = "flight_adventure_task_packs_v1";
@@ -1796,12 +2596,18 @@
         manual: { enabled: false, packs: DEFAULT_PACK_SELECTION }
     };
     const TASK_MODE_LABELS = { family: "家庭", party: "聚会", couple: "情侣", "all-light": "轻松全集", manual: "手动任务" };
+    const DEFAULT_SETUP_PLAYERS = [
+        { name: "玩家1", color: "R" },
+        { name: "玩家2", color: "Y" }
+    ];
+    const PLAYER_COLOR_CODES = ["R", "Y", "B", "G"];
 
     // ========== 音效系统 (Web Audio API) ==========
     let audioCtx = null;
     let diceRollAudio = null;
     let backgroundMusicAudio = null;
     let musicEnabled = loadMusicEnabled();
+    let motionEnabled = loadMotionEnabled();
 
     function loadMusicEnabled() {
         try {
@@ -1845,6 +2651,41 @@
         updateMusicControl();
         if (musicEnabled) playBackgroundMusic();
         else pauseBackgroundMusic();
+        setSettingsFeedback(musicEnabled ? "背景音乐已开启" : "背景音乐已关闭");
+    }
+
+    function defaultMotionEnabled() {
+        return !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    }
+
+    function loadMotionEnabled() {
+        try {
+            const saved = localStorage.getItem(VISUAL_SETTINGS_KEY);
+            return saved === null ? defaultMotionEnabled() : saved !== "off";
+        } catch {
+            return defaultMotionEnabled();
+        }
+    }
+
+    function applyMotionPreference() {
+        document.documentElement.classList.toggle("reduced-motion", !motionEnabled);
+    }
+
+    function updateMotionControl() {
+        if (!els?.motionToggleBtn) return;
+        els.motionToggleBtn.setAttribute("aria-pressed", String(motionEnabled));
+        els.motionToggleBtn.textContent = motionEnabled ? "动效：开" : "动效：关";
+        els.motionStatusText.textContent = motionEnabled
+            ? "已开启大厅、按钮和状态切换动效"
+            : "已关闭装饰和界面切换动效";
+    }
+
+    function toggleMotionPreference() {
+        motionEnabled = !motionEnabled;
+        try { localStorage.setItem(VISUAL_SETTINGS_KEY, motionEnabled ? "on" : "off"); } catch {}
+        applyMotionPreference();
+        updateMotionControl();
+        setSettingsFeedback(motionEnabled ? "界面动效已开启" : "界面动效已关闭");
     }
 
     function getAudioContext() {
@@ -2016,6 +2857,60 @@
         final: "终极惩罚：最后一名接受全场共同指定的大冒险。"
     };
 
+    function cloneDefaultSetupPlayers() {
+        return DEFAULT_SETUP_PLAYERS.map(player => ({ ...player }));
+    }
+
+    function normalizeSetupPlayers(source) {
+        if (!Array.isArray(source) || source.length < 2 || source.length > 16) return null;
+        const normalized = source.map(player => ({
+            name: typeof player?.name === "string" ? player.name.trim() : "",
+            color: PLAYER_COLOR_CODES.includes(player?.color) ? player.color : ""
+        }));
+        if (normalized.some(player => !player.name || !player.color)) return null;
+        const counts = countColors(normalized);
+        if (Object.values(counts).some(count => count > 4)) return null;
+        return normalized;
+    }
+
+    function validateSetupPlayers(source = setupPlayers) {
+        if (!Array.isArray(source) || source.length < 2 || source.length > 16) return "人数必须是 2-16。";
+        if (source.some(player => typeof player?.name !== "string" || !player.name.trim())) return "请填写所有玩家名。";
+        if (source.some(player => !PLAYER_COLOR_CODES.includes(player?.color))) return "请选择有效的棋子颜色。";
+        const counts = countColors(source);
+        if (Object.values(counts).some(count => count > 4)) return "每色最多 4 人。";
+        return "";
+    }
+
+    function loadSetupPlayers() {
+        try {
+            const stored = normalizeSetupPlayers(JSON.parse(localStorage.getItem(PLAYER_SETTINGS_KEY)));
+            return stored || cloneDefaultSetupPlayers();
+        } catch {
+            return cloneDefaultSetupPlayers();
+        }
+    }
+
+    function savePlayerPreferences(options = {}) {
+        const error = validateSetupPlayers();
+        if (error) {
+            if (options.alertOnError) alert(error);
+            setSettingsFeedback(error, true);
+            return false;
+        }
+        setupPlayers = setupPlayers.map(player => ({ name: player.name.trim(), color: player.color }));
+        try {
+            localStorage.setItem(PLAYER_SETTINGS_KEY, JSON.stringify(setupPlayers));
+        } catch {
+            setSettingsFeedback("配置保存失败，请检查浏览器存储权限。", true);
+            return false;
+        }
+        if (options.render !== false) renderSetupPlayers();
+        if (options.feedback !== false) setSettingsFeedback("玩家配置已保存到本机");
+        updateDashboard();
+        return true;
+    }
+
     const el = id => document.getElementById(id);
     const els = {
         home: el("home"), setup: el("setup"), taskCenter: el("taskCenter"), game: el("game"), progressPage: el("progressPage"), recordsPage: el("recordsPage"), board: el("board"), pieces: el("pieces"),
@@ -2028,6 +2923,8 @@
         saveSummary: el("saveSummary"), taskCountTotal: el("taskCountTotal"), playerCountTotal: el("playerCountTotal"), homeSaveState: el("homeSaveState"),
         setupBackHomeBtn: el("setupBackHomeBtn"), setupTaskBtn: el("setupTaskBtn"), setupContinueBtn: el("setupContinueBtn"),
         setupTaskTotal: el("setupTaskTotal"), setupSaveState: el("setupSaveState"), setupClearDataBtn: el("setupClearDataBtn"), musicToggleBtn: el("musicToggleBtn"), musicStatusText: el("musicStatusText"),
+        setupPlayerCount: el("setupPlayerCount"), setupSaveBadge: el("setupSaveBadge"), motionToggleBtn: el("motionToggleBtn"), motionStatusText: el("motionStatusText"),
+        restoreDefaultsBtn: el("restoreDefaultsBtn"), saveSettingsBtn: el("saveSettingsBtn"), settingsFeedback: el("settingsFeedback"), setupOverwriteHint: el("setupOverwriteHint"),
         taskBackHomeBtn: el("taskBackHomeBtn"), checkTasksBtn: el("checkTasksBtn"), taskStartBtn: el("taskStartBtn"), taskSetupBtn: el("taskSetupBtn"),
         taskCenterTotal: el("taskCenterTotal"), taskCenterStatus: el("taskCenterStatus"),
         taskPackHint: el("taskPackHint"), taskPackSummary: el("taskPackSummary"), taskEditorCard: el("taskEditorCard"),
@@ -2052,10 +2949,7 @@
     let tasks = loadTasks();
     let commercialTaskLibrary = loadCommercialTaskLibraryFromStorage();
     let taskPackSettings = loadTaskPackSettings();
-    let setupPlayers = [
-        { name: "玩家1", color: "R" },
-        { name: "玩家2", color: "Y" }
-    ];
+    let setupPlayers = loadSetupPlayers();
     let state = null;
     let rolling = false;
     let modalQueue = [];
@@ -2098,12 +2992,14 @@
         document.title = `飞行棋 · 大冒险 v${APP_VERSION}`;
         el("appTitle").textContent = `飞行棋 · 大冒险 v${APP_VERSION}`;
         el("homeVersion").textContent = `v${APP_VERSION}`;
+        applyMotionPreference();
         renderBoard();
         renderSetupPlayers();
         renderTaskEditors();
         renderTaskPackManager();
         bind();
         updateMusicControl();
+        updateMotionControl();
         updateDashboard();
         showHome();
         if (!commercialTaskLibrary?.modes) loadCommercialTaskLibrary({ silent: true });
@@ -2204,6 +3100,12 @@
         els.setupTaskBtn.onclick = showTaskCenter;
         els.setupContinueBtn.onclick = continueGame;
         els.musicToggleBtn.onclick = toggleBackgroundMusic;
+        els.motionToggleBtn.onclick = toggleMotionPreference;
+        els.saveSettingsBtn.onclick = () => savePlayerPreferences();
+        els.restoreDefaultsBtn.onclick = restoreDefaultSettings;
+        document.querySelectorAll("[data-settings-tab]").forEach(button => {
+            button.onclick = () => selectSettingsTab(button.dataset.settingsTab);
+        });
         document.addEventListener('pointerdown', (event) => {
             if (!event.target.closest('#musicToggleBtn')) playBackgroundMusic();
         }, { passive: true });
@@ -2276,6 +3178,47 @@
         closeModalForNavigation();
     }
 
+    function setSettingsFeedback(message, warning = false) {
+        if (!els?.settingsFeedback) return;
+        els.settingsFeedback.textContent = message;
+        els.settingsFeedback.classList.toggle("is-warning", warning);
+    }
+
+    function selectSettingsTab(tabName) {
+        const validTabs = ["players", "experience", "data"];
+        const selected = validTabs.includes(tabName) ? tabName : "players";
+        document.querySelectorAll("[data-settings-tab]").forEach(button => {
+            const active = button.dataset.settingsTab === selected;
+            button.classList.toggle("is-active", active);
+            button.setAttribute("aria-selected", String(active));
+            button.tabIndex = active ? 0 : -1;
+        });
+        document.querySelectorAll("[data-settings-panel]").forEach(panel => {
+            const active = panel.dataset.settingsPanel === selected;
+            panel.classList.toggle("is-active", active);
+            panel.hidden = !active;
+        });
+    }
+
+    function restoreDefaultSettings() {
+        if (!confirm("恢复默认设置？玩家、背景音乐和界面动效会恢复默认，游戏存档与任务数据会保留。")) return;
+        try {
+            localStorage.removeItem(PLAYER_SETTINGS_KEY);
+            localStorage.removeItem(AUDIO_SETTINGS_KEY);
+            localStorage.removeItem(VISUAL_SETTINGS_KEY);
+        } catch {}
+        setupPlayers = cloneDefaultSetupPlayers();
+        musicEnabled = true;
+        motionEnabled = defaultMotionEnabled();
+        applyMotionPreference();
+        updateMusicControl();
+        updateMotionControl();
+        renderSetupPlayers();
+        updateDashboard();
+        setSettingsFeedback("默认设置已恢复，游戏存档与任务数据未删除");
+        if (musicEnabled) playBackgroundMusic();
+    }
+
     function closeModalForNavigation() {
         if (!modalOpen && !modalQueue.length) return;
         els.modalBg.style.display = "none";
@@ -2316,7 +3259,8 @@
         els.game.style.display = "none";
     }
 
-    function showSetup() {
+    function showSetup(tabName = "players") {
+        const requestedTab = typeof tabName === "string" ? tabName : "players";
         document.body.classList.remove("home-mode");
         updateDashboard();
         els.home.style.display = "none";
@@ -2326,6 +3270,8 @@
         els.progressPage.classList.remove("active");
         els.recordsPage.classList.remove("active");
         els.game.style.display = "none";
+        selectSettingsTab(requestedTab);
+        window.scrollTo(0, 0);
     }
 
     function showTaskCenter() {
@@ -2339,6 +3285,7 @@
         els.progressPage.classList.remove("active");
         els.recordsPage.classList.remove("active");
         els.game.style.display = "none";
+        window.scrollTo(0, 0);
     }
 
     function showProgressPage() {
@@ -2384,6 +3331,11 @@
         els.homeSaveState.textContent = saved ? "有" : "无";
         els.setupTaskTotal.textContent = count;
         els.setupSaveState.textContent = saved ? "有" : "无";
+        els.setupPlayerCount.textContent = setupPlayers.length;
+        els.setupSaveBadge.textContent = saved ? "有" : "无";
+        els.setupOverwriteHint.textContent = saved
+            ? "有存档：开始新游戏会覆盖当前游戏进度。"
+            : "无存档：开始新游戏会创建一局新的冒险。";
         els.taskCenterTotal.textContent = count;
         els.taskCenterStatus.textContent = taskStatus;
     }
@@ -2589,10 +3541,7 @@
 
     function startGame() {
         saveTasksFromEditors();
-        if (setupPlayers.length < 2 || setupPlayers.length > 16) return alert("人数必须是 2-16。");
-        if (setupPlayers.some(p => !p.name.trim())) return alert("请填写所有玩家名。");
-        const counts = countColors(setupPlayers);
-        if (Object.values(counts).some(n => n > 4)) return alert("每色最多 4 人。");
+        if (!savePlayerPreferences({ alertOnError: true, feedback: false, render: false })) return;
 
         const used = { R:0, Y:0, B:0, G:0 };
         state = {
@@ -3371,7 +4320,12 @@ ${finalTask?.content || tasks.final}`, sub: `${activeModeName()} · 终极任务
     function renderTaskPackManager() {
         if (!els?.taskPackSummary) return;
         const mode = taskPackSettings.mode || (taskPackSettings.enabled ? "party" : "manual");
-        document.querySelectorAll("[data-task-mode]").forEach(btn => btn.classList.toggle("is-active", btn.dataset.taskMode === mode));
+        document.querySelectorAll("[data-task-mode]").forEach(btn => {
+            const isActive = btn.dataset.taskMode === mode;
+            btn.classList.toggle("is-active", isActive);
+            btn.setAttribute("aria-pressed", String(isActive));
+        });
+        els.taskCenter?.classList.toggle("is-library-mode", mode !== "manual");
         els.taskEditorCard?.classList.toggle("is-hidden", mode !== "manual");
         if (els.taskModeStatus) els.taskModeStatus.textContent = mode === "manual" ? "手动编辑" : "已启用";
         if (els.taskModePlayerCount) els.taskModePlayerCount.textContent = `${setupPlayers.length} 人`;
