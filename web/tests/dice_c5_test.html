@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>C5 网页骰子测试</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; padding: 24px; color: #352518; background: #fff3d0;
+            font: 15px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        h1 { margin: 0 0 8px; font-size: 24px; }
+        #summary { margin-bottom: 18px; font-weight: 800; }
+        .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+        .case {
+            min-height: 96px; padding: 14px; border: 2px solid #e4bd68; border-radius: 8px;
+            background: #fff; box-shadow: 0 8px 18px #7848111a;
+        }
+        .case.pass { border-color: #4db768; }
+        .case.fail { border-color: #e65345; background: #fff0ed; }
+        .face { display: grid; grid-template-columns: repeat(3, 16px); grid-template-rows: repeat(3, 16px); gap: 2px; margin-top: 8px; }
+        .pip { width: 10px; height: 10px; align-self: center; justify-self: center; border-radius: 50%; background: #2b241d; }
+        iframe { position: fixed; width: 1px; height: 1px; border: 0; opacity: 0; pointer-events: none; }
+        @media (max-width: 560px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    </style>
+</head>
+<body>
+    <h1>C5 网页骰子确定性测试</h1>
+    <div id="summary">正在载入正式游戏代码…</div>
+    <div class="grid" id="results"></div>
+    <iframe id="gameFrame" src="../index.html?dice-c5-test=1" title="正式游戏代码"></iframe>
+    <script>
+        const EXPECTED = {
+            1: [5],
+            2: [1, 9],
+            3: [1, 5, 9],
+            4: [1, 3, 7, 9],
+            5: [1, 3, 5, 7, 9],
+            6: [1, 3, 4, 6, 7, 9]
+        };
+
+        function drawReferenceFace(container, positions) {
+            positions.forEach(pos => {
+                const pip = document.createElement('span');
+                pip.className = 'pip';
+                pip.style.gridColumn = String(((pos - 1) % 3) + 1);
+                pip.style.gridRow = String(Math.floor((pos - 1) / 3) + 1);
+                container.appendChild(pip);
+            });
+        }
+
+        function addResult(label, passed, detail, positions = []) {
+            const card = document.createElement('section');
+            card.className = `case ${passed ? 'pass' : 'fail'}`;
+            card.innerHTML = `<strong>${passed ? 'PASS' : 'FAIL'} · ${label}</strong><div>${detail}</div>`;
+            if (positions.length) {
+                const face = document.createElement('div');
+                face.className = 'face';
+                drawReferenceFace(face, positions);
+                card.appendChild(face);
+            }
+            document.getElementById('results').appendChild(card);
+            return passed;
+        }
+
+        document.getElementById('gameFrame').addEventListener('load', () => {
+            const game = document.getElementById('gameFrame').contentWindow;
+            const hooks = game.__diceC5TestHooks;
+            const available = hooks
+                && hooks.version === '2.14.0'
+                && typeof hooks.renderDiceFaces === 'function'
+                && typeof hooks.createDiceRollTransaction === 'function';
+            let passed = 0;
+            let total = 0;
+
+            total += 1;
+            if (addResult('正式函数可访问', available, available ? '已载入正式骰子函数' : '缺少正式骰子函数')) passed += 1;
+
+            if (available) {
+                for (let value = 1; value <= 6; value += 1) {
+                    hooks.renderDiceFaces(value);
+                    const face = game.document.getElementById('diceFront');
+                    const pips = Array.from(face.querySelectorAll('.dice-pip'));
+                    const count = pips.length;
+                    const positions = pips.map(pip => {
+                        const col = Number(pip.style.gridColumn);
+                        const row = Number(pip.style.gridRow);
+                        return (row - 1) * 3 + col;
+                    });
+                    const visible = ['diceFront', 'diceTop', 'diceRight']
+                        .map(id => Number(game.document.getElementById(id).dataset.value));
+                    const legalOrientation = new Set(visible).size === 3
+                        && visible.every((current, index) => visible.slice(index + 1).every(other => current + other !== 7));
+                    const ok = Number(face.dataset.value) === value
+                        && count === EXPECTED[value].length
+                        && positions.join(',') === EXPECTED[value].join(',')
+                        && legalOrientation;
+                    total += 1;
+                    if (addResult(
+                        `${value} 点`,
+                        ok,
+                        `正面 ${face.dataset.value}，点位 ${positions.join('/')}；可见面 ${visible.join('/')}`,
+                        EXPECTED[value]
+                    )) passed += 1;
+                }
+
+                let randomCalls = 0;
+                for (let index = 0; index < 30; index += 1) {
+                    const expected = (index % 6) + 1;
+                    const transaction = hooks.createDiceRollTransaction(() => {
+                        randomCalls += 1;
+                        return (expected - 0.5) / 6;
+                    });
+                    total += 1;
+                    if (transaction.value === expected) passed += 1;
+                    else addResult(`第 ${index + 1} 次 transaction`, false, `预期 ${expected}，实际 ${transaction.value}`);
+                }
+                total += 1;
+                if (addResult('30 次只生成一次结果', randomCalls === 30, `随机源调用 ${randomCalls} 次，预期 30 次`)) passed += 1;
+            }
+
+            const summary = document.getElementById('summary');
+            summary.textContent = `${passed}/${total} 项通过；2 点与 5 点已分别检查。`;
+            summary.style.color = passed === total ? '#24703a' : '#a52c22';
+            document.title = passed === total ? 'PASS · C5 网页骰子测试' : 'FAIL · C5 网页骰子测试';
+        });
+    </script>
+</body>
+</html>

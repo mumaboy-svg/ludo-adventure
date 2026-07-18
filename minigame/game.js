@@ -12,22 +12,12 @@ ctx.scale(dpr, dpr);
 
 const W = systemInfo.windowWidth;
 const H = systemInfo.windowHeight;
-const GAME_VERSION = '2.12.0';
+const GAME_VERSION = '2.14.0';
 const safeTop = systemInfo.safeArea ? systemInfo.safeArea.top : (systemInfo.statusBarHeight || 0);
 const safeBottom = systemInfo.safeArea ? Math.max(0, H - systemInfo.safeArea.bottom) : 0;
 const safeLeft = systemInfo.safeArea ? Math.max(0, systemInfo.safeArea.left || 0) : 0;
 const safeRight = systemInfo.safeArea ? Math.max(0, W - (systemInfo.safeArea.right || W)) : 0;
 const capsuleBottom = menuButton ? menuButton.bottom : safeTop + 44;
-const CONTENT_SECURITY_FUNCTION = 'msgSecCheck';
-let contentSecurityReady = false;
-try {
-  if (wx.cloud?.init && wx.cloud?.callFunction) {
-    wx.cloud.init();
-    contentSecurityReady = true;
-  }
-} catch (error) {
-  contentSecurityReady = false;
-}
 
 const ASSETS = {
   bg: 'assets/minigame/ui/home_bg_mobile.jpg',
@@ -73,6 +63,7 @@ let logText = '掷出 6 才能起飞';
 let modal = null;
 let modalQueue = [];
 let modalOpenedAt = 0;
+let namePickerPlayerIndex = null;
 let settingsPage = 0;
 let settingsCategory = 'players';
 let progressPage = 0;
@@ -83,6 +74,8 @@ let taskView = 'modes';
 let boardDebug = false;
 let rolling = false;
 let rollingDiceValue = null;
+let diceRollSequence = 0;
+let activeDiceRoll = null;
 let pieceAnimation = null;
 let pendingMoveTrack = [];
 let deferModals = false;
@@ -106,6 +99,22 @@ const requestFrame = typeof canvas.requestAnimationFrame === 'function'
   ? callback => canvas.requestAnimationFrame(callback)
   : (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : null);
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const DICE_PIP_POSITIONS = Object.freeze({
+  1: Object.freeze([[.5, .5]]),
+  2: Object.freeze([[.3, .3], [.7, .7]]),
+  3: Object.freeze([[.3, .3], [.5, .5], [.7, .7]]),
+  4: Object.freeze([[.3, .3], [.7, .3], [.3, .7], [.7, .7]]),
+  5: Object.freeze([[.3, .3], [.7, .3], [.5, .5], [.3, .7], [.7, .7]]),
+  6: Object.freeze([[.3, .25], [.7, .25], [.3, .5], [.7, .5], [.3, .75], [.7, .75]])
+});
+const DICE_VISIBLE_ORIENTATIONS = Object.freeze({
+  1: Object.freeze({ front: 1, top: 2, right: 3 }),
+  2: Object.freeze({ front: 2, top: 6, right: 3 }),
+  3: Object.freeze({ front: 3, top: 2, right: 6 }),
+  4: Object.freeze({ front: 4, top: 2, right: 1 }),
+  5: Object.freeze({ front: 5, top: 1, right: 3 }),
+  6: Object.freeze({ front: 6, top: 5, right: 3 })
+});
 const OUTER_PATH_LENGTH = 52;
 const START_INDEX = { R: 22, Y: 48, B: 9, G: 35 };
 const ENTRY_INDEX = { R: 19, Y: 45, B: 6, G: 32 };
@@ -188,11 +197,17 @@ function makeId() {
 }
 function defaultSetupPlayers() {
   return [
-    { name: '玩家1', color: 'R' },
-    { name: '玩家2', color: 'Y' }
+    { name: '跳跳', color: 'R' },
+    { name: '绵绵', color: 'Y' }
   ];
 }
 function imgForColor(color) { return { R: 'planeR', Y: 'planeY', B: 'planeB', G: 'planeG' }[color] || 'planeR'; }
+const PLAYER_NAME_OPTIONS = [
+  '跳跳', '绵绵', '脆脆', '波波',
+  'QQ', '泡泡', '冰冰', '可可',
+  '糖糖', '果果', '团团', '滋滋',
+  '闪闪', '乐乐', '叮叮', '嘟嘟'
+];
 const RESTRICTED_NAME_TOKENS = [
   '习近平', '习近', 'xijinping', '毛泽东', '邓小平', '江泽民', '胡锦涛', '李鹏', '朱镕基',
   '温家宝', '李克强', '胡耀邦', '赵紫阳', '薄熙来', '王岐山', '孙中山', '蒋介石',
@@ -223,35 +238,31 @@ function sanitizePlayerName(value, index) {
   const name = cleanPlayerName(value);
   return name && !containsRestrictedName(name) ? name : fallbackPlayerName(index);
 }
-async function reviewPlayerNameWithCloud(name) {
-  if (!contentSecurityReady) return { approved: false, reason: 'unavailable' };
-  try {
-    const response = await wx.cloud.callFunction({
-      name: CONTENT_SECURITY_FUNCTION,
-      data: { content: name, scene: 'nickname' }
-    });
-    const result = response?.result || {};
-    if (result.decision === 'pass') return { approved: true, reason: 'pass' };
-    return { approved: false, reason: result.decision || 'review' };
-  } catch (error) {
-    return { approved: false, reason: 'unavailable' };
-  }
+function normalizeSetupPlayerNames(players) {
+  const used = new Set();
+  return players.map((player, index) => {
+    const rawName = cleanPlayerName(player?.name);
+    const name = PLAYER_NAME_OPTIONS.includes(rawName) && !used.has(rawName)
+      ? rawName
+      : PLAYER_NAME_OPTIONS.find(option => !used.has(option));
+    used.add(name);
+    return { ...player, name: name || PLAYER_NAME_OPTIONS[index % PLAYER_NAME_OPTIONS.length] };
+  });
 }
-function contentReviewMessage(result) {
-  return result?.reason === 'unavailable'
-    ? '内容审核服务暂不可用，请稍后再试。'
-    : '您输入的内容可能包含不适宜的表述，请修改后重新填写。';
+function firstAvailablePlayerName(players) {
+  const used = new Set(players.map(player => player.name));
+  return PLAYER_NAME_OPTIONS.find(name => !used.has(name)) || PLAYER_NAME_OPTIONS[0];
 }
 function loadSetupPlayers() {
   const saved = wx.getStorageSync('ludo_minigame_setup_v1');
   if (!Array.isArray(saved) || saved.length < 2) return defaultSetupPlayers();
   let changed = false;
-  const players = saved.slice(0, 16).map((player, index) => {
-    const rawName = String(player?.name || '');
-    const name = sanitizePlayerName(rawName, index);
+  const players = normalizeSetupPlayerNames(saved.slice(0, 16).map((player, index) => {
     const color = ['R', 'Y', 'B', 'G'].includes(player?.color) ? player.color : ['R', 'Y', 'B', 'G'][index % 4];
-    changed ||= name !== rawName || color !== player?.color;
-    return { name, color };
+    return { name: String(player?.name || ''), color };
+  }));
+  players.forEach((player, index) => {
+    changed ||= player.name !== String(saved[index]?.name || '') || player.color !== saved[index]?.color;
   });
   if (changed) wx.setStorageSync('ludo_minigame_setup_v1', players);
   return players;
@@ -1359,32 +1370,214 @@ function drawModal() {
   buttons.push({ x: closeX, y: closeY, w: closeSize, h: closeSize, action: 'closeModal' });
 }
 
-function drawDice(x, y, size, value) {
-  fillRoundRect(x, y, size, size, 15, '#fff', true);
-  ctx.strokeStyle = 'rgba(48,37,28,.16)';
-  ctx.lineWidth = 2;
-  roundRect(x, y, size, size, 15);
-  ctx.stroke();
-  if (!Number(value)) {
-    ctx.fillStyle = '#30251c';
-    ctx.font = '900 22px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('?', x + size / 2, y + size / 2 + 8);
-    ctx.textAlign = 'left';
-    return;
-  }
-  const spots = {
-    1: [[.5,.5]], 2: [[.3,.3],[.7,.7]], 3: [[.3,.3],[.5,.5],[.7,.7]],
-    4: [[.3,.3],[.7,.3],[.3,.7],[.7,.7]],
-    5: [[.3,.3],[.7,.3],[.5,.5],[.3,.7],[.7,.7]],
-    6: [[.3,.25],[.7,.25],[.3,.5],[.7,.5],[.3,.75],[.7,.75]]
-  }[value];
+function drawNamePicker() {
+  if (!Number.isInteger(namePickerPlayerIndex) || !setupPlayers[namePickerPlayerIndex]) return;
+  buttons.push({ x: 0, y: 0, w: W, h: H, action: 'namePickerClose' });
+  ctx.fillStyle = 'rgba(20,12,7,.66)';
+  ctx.fillRect(0, 0, W, H);
+
+  const landscape = W > H;
+  const panelW = Math.min(W - 24, landscape ? 560 : 420);
+  const panelH = Math.min(H - Math.max(capsuleBottom + 18, 78) - safeBottom - 12, landscape ? 292 : 360);
+  const panelX = (W - panelW) / 2;
+  const panelY = Math.max(capsuleBottom + 10, (H - panelH) / 2);
+  fillRoundGradient(panelX, panelY, panelW, panelH, 20, [[0, '#fffdf8'], [1, '#ffe8b7']], true);
+  strokeRoundRect(panelX, panelY, panelW, panelH, 20, 'rgba(255,255,255,.95)', 2);
+
+  ctx.fillStyle = '#30251c';
+  ctx.font = `900 ${landscape ? 17 : 19}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`为玩家 ${namePickerPlayerIndex + 1} 选择昵称`, W / 2, panelY + 31);
+  ctx.fillStyle = '#806344';
+  ctx.font = '800 10px sans-serif';
+  ctx.fillText('每个昵称只能由一位玩家使用', W / 2, panelY + 50);
+
+  const closeSize = 32;
+  const closeX = panelX + panelW - closeSize - 10;
+  const closeY = panelY + 10;
+  fillRoundRect(closeX, closeY, closeSize, closeSize, closeSize / 2, '#fff7df', false);
+  ctx.fillStyle = '#6b3e1a';
+  ctx.font = '900 21px sans-serif';
+  ctx.fillText('×', closeX + closeSize / 2, closeY + closeSize / 2 + 1);
+  buttons.push({ x: closeX, y: closeY, w: closeSize, h: closeSize, action: 'namePickerClose' });
+
+  const columns = 4;
+  const gap = landscape ? 8 : 7;
+  const gridX = panelX + 14;
+  const gridY = panelY + 62;
+  const itemW = (panelW - 28 - gap * (columns - 1)) / columns;
+  const itemH = Math.max(32, Math.min(50, (panelH - 76 - gap * 3) / 4));
+  const currentName = setupPlayers[namePickerPlayerIndex].name;
+  const usedNames = new Set(setupPlayers
+    .filter((player, index) => index !== namePickerPlayerIndex)
+    .map(player => player.name));
+
+  PLAYER_NAME_OPTIONS.forEach((name, optionIndex) => {
+    const col = optionIndex % columns;
+    const row = Math.floor(optionIndex / columns);
+    const x = gridX + col * (itemW + gap);
+    const y = gridY + row * (itemH + gap);
+    const selected = name === currentName;
+    const disabled = usedNames.has(name);
+    const palette = disabled
+      ? [[0, '#ece8e1'], [1, '#d8d1c7']]
+      : selected
+        ? [[0, '#ffe66a'], [1, '#f39a2e']]
+        : [[0, '#ffffff'], [1, '#fff0c9']];
+    fillRoundGradient(x, y, itemW, itemH, 10, palette, !disabled);
+    strokeRoundRect(x, y, itemW, itemH, 10, selected ? '#fff4a8' : 'rgba(169,112,48,.18)', selected ? 2 : 1);
+    ctx.fillStyle = disabled ? '#9b9389' : selected ? '#542d0e' : '#493522';
+    ctx.font = `900 ${itemW < 70 ? 13 : 15}px sans-serif`;
+    ctx.fillText(name, x + itemW / 2, y + itemH / 2 + 5);
+    if (!disabled) buttons.push({ x, y, w: itemW, h: itemH, action: `setupNameChoice:${optionIndex}` });
+  });
+  ctx.textAlign = 'left';
+}
+
+function normalizeDiceValue(value) {
+  const number = Number(value);
+  return Number.isInteger(number) && number >= 1 && number <= 6 ? number : 1;
+}
+
+function createDiceValue(randomSource = Math.random) {
+  return Math.floor(randomSource() * 6) + 1;
+}
+
+function createDiceRollTransaction(randomSource = Math.random) {
+  diceRollSequence += 1;
+  return Object.freeze({
+    id: diceRollSequence,
+    value: createDiceValue(randomSource),
+    startedAt: Date.now()
+  });
+}
+
+function diceAnimationFrameValue(finalValue, frameIndex) {
+  return ((normalizeDiceValue(finalValue) + frameIndex * 2 - 1) % 6) + 1;
+}
+
+function diceSideValues(frontValue) {
+  const normalized = normalizeDiceValue(frontValue);
+  return DICE_VISIBLE_ORIENTATIONS[normalized];
+}
+
+function quadPoint(points, u, v) {
+  const topX = points[0].x + (points[1].x - points[0].x) * u;
+  const topY = points[0].y + (points[1].y - points[0].y) * u;
+  const bottomX = points[3].x + (points[2].x - points[3].x) * u;
+  const bottomY = points[3].y + (points[2].y - points[3].y) * u;
+  return {
+    x: topX + (bottomX - topX) * v,
+    y: topY + (bottomY - topY) * v
+  };
+}
+
+function drawDicePipsOnQuad(points, value, radius) {
   ctx.fillStyle = '#2f241b';
-  spots.forEach(([px, py]) => {
+  DICE_PIP_POSITIONS[normalizeDiceValue(value)].forEach(([u, v]) => {
+    const point = quadPoint(points, u, v);
     ctx.beginPath();
-    ctx.arc(x + size * px, y + size * py, 4.4, 0, Math.PI * 2);
+    ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
     ctx.fill();
   });
+}
+
+function drawDiceFacePolygon(points, value, light, dark, radius) {
+  const gradient = ctx.createLinearGradient(points[0].x, points[0].y, points[2].x, points[2].y);
+  gradient.addColorStop(0, light);
+  gradient.addColorStop(1, dark);
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  points.slice(1).forEach(point => ctx.lineTo(point.x, point.y));
+  ctx.closePath();
+  ctx.fillStyle = gradient;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(90,52,20,.62)';
+  ctx.lineWidth = 1.4;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+  drawDicePipsOnQuad(points, value, radius);
+}
+
+function drawDicePipsOnRect(x, y, size, value, radius) {
+  ctx.fillStyle = '#2f241b';
+  DICE_PIP_POSITIONS[normalizeDiceValue(value)].forEach(([px, py]) => {
+    ctx.beginPath();
+    ctx.arc(x + size * px, y + size * py, radius, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+function drawDice(x, y, size, value) {
+  const hasValue = Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 6;
+  const faceValues = diceSideValues(value);
+  const elapsed = activeDiceRoll ? Date.now() - activeDiceRoll.startedAt : 0;
+  const progress = activeDiceRoll ? clamp(elapsed / activeDiceRoll.duration, 0, 1) : 1;
+  const hop = rolling
+    ? Math.abs(Math.sin(progress * Math.PI * (reducedMotionEnabled ? 1 : 3))) * size * (reducedMotionEnabled ? .06 : .16)
+    : 0;
+  const wobble = rolling && !reducedMotionEnabled ? Math.sin(progress * Math.PI * 6) * .14 : 0;
+  const scale = rolling ? 1 + Math.sin(progress * Math.PI) * .045 : 1;
+  const shadowScale = 1 - Math.min(.38, hop / Math.max(1, size) * 1.8);
+
+  ctx.save();
+  ctx.fillStyle = `rgba(53,31,18,${rolling ? .24 : .32})`;
+  ctx.beginPath();
+  ctx.ellipse(x + size * .5, y + size * .88, size * .30 * shadowScale, size * .085 * shadowScale, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  const centerX = x + size / 2;
+  const centerY = y + size / 2;
+  ctx.save();
+  ctx.translate(centerX, centerY - hop);
+  ctx.rotate(wobble);
+  ctx.scale(scale, scale);
+  ctx.translate(-centerX, -centerY);
+
+  const frontSize = size * .62;
+  const depth = size * (.15 + (rolling && !reducedMotionEnabled ? Math.sin(progress * Math.PI * 4) * .025 : 0));
+  const frontX = x + size * .10;
+  const frontY = y + size * .25;
+  const top = [
+    { x: frontX, y: frontY },
+    { x: frontX + frontSize, y: frontY },
+    { x: frontX + frontSize + depth, y: frontY - depth },
+    { x: frontX + depth, y: frontY - depth }
+  ];
+  const right = [
+    { x: frontX + frontSize, y: frontY },
+    { x: frontX + frontSize + depth, y: frontY - depth },
+    { x: frontX + frontSize + depth, y: frontY + frontSize - depth },
+    { x: frontX + frontSize, y: frontY + frontSize }
+  ];
+  const pipRadius = Math.max(2.1, size * .052);
+
+  drawDiceFacePolygon(top, faceValues.top, '#fffdf5', '#efc36c', pipRadius * .72);
+  drawDiceFacePolygon(right, faceValues.right, '#f4c96f', '#bd7028', pipRadius * .72);
+
+  const frontGradient = ctx.createLinearGradient(frontX, frontY, frontX + frontSize, frontY + frontSize);
+  frontGradient.addColorStop(0, '#fffdf8');
+  frontGradient.addColorStop(.62, '#fff0c5');
+  frontGradient.addColorStop(1, '#eab95c');
+  ctx.shadowColor = 'rgba(54,29,14,.28)';
+  ctx.shadowBlur = rolling ? 6 : 4;
+  ctx.shadowOffsetY = 3;
+  fillRoundRect(frontX, frontY, frontSize, frontSize, Math.max(7, size * .11), frontGradient, false);
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+  strokeRoundRect(frontX, frontY, frontSize, frontSize, Math.max(7, size * .11), 'rgba(90,52,20,.68)', 1.5);
+
+  if (hasValue) {
+    drawDicePipsOnRect(frontX, frontY, frontSize, faceValues.front, pipRadius);
+  } else {
+    ctx.fillStyle = '#30251c';
+    ctx.font = `900 ${Math.round(size * .36)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('?', frontX + frontSize / 2, frontY + frontSize * .67);
+    ctx.textAlign = 'left';
+  }
+  ctx.restore();
 }
 
 function pieceCoord(piece) {
@@ -1697,6 +1890,7 @@ function render() {
   else if (scene === 'records') drawRecordsPage();
   else if (scene === 'pieces') drawPieceTest();
   drawModal();
+  drawNamePicker();
 }
 
 function hitTest(x, y) {
@@ -1837,7 +2031,7 @@ function drawSettingsPlayerCard(x, y, w, h, player, index) {
   ctx.fillStyle = '#493522';
   ctx.font = `900 ${h < 48 ? 12 : 13}px sans-serif`;
   ctx.fillText(`${prefix}${truncateTextToWidth(player.name, nameX - labelX - 8 - ctx.measureText(prefix).width)}`, labelX, y + h / 2 + 5);
-  drawPanelButton(nameX, y + 6, actionW, buttonH, '改名', `setupName:${index}`, false);
+  drawPanelButton(nameX, y + 6, actionW, buttonH, '选名', `setupName:${index}`, false);
   drawPanelButton(colorX, y + 6, actionW, buttonH, '颜色', `setupColor:${index}`, false);
   drawPanelButton(deleteX, y + 6, deleteW, buttonH, '×', `setupDelete:${index}`, false);
 }
@@ -2679,38 +2873,13 @@ function cycleSetupColor(index) {
 function editSetupName(index) {
   const player = setupPlayers[index];
   if (!player) return;
-  wx.showModal({
-    title: `编辑玩家 ${index + 1}`,
-    editable: true,
-    placeholderText: '输入玩家名',
-    content: player.name,
-    async success(res) {
-      if (!res.confirm) return;
-      const name = cleanPlayerName(res.content);
-      if (!name) {
-        showTask('名字不能为空', '请填写玩家名后再保存。');
-      } else if (containsRestrictedName(name)) {
-        showTask('内容不可使用', '您输入的内容可能包含不适宜的表述，请修改后重新填写。');
-      } else {
-        wx.showLoading({ title: '内容审核中', mask: true });
-        const result = await reviewPlayerNameWithCloud(name);
-        wx.hideLoading();
-        if (!result.approved) {
-          showTask('内容不可使用', contentReviewMessage(result));
-        } else {
-          player.name = name;
-          saveSetupPlayers();
-        }
-      }
-      render();
-    }
-  });
+  namePickerPlayerIndex = index;
 }
 
 function validateSetupPlayers() {
   if (setupPlayers.length < 2 || setupPlayers.length > 16) return '玩家人数必须是 2–16 人。';
-  if (setupPlayers.some((player) => !String(player.name || '').trim())) return '请填写所有玩家名。';
-  if (setupPlayers.some((player) => containsRestrictedName(player.name))) return '玩家名包含不适宜的表述，请修改后再试。';
+  if (setupPlayers.some((player) => !PLAYER_NAME_OPTIONS.includes(player.name))) return '请为所有玩家选择固定昵称。';
+  if (new Set(setupPlayers.map(player => player.name)).size !== setupPlayers.length) return '每位玩家需要使用不同的昵称。';
   const counts = countColors(setupPlayers);
   if (Object.values(counts).some((count) => count > 4)) return '每种颜色最多 4 位玩家。';
   return '';
@@ -2722,29 +2891,18 @@ function saveSetupPreferences() {
     showTask('无法保存', error);
     return;
   }
-  setupPlayers = setupPlayers.map((player, index) => ({
-    name: sanitizePlayerName(player.name, index),
-    color: player.color
-  }));
+  setupPlayers = normalizeSetupPlayerNames(setupPlayers);
   saveSetupPlayers();
   showTask('设置已保存', `${setupPlayers.length} 位玩家的名称和颜色已保存。`);
 }
 
-async function applySetupAndStart() {
+function applySetupAndStart() {
   const error = validateSetupPlayers();
   if (error) {
     showTask('无法开始', error);
     return;
   }
-  wx.showLoading({ title: '内容审核中', mask: true });
-  const results = await Promise.all(setupPlayers.map(player => reviewPlayerNameWithCloud(cleanPlayerName(player.name))));
-  wx.hideLoading();
-  const rejected = results.find(result => !result.approved);
-  if (rejected) {
-    showTask('无法开始', contentReviewMessage(rejected));
-    return;
-  }
-  setupPlayers = setupPlayers.map((player, index) => ({ name: sanitizePlayerName(player.name, index), color: player.color }));
+  setupPlayers = normalizeSetupPlayerNames(setupPlayers);
   saveSetupPlayers();
   confirmStartFreshGame('设置已保存，新局开始');
 }
@@ -2911,25 +3069,34 @@ function resolveDiceRoll(value) {
 function rollDice() {
   if (rolling || pieceAnimation || modal) return;
   if (state.gameOver) { showTask('游戏结束', '本局已结束，请重开或返回大厅。'); return; }
+  const transaction = createDiceRollTransaction();
+  const duration = reducedMotionEnabled ? 220 : 520;
+  activeDiceRoll = { ...transaction, duration };
   rolling = true;
-  rollingDiceValue = Math.floor(Math.random() * 6) + 1;
-  const audio = wx.createInnerAudioContext();
-  audio.src = 'packages/game-assets/assets/audio/dice_roll.mp3';
-  audio.onEnded(() => audio.destroy());
-  audio.onError(() => audio.destroy());
-  audio.play();
-  const startedAt = Date.now();
+  rollingDiceValue = diceAnimationFrameValue(transaction.value, 0);
+  try {
+    const audio = wx.createInnerAudioContext();
+    audio.src = 'packages/game-assets/assets/audio/dice_roll.mp3';
+    audio.onEnded(() => audio.destroy());
+    audio.onError(() => audio.destroy());
+    audio.play();
+  } catch {}
   const tick = () => {
-    rollingDiceValue = Math.floor(Math.random() * 6) + 1;
+    if (!activeDiceRoll || activeDiceRoll.id !== transaction.id) return;
+    const elapsed = Date.now() - transaction.startedAt;
+    const frameIndex = Math.floor(elapsed / (reducedMotionEnabled ? 55 : 46));
+    rollingDiceValue = diceAnimationFrameValue(transaction.value, frameIndex);
     render();
-    if (Date.now() - startedAt < 700) {
-      setTimeout(tick, 70);
+    if (elapsed < duration) {
+      setTimeout(tick, reducedMotionEnabled ? 55 : 46);
       return;
     }
-    const value = Math.floor(Math.random() * 6) + 1;
+    rollingDiceValue = transaction.value;
+    render();
     rolling = false;
+    activeDiceRoll = null;
     rollingDiceValue = null;
-    resolveDiceRoll(value);
+    resolveDiceRoll(transaction.value);
   };
   tick();
 }
@@ -3012,7 +3179,7 @@ function handleAction(action) {
       const color = firstAvailableColor(setupPlayers, setupPlayers.length % 4);
       if (!color) showTask('颜色已满', '红、黄、蓝、绿每种颜色最多 4 位玩家。');
       else {
-        setupPlayers.push({ name: `玩家${setupPlayers.length + 1}`, color });
+        setupPlayers.push({ name: firstAvailablePlayerName(setupPlayers), color });
         settingsPage = Math.floor((setupPlayers.length - 1) / settingsPageSize());
         saveSetupPlayers();
       }
@@ -3028,6 +3195,17 @@ function handleAction(action) {
     else { setupPlayers.splice(index, 1); saveSetupPlayers(); }
   }
   if (action.startsWith('setupName:')) editSetupName(Number(action.split(':')[1]));
+  if (action.startsWith('setupNameChoice:')) {
+    const optionIndex = Number(action.split(':')[1]);
+    const player = setupPlayers[namePickerPlayerIndex];
+    const name = PLAYER_NAME_OPTIONS[optionIndex];
+    if (player && name && !setupPlayers.some((entry, index) => index !== namePickerPlayerIndex && entry.name === name)) {
+      player.name = name;
+      saveSetupPlayers();
+    }
+    namePickerPlayerIndex = null;
+  }
+  if (action === 'namePickerClose') namePickerPlayerIndex = null;
   if (action.startsWith('setupColor:')) cycleSetupColor(Number(action.split(':')[1]));
   if (action === 'setupPrev') settingsPage = Math.max(0, settingsPage - 1);
   if (action === 'setupNext') settingsPage = Math.min(Math.max(0, Math.ceil(setupPlayers.length / settingsPageSize()) - 1), settingsPage + 1);
