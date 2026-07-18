@@ -68,9 +68,10 @@
             const game = document.getElementById('gameFrame').contentWindow;
             const hooks = game.__diceC5TestHooks;
             const available = hooks
-                && hooks.version === '2.14.0'
+                && hooks.version === '2.15.0'
                 && typeof hooks.renderDiceFaces === 'function'
-                && typeof hooks.createDiceRollTransaction === 'function';
+                && typeof hooks.createDiceRollTransaction === 'function'
+                && typeof hooks.getDiceVisualState === 'function';
             let passed = 0;
             let total = 0;
 
@@ -80,27 +81,29 @@
             if (available) {
                 for (let value = 1; value <= 6; value += 1) {
                     hooks.renderDiceFaces(value);
-                    const face = game.document.getElementById('diceFront');
-                    const pips = Array.from(face.querySelectorAll('.dice-pip'));
-                    const count = pips.length;
-                    const positions = pips.map(pip => {
-                        const col = Number(pip.style.gridColumn);
-                        const row = Number(pip.style.gridRow);
-                        return (row - 1) * 3 + col;
+                    const faceChecks = Object.entries(hooks.fixedFaces).map(([id, faceValue]) => {
+                        const face = game.document.getElementById(id);
+                        const positions = Array.from(face.querySelectorAll('.dice-pip')).map(pip => {
+                            const col = Number(pip.style.gridColumn);
+                            const row = Number(pip.style.gridRow);
+                            return (row - 1) * 3 + col;
+                        });
+                        return Number(face.dataset.value) === faceValue
+                            && positions.join(',') === EXPECTED[faceValue].join(',');
                     });
-                    const visible = ['diceFront', 'diceTop', 'diceRight']
-                        .map(id => Number(game.document.getElementById(id).dataset.value));
-                    const legalOrientation = new Set(visible).size === 3
-                        && visible.every((current, index) => visible.slice(index + 1).every(other => current + other !== 7));
-                    const ok = Number(face.dataset.value) === value
-                        && count === EXPECTED[value].length
-                        && positions.join(',') === EXPECTED[value].join(',')
-                        && legalOrientation;
+                    const visualState = hooks.getDiceVisualState();
+                    const targetRotation = hooks.targetRotations[value];
+                    const rotationMatches = ['x', 'y', 'z'].every(axis =>
+                        ((visualState.rotation[axis] - targetRotation[axis]) % 360 + 360) % 360 === 0
+                    );
+                    const ok = faceChecks.every(Boolean)
+                        && visualState.result === value
+                        && rotationMatches;
                     total += 1;
                     if (addResult(
                         `${value} 点`,
                         ok,
-                        `正面 ${face.dataset.value}，点位 ${positions.join('/')}；可见面 ${visible.join('/')}`,
+                        `固定六面 ${faceChecks.every(Boolean) ? '正确' : '错误'}；结果 ${visualState.result}；旋转 ${visualState.rotation.x}/${visualState.rotation.y}/${visualState.rotation.z}`,
                         EXPECTED[value]
                     )) passed += 1;
                 }
@@ -121,7 +124,7 @@
             }
 
             const summary = document.getElementById('summary');
-            summary.textContent = `${passed}/${total} 项通过；2 点与 5 点已分别检查。`;
+            summary.textContent = `${passed}/${total} 项通过；固定六面、最终旋转、2 点与 5 点已分别检查。`;
             summary.style.color = passed === total ? '#24703a' : '#a52c22';
             document.title = passed === total ? 'PASS · C5 网页骰子测试' : 'FAIL · C5 网页骰子测试';
         });
