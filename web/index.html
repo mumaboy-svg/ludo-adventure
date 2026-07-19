@@ -940,6 +940,7 @@
         .dice-stage {
             --dice-size: 58px;
             --dice-half: 29px;
+            --dice-pip-size: 9px;
             position: relative; width: 96px; height: 88px;
             display: grid; place-items: center; perspective: 620px;
         }
@@ -1007,7 +1008,8 @@
             filter: brightness(.86);
         }
         .dice-pip {
-            width: 12px; height: 12px;
+            width: var(--dice-pip-size);
+            height: var(--dice-pip-size);
             background: #2b241d;
             border-radius: 50%;
             align-self: center;
@@ -1517,6 +1519,7 @@
             .dice-stage {
                 --dice-size: 46px;
                 --dice-half: 23px;
+                --dice-pip-size: 8px;
                 width: 66px;
                 height: 66px;
             }
@@ -1558,6 +1561,7 @@
             .dice-stage {
                 --dice-size: 40px;
                 --dice-half: 20px;
+                --dice-pip-size: 7px;
                 width: 56px;
                 height: 56px;
             }
@@ -2248,7 +2252,7 @@
         <div class="web-loader-percent" id="webLoaderPercent">0%</div>
         <p class="web-loader-error" id="webLoaderError" hidden></p>
         <button class="web-loader-retry" id="webLoaderRetry" type="button" hidden>重新加载</button>
-        <div class="web-loader-version" id="webLoaderVersion">v2.15.2</div>
+        <div class="web-loader-version" id="webLoaderVersion">v2.15.3</div>
     </div>
 </div>
 <noscript><div class="web-loader-noscript">请开启 JavaScript 后重新进入游戏。</div></noscript>
@@ -2635,7 +2639,7 @@
 
 <script>
 (() => {
-    const APP_VERSION = "2.15.2";
+    const APP_VERSION = "2.15.3";
     const STATE_KEY = "flight_adventure_v66_state";
     const TASK_KEY = "flight_adventure_v66_tasks";
     const AUDIO_SETTINGS_KEY = "flight_adventure_audio_v1";
