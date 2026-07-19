@@ -1496,12 +1496,13 @@
         }
         @media (orientation: portrait) and (max-width: 860px) {
             .dice-row {
-                grid-template-columns: minmax(0, 1fr);
-                grid-template-rows: 78px 42px;
-                justify-items: center;
-                gap: 0;
-                min-height: 148px;
-                padding: 20px 4.8% 8px;
+                grid-template-columns: 72px minmax(0, 1fr);
+                grid-template-rows: 76px;
+                align-items: center;
+                justify-items: stretch;
+                column-gap: 8px;
+                min-height: 98px;
+                padding: 10px 7% 10px 4%;
             }
             .dice-container {
                 width: 70px;
@@ -1509,7 +1510,7 @@
                 min-width: 70px;
                 min-height: 70px;
                 justify-self: center;
-                align-self: end;
+                align-self: center;
                 overflow: visible;
                 border-radius: 20px;
             }
@@ -1520,10 +1521,11 @@
                 height: 66px;
             }
             .roll-btn {
-                width: min(78%, 270px);
-                height: 42px;
+                width: 100%;
+                min-width: 0;
+                height: 46px;
                 margin-left: 0;
-                justify-self: center;
+                justify-self: stretch;
             }
         }
         @media(max-width: 860px) and (max-height: 720px) {
@@ -1540,10 +1542,11 @@
         }
         @media (orientation: portrait) and (max-width: 860px) and (max-height: 720px) {
             .dice-row {
-                grid-template-rows: 64px 34px;
-                gap: 0;
-                min-height: 114px;
-                padding: 12px 4.8% 4px;
+                grid-template-columns: 62px minmax(0, 1fr);
+                grid-template-rows: 64px;
+                column-gap: 6px;
+                min-height: 80px;
+                padding: 8px 7% 8px 4%;
             }
             .dice-container {
                 width: 60px;
@@ -1559,7 +1562,7 @@
                 height: 56px;
             }
             .roll-btn {
-                width: min(80%, 252px);
+                width: 100%;
                 height: 34px;
                 font-size: 14px;
             }
@@ -2245,7 +2248,7 @@
         <div class="web-loader-percent" id="webLoaderPercent">0%</div>
         <p class="web-loader-error" id="webLoaderError" hidden></p>
         <button class="web-loader-retry" id="webLoaderRetry" type="button" hidden>重新加载</button>
-        <div class="web-loader-version" id="webLoaderVersion">v2.15.1</div>
+        <div class="web-loader-version" id="webLoaderVersion">v2.15.2</div>
     </div>
 </div>
 <noscript><div class="web-loader-noscript">请开启 JavaScript 后重新进入游戏。</div></noscript>
@@ -2632,7 +2635,7 @@
 
 <script>
 (() => {
-    const APP_VERSION = "2.15.1";
+    const APP_VERSION = "2.15.2";
     const STATE_KEY = "flight_adventure_v66_state";
     const TASK_KEY = "flight_adventure_v66_tasks";
     const AUDIO_SETTINGS_KEY = "flight_adventure_audio_v1";
