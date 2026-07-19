@@ -1,0 +1,19 @@
+{
+  "size": {
+    "total": 4409472,
+    "packages": [
+      {
+        "name": "TOTAL",
+        "size": 4409472
+      },
+      {
+        "name": "main",
+        "size": 2367112
+      },
+      {
+        "name": "/packages/game-assets/",
+        "size": 2042360
+      }
+    ]
+  }
+}

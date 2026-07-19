@@ -12,7 +12,7 @@ ctx.scale(dpr, dpr);
 
 const W = systemInfo.windowWidth;
 const H = systemInfo.windowHeight;
-const GAME_VERSION = '2.18.0';
+const GAME_VERSION = '2.20.1';
 const safeTop = systemInfo.safeArea ? systemInfo.safeArea.top : (systemInfo.statusBarHeight || 0);
 const safeBottom = systemInfo.safeArea ? Math.max(0, H - systemInfo.safeArea.bottom) : 0;
 const safeLeft = systemInfo.safeArea ? Math.max(0, systemInfo.safeArea.left || 0) : 0;
@@ -43,6 +43,12 @@ const ASSETS = {
   dicePanel: 'packages/game-assets/assets/images/ui/dice_panel.webp',
   taskCard: 'packages/game-assets/assets/minigame/ui/modal_task_card.png',
   kingCard: 'packages/game-assets/assets/minigame/ui/modal_king_card.png',
+  guidePrincess: 'packages/game-assets/assets/minigame/ui/story-guide/guide_princess_candy.webp',
+  guideCloudCastle: 'packages/game-assets/assets/minigame/ui/story-guide/guide_cloud_castle.webp',
+  guideHeroR: 'packages/game-assets/assets/minigame/ui/story-guide/guide_hero_red.webp',
+  guideHeroY: 'packages/game-assets/assets/minigame/ui/story-guide/guide_hero_yellow.webp',
+  guideHeroB: 'packages/game-assets/assets/minigame/ui/story-guide/guide_hero_blue.webp',
+  guideHeroG: 'packages/game-assets/assets/minigame/ui/story-guide/guide_hero_green.webp',
   planeR: 'packages/game-assets/assets/minigame/images/plane_R.png',
   planeY: 'packages/game-assets/assets/minigame/images/plane_Y.png',
   planeB: 'packages/game-assets/assets/minigame/images/plane_B.png',
@@ -87,6 +93,8 @@ let backgroundMusicRequested = false;
 let backgroundMusicEnabled = wx.getStorageSync('ludo_minigame_bgm_enabled_v1') !== false;
 let reducedMotionEnabled = wx.getStorageSync('ludo_minigame_reduced_motion_v1') === true;
 let visualAnimationLoopStarted = false;
+const STORY_GUIDE_STORAGE_KEY = 'ludo_story_guide_v1';
+let storyGuide = { open: false, step: 0, pendingAction: '' };
 const TASK_PACK_LABELS = { safe_family: '家庭安全', party_light: '聚会轻松', party_fun: '聚会搞笑', couple_light: '情侣互动', king: '国王卡' };
 const DEFAULT_TASK_PACKS = { safe_family: true, party_light: true, party_fun: true, couple_light: false, king: true };
 const TASK_PACK_PRESETS = {
@@ -283,6 +291,28 @@ function loadSetupPlayers() {
   return players;
 }
 function saveSetupPlayers() { wx.setStorageSync('ludo_minigame_setup_v1', setupPlayers); }
+function hasCompletedStoryGuide() {
+  const saved = wx.getStorageSync(STORY_GUIDE_STORAGE_KEY);
+  return saved === true || saved?.completed === true;
+}
+function markStoryGuideCompleted() {
+  wx.setStorageSync(STORY_GUIDE_STORAGE_KEY, { completed: true, completedAt: Date.now() });
+}
+function openStoryGuide(pendingAction = '') {
+  storyGuide = { open: true, step: 0, pendingAction };
+}
+function startStoryGuideForAction(action) {
+  if (hasCompletedStoryGuide()) return false;
+  openStoryGuide(action);
+  return true;
+}
+function finishStoryGuide() {
+  const pendingAction = storyGuide.pendingAction;
+  markStoryGuideCompleted();
+  storyGuide = { open: false, step: 0, pendingAction: '' };
+  if (pendingAction === 'new') scene = 'settings';
+  if (pendingAction === 'quick') confirmStartFreshGame('糖果云国救援开始：掷出 6 才能起飞');
+}
 function initCloudSecurity() {
   try {
     if (!wx.cloud || typeof wx.cloud.init !== 'function' || typeof wx.cloud.callFunction !== 'function') return false;
@@ -914,12 +944,27 @@ function drawHomePill(x, y, w, label, value) {
   ctx.textAlign = 'left';
 }
 
+function drawHomeStoryPill(x, y, w) {
+  withButtonPressFeedback('story', x, y, w, 34, () => {
+    fillRoundGradient(x, y, w, 34, 17, [[0, 'rgba(255,238,170,.96)'], [1, 'rgba(255,186,102,.86)']], true);
+    strokeRoundRect(x, y, w, 34, 17, 'rgba(255,255,255,.9)', 1);
+    ctx.fillStyle = '#74400d';
+    ctx.font = '900 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('故事', x + w / 2, y + 21);
+    ctx.textAlign = 'left';
+  });
+  buttons.push({ x, y, w, h: 34, action: 'story' });
+}
+
 function drawHomeHud() {
   const y = Math.max(8, safeTop + 4);
   const pillW = Math.min(54, Math.max(44, W * .13));
   const gap = 5;
   drawHomePill(8, y, pillW, '任务', activeTaskTotal());
   drawHomePill(8 + pillW + gap, y, pillW, '玩家', setupPlayers.length);
+  const storyW = Math.min(52, Math.max(46, W * .13));
+  drawHomeStoryPill(8 + (pillW + gap) * 2, y, storyW);
   const saveW = Math.min(50, Math.max(42, W * .12));
   const versionText = `v${GAME_VERSION}`;
   const vw = Math.min(66, Math.max(54, W * .16));
@@ -1044,6 +1089,124 @@ function drawHome() {
   drawMenuButton(bx, startY + (bh + gap) * 2, bw, bh, '快速开始', '', 'quickIcon', 'quick', false, 2);
 
   drawToolBar(toolY);
+}
+
+function drawStoryGuide() {
+  if (!storyGuide.open) return;
+  buttons.push({ x: 0, y: 0, w: W, h: H, action: 'storyGuideBackdrop' });
+  const landscape = W > H;
+  const top = Math.max(capsuleBottom + 10, safeTop + 12);
+  const bottom = Math.max(safeBottom + 12, 18);
+  const cardW = Math.min(W - 28, landscape ? 500 : 400);
+  const cardH = Math.min(H - top - bottom, landscape ? 330 : 470);
+  const cardX = Math.round((W - cardW) / 2);
+  const cardY = Math.round(Math.max(top, (H - cardH) / 2));
+  const compact = cardH < 400;
+  const isSecondPage = storyGuide.step === 1;
+  const title = isSecondPage ? '四位飞行小勇士' : '糖果公主的求救信';
+  const body = isSecondPage
+    ? '红、黄、蓝、绿四位飞行小勇士，从彩虹机场出发。每一次掷骰都是一阵顺风；任务卡是勇气试炼，国王卡是云国魔法。最先抵达云堡的小勇士，将带回糖果公主的笑容。'
+    : '糖果云国的彩虹糖心被乌云偷走，糖果公主被困在棉花糖云堡。红、黄、蓝、绿四位飞行小勇士正在集结，等你带领他们穿过糖果航线，开始这场救援。';
+
+  ctx.fillStyle = 'rgba(29,19,38,.64)';
+  ctx.fillRect(0, 0, W, H);
+  fillRoundGradient(cardX, cardY, cardW, cardH, 28, [[0, '#fff8df'], [.48, '#ffe6b4'], [1, '#ffd0b7']], true);
+  strokeRoundRect(cardX, cardY, cardW, cardH, 28, 'rgba(255,255,255,.94)', 2);
+
+  const artY = cardY + (compact ? 36 : 44);
+  const artH = compact ? 86 : 142;
+  const artCenterY = artY + artH * .54;
+  const glow = ctx.createRadialGradient(cardX + cardW / 2, artCenterY, 6, cardX + cardW / 2, artCenterY, cardW * .42);
+  glow.addColorStop(0, 'rgba(255,255,255,.98)');
+  glow.addColorStop(.48, 'rgba(255,240,132,.58)');
+  glow.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(cardX + 10, artY - 18, cardW - 20, artH + 36);
+
+  const fallbackPlaneKeys = ['planeR', 'planeY', 'planeB', 'planeG'];
+  const drawFallbackPlanes = () => {
+    const planeSize = compact ? 48 : 60;
+    const planeGap = Math.min(18, cardW * .035);
+    const planeTotal = planeSize * fallbackPlaneKeys.length + planeGap * (fallbackPlaneKeys.length - 1);
+    const planeStartX = cardX + (cardW - planeTotal) / 2;
+    fallbackPlaneKeys.forEach((key, index) => {
+      const float = reducedMotionEnabled ? 0 : Math.sin((Date.now() - bootTime) / 480 + index * .9) * 4;
+      if (images[key]) drawImageContain(images[key], planeStartX + index * (planeSize + planeGap), artCenterY - planeSize / 2 + float, planeSize, planeSize);
+    });
+  };
+
+  if (isSecondPage) {
+    const heroAssets = [
+      ['guideHeroR', 'planeR'],
+      ['guideHeroY', 'planeY'],
+      ['guideHeroB', 'planeB'],
+      ['guideHeroG', 'planeG']
+    ];
+    const gridW = Math.min(cardW - 52, compact ? 278 : 334);
+    const cellW = gridW / 2;
+    const cellH = artH / 2;
+    const gridX = cardX + (cardW - gridW) / 2;
+    heroAssets.forEach(([guideKey, fallbackKey], index) => {
+      const column = index % 2;
+      const row = Math.floor(index / 2);
+      const float = reducedMotionEnabled ? 0 : Math.sin((Date.now() - bootTime) / 430 + index * 1.15) * 3;
+      const image = images[guideKey] || images[fallbackKey];
+      if (image) drawImageContain(image, gridX + column * cellW + 2, artY + row * cellH - 2 + float, cellW - 4, cellH + 4);
+    });
+  } else if (images.guidePrincess || images.guideCloudCastle) {
+    const castleW = Math.min(cardW * .61, compact ? 205 : 250);
+    const castleH = artH * .96;
+    const castleX = cardX + cardW * .35;
+    const princessW = compact ? 82 : 112;
+    const princessH = artH * 1.08;
+    const princessX = cardX + cardW * .14;
+    const princessFloat = reducedMotionEnabled ? 0 : Math.sin((Date.now() - bootTime) / 620) * 2.5;
+    ctx.fillStyle = 'rgba(255,255,255,.42)';
+    roundRect(cardX + cardW * .10, artY + artH * .74, cardW * .80, artH * .20, artH * .10);
+    ctx.fill();
+    if (images.guideCloudCastle) drawImageContain(images.guideCloudCastle, castleX, artY + artH * .02, castleW, castleH);
+    if (images.guidePrincess) drawImageContain(images.guidePrincess, princessX, artY - artH * .07 + princessFloat, princessW, princessH);
+  } else {
+    drawFallbackPlanes();
+  }
+
+  ctx.fillStyle = '#8a4a09';
+  ctx.font = `900 ${compact ? 18 : 21}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText(title, W / 2, artY + artH + (compact ? 12 : 18));
+  ctx.fillStyle = '#a36424';
+  ctx.font = '800 11px sans-serif';
+  ctx.fillText(`${isSecondPage ? 2 : 1} / 2 · 糖果云国启程信`, W / 2, artY - 8);
+
+  const textW = cardW - 46;
+  const fitted = fitModalText(body, textW, compact ? 4 : 5, compact ? 13 : 15);
+  const lineH = Math.round(fitted.size * 1.52);
+  const textY = artY + artH + (compact ? 34 : 48);
+  ctx.fillStyle = '#5f3c26';
+  ctx.font = `800 ${fitted.size}px sans-serif`;
+  fitted.lines.forEach((line, index) => {
+    ctx.fillText(line, W / 2, textY + index * lineH, textW);
+  });
+
+  const buttonH = compact ? 40 : 46;
+  const buttonY = cardY + cardH - buttonH - (compact ? 16 : 20);
+  const gap = 10;
+  const skipW = Math.round(cardW * .30);
+  const primaryW = cardW - skipW - gap - 36;
+  const skipX = cardX + 18;
+  const primaryX = skipX + skipW + gap;
+  fillRoundGradient(skipX, buttonY, skipW, buttonH, buttonH / 2, [[0, '#fffdf6'], [1, '#f4d8a8']], true);
+  strokeRoundRect(skipX, buttonY, skipW, buttonH, buttonH / 2, 'rgba(126,72,22,.28)', 1);
+  fillRoundGradient(primaryX, buttonY, primaryW, buttonH, buttonH / 2, [[0, '#fff07b'], [.54, '#ffbf3f'], [1, '#ed7f2f']], true);
+  strokeRoundRect(primaryX, buttonY, primaryW, buttonH, buttonH / 2, 'rgba(255,255,255,.92)', 2);
+  ctx.fillStyle = '#6a401e';
+  ctx.font = `900 ${compact ? 13 : 15}px sans-serif`;
+  ctx.fillText('稍后再说', skipX + skipW / 2, buttonY + buttonH * .61);
+  ctx.fillStyle = '#69370b';
+  ctx.fillText(isSecondPage ? '启程救援' : '继续听', primaryX + primaryW / 2, buttonY + buttonH * .61);
+  ctx.textAlign = 'left';
+  buttons.push({ x: skipX, y: buttonY, w: skipW, h: buttonH, action: 'storyGuideSkip' });
+  buttons.push({ x: primaryX, y: buttonY, w: primaryW, h: buttonH, action: 'storyGuideNext' });
 }
 
 function drawMenuButton(x, y, w, h, title, sub, icon, action, primary, order = 0) {
@@ -1465,35 +1628,53 @@ function diceAnimationFrameValue(finalValue, frameIndex) {
 
 function diceMotionState(progress, size, reducedMotion) {
   const p = Math.max(0, Math.min(1, Number(progress) || 0));
-  const travel = size * (reducedMotion ? .09 : .24);
-  const firstLift = size * (reducedMotion ? .07 : .18);
-  const secondLift = size * (reducedMotion ? .035 : .095);
+  if (p >= 1) return { offsetX: 0, lift: 0, impact: 0, scale: 1, rotation: 0 };
+  const compact = size <= 42;
+  const medium = size <= 50;
+  const profile = compact
+    ? { launchX: -5, firstImpactX: 3, secondImpactX: 1.5, firstApex: 5, secondApex: 3.5, settleApex: 1.5, airScale: .9 }
+    : medium
+      ? { launchX: -6, firstImpactX: 4, secondImpactX: 2, firstApex: 6, secondApex: 4, settleApex: 2, airScale: .91 }
+      : { launchX: -13, firstImpactX: 7, secondImpactX: 3, firstApex: 13, secondApex: 9, settleApex: 3, airScale: .95 };
+  const motionScale = reducedMotion ? .42 : 1;
+  const easeOutCubic = value => 1 - Math.pow(1 - value, 3);
   let offsetX = 0;
   let lift = 0;
   let impact = 0;
+  let scale = 1;
+  let rotation = 0;
 
-  if (p < .48) {
-    const t = p / .48;
-    offsetX = travel * Math.sin(t * Math.PI * .5);
-    lift = firstLift * Math.sin(t * Math.PI);
-  } else if (p < .76) {
-    const t = (p - .48) / .28;
-    offsetX = travel * (.98 - t * .53);
-    lift = secondLift * Math.sin(t * Math.PI);
+  if (p < .56) {
+    const t = p / .56;
+    const heightRatio = Math.sin(Math.PI * t);
+    offsetX = (profile.launchX + (profile.firstImpactX - profile.launchX) * easeOutCubic(t)) * motionScale;
+    lift = heightRatio * profile.firstApex * motionScale;
+    scale = 1 - (1 - profile.airScale) * heightRatio * motionScale;
+    rotation = -.08 + t * .22;
+  } else if (p < .82) {
+    const t = (p - .56) / .26;
+    const heightRatio = Math.sin(Math.PI * t) * .42;
+    offsetX = (profile.firstImpactX + (profile.secondImpactX - profile.firstImpactX) * easeOutCubic(t)) * motionScale;
+    lift = Math.sin(Math.PI * t) * profile.secondApex * motionScale;
     impact = Math.max(0, 1 - t / .22);
-  } else if (p < .96) {
-    const t = (p - .76) / .20;
-    offsetX = travel * .45 * (1 - t);
-    lift = secondLift * .48 * Math.sin(t * Math.PI);
+    scale = 1 - (1 - profile.airScale) * heightRatio * motionScale;
+    rotation = .14 - t * .18;
+  } else {
+    const t = (p - .82) / .18;
+    const eased = easeOutCubic(t);
+    offsetX = profile.secondImpactX * (1 - eased) * motionScale;
+    lift = Math.sin(Math.PI * t) * profile.settleApex * motionScale;
     impact = Math.max(0, 1 - t / .30) * .7;
+    scale = 1 + Math.sin(Math.PI * t) * .035 * motionScale;
+    rotation = -.04 * (1 - eased);
   }
 
   return {
     offsetX,
     lift,
     impact,
-    scale: 1 + lift / Math.max(1, size) * .18 - impact * .045,
-    rotation: reducedMotion ? 0 : Math.sin(p * Math.PI * 5.5) * (.12 + lift / Math.max(1, size) * .2)
+    scale: scale - impact * .045,
+    rotation: reducedMotion ? 0 : rotation
   };
 }
 
@@ -1604,7 +1785,7 @@ function drawDice(x, y, size, value) {
     { x: frontX + frontSize + depth, y: frontY + frontSize - depth },
     { x: frontX + frontSize, y: frontY + frontSize }
   ];
-  const pipRadius = Math.max(2.1, size * .052);
+  const pipRadius = Math.max(2.3, size * .077);
 
   drawDiceFacePolygon(top, faceValues.top, '#fffdf5', '#efc36c', pipRadius * .72);
   drawDiceFacePolygon(right, faceValues.right, '#f4c96f', '#bd7028', pipRadius * .72);
@@ -1951,6 +2132,7 @@ function render() {
   else if (scene === 'progress') drawProgressPage();
   else if (scene === 'records') drawRecordsPage();
   else if (scene === 'pieces') drawPieceTest();
+  if (scene === 'home') drawStoryGuide();
   drawModal();
 }
 
@@ -3287,7 +3469,7 @@ function rollDice() {
   if (rolling || pieceAnimation || modal) return;
   if (state.gameOver) { showTask('游戏结束', '本局已结束，请重开或返回大厅。'); return; }
   const transaction = createDiceRollTransaction();
-  const duration = reducedMotionEnabled ? 220 : 520;
+  const duration = reducedMotionEnabled ? 180 : 820;
   activeDiceRoll = { ...transaction, duration };
   rolling = true;
   rollingDiceValue = diceAnimationFrameValue(transaction.value, 0);
@@ -3378,8 +3560,19 @@ function handleAction(action) {
     showTask('昵称审核中', '请等待当前昵称审核完成。');
     return;
   }
-  if (action === 'new') scene = 'settings';
-  if (action === 'quick') confirmStartFreshGame('快速开始：掷出 6 才能起飞');
+  if (action === 'story') openStoryGuide('story');
+  if (action === 'storyGuideNext') {
+    if (storyGuide.step === 0) storyGuide.step = 1;
+    else finishStoryGuide();
+  }
+  if (action === 'storyGuideSkip') finishStoryGuide();
+  if (action === 'storyGuideBackdrop') return;
+  if (action === 'new') {
+    if (!startStoryGuideForAction('new')) scene = 'settings';
+  }
+  if (action === 'quick') {
+    if (!startStoryGuideForAction('quick')) confirmStartFreshGame('快速开始：掷出 6 才能起飞');
+  }
   if (action === 'continue') continueSavedGame();
   if (action === 'noSavedContinue') showTask('暂无存档', '请先设置玩家并开始新游戏，或从大厅选择快速开始。');
   if (action === 'home') scene = 'home';

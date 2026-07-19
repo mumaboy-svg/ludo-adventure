@@ -60,7 +60,7 @@ const {
   diceSideValues
 } = sandbox.module.exports;
 
-assert(source.includes("const GAME_VERSION = '2.18.0';"), '小游戏版本应为 2.18.0');
+assert(source.includes("const GAME_VERSION = '2.20.1';"), '小游戏版本应为 2.20.1');
 assert.strictEqual(normalizeDiceValue(2), 2);
 assert.strictEqual(normalizeDiceValue(5), 5);
 assert.strictEqual(normalizeDiceValue('bad'), 1);
@@ -93,9 +93,9 @@ for (let finalValue = 1; finalValue <= 6; finalValue += 1) {
 }
 
 const launch = diceMotionState(.24, 60, false);
-const firstImpact = diceMotionState(.48, 60, false);
-const rebound = diceMotionState(.62, 60, false);
-const secondImpact = diceMotionState(.76, 60, false);
+const firstImpact = diceMotionState(.56, 60, false);
+const rebound = diceMotionState(.66, 60, false);
+const secondImpact = diceMotionState(.82, 60, false);
 const settled = diceMotionState(1, 60, false);
 const reducedLaunch = diceMotionState(.24, 60, true);
 assert(launch.offsetX > 0 && launch.lift > 0, '首段抛出必须同时产生横向位移和离地高度');
@@ -121,5 +121,8 @@ assert(source.includes('drawDiceFacePolygon(top'), '必须绘制骰子顶部');
 assert(source.includes('drawDiceFacePolygon(right'), '必须绘制骰子右侧');
 assert(source.includes('diceMotionState(progress, size, reducedMotionEnabled)'), 'Canvas 骰子必须使用统一的轨迹状态');
 assert(source.includes('motion.impact > 0'), 'Canvas 骰子必须绘制两次落地反馈');
+assert(extractFunction('diceMotionState').includes('p < .56') && extractFunction('diceMotionState').includes('p < .82'), '小游戏轨迹必须与网页版使用同一组三阶段接触时机');
+assert(source.includes('const pipRadius = Math.max(2.3, size * .077);'), '骰点尺寸必须随骰身尺寸按网页版比例缩放');
+assert(rollDiceSource.includes('const duration = reducedMotionEnabled ? 180 : 820;'), '小游戏骰子时长必须与网页版常规/低动态时长同步');
 
-console.log('PASS: C5.1 小游戏骰子 30 次 transaction、2/5 点、两段弹跳、动态阴影、连点锁和实体三面绘制检查通过。');
+console.log('PASS: 小游戏骰子 30 次 transaction、2/5 点、网页版三阶段轨迹、动态阴影、连点锁和实体三面绘制检查通过。');
