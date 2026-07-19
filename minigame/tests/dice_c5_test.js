@@ -26,6 +26,7 @@ const functionNames = [
   'createDiceValue',
   'createDiceRollTransaction',
   'diceAnimationFrameValue',
+  'diceMotionState',
   'diceSideValues'
 ];
 const coreSource = functionNames.map(extractFunction).join('\n');
@@ -34,6 +35,7 @@ const sandbox = {
   Date,
   Object,
   Number,
+  Boolean,
   DICE_VISIBLE_ORIENTATIONS: {
     1: { front: 1, top: 2, right: 3 },
     2: { front: 2, top: 6, right: 3 },
@@ -46,7 +48,7 @@ const sandbox = {
   module: { exports: {} }
 };
 vm.runInNewContext(
-  `${coreSource}\nmodule.exports = { normalizeDiceValue, createDiceValue, createDiceRollTransaction, diceAnimationFrameValue, diceSideValues };`,
+  `${coreSource}\nmodule.exports = { normalizeDiceValue, createDiceValue, createDiceRollTransaction, diceAnimationFrameValue, diceMotionState, diceSideValues };`,
   sandbox
 );
 
@@ -54,10 +56,11 @@ const {
   normalizeDiceValue,
   createDiceRollTransaction,
   diceAnimationFrameValue,
+  diceMotionState,
   diceSideValues
 } = sandbox.module.exports;
 
-assert(source.includes("const GAME_VERSION = '2.14.0';"), '小游戏版本应为 2.14.0');
+assert(source.includes("const GAME_VERSION = '2.18.0';"), '小游戏版本应为 2.18.0');
 assert.strictEqual(normalizeDiceValue(2), 2);
 assert.strictEqual(normalizeDiceValue(5), 5);
 assert.strictEqual(normalizeDiceValue('bad'), 1);
@@ -89,6 +92,21 @@ for (let finalValue = 1; finalValue <= 6; finalValue += 1) {
   }
 }
 
+const launch = diceMotionState(.24, 60, false);
+const firstImpact = diceMotionState(.48, 60, false);
+const rebound = diceMotionState(.62, 60, false);
+const secondImpact = diceMotionState(.76, 60, false);
+const settled = diceMotionState(1, 60, false);
+const reducedLaunch = diceMotionState(.24, 60, true);
+assert(launch.offsetX > 0 && launch.lift > 0, '首段抛出必须同时产生横向位移和离地高度');
+assert(firstImpact.impact > 0 && firstImpact.lift <= .001, '第一次落地必须产生碰撞反馈并回到台面');
+assert(rebound.offsetX > 0 && rebound.lift > 0, '第一次落地后必须有第二段小弹跳');
+assert(secondImpact.impact > 0 && secondImpact.lift <= .001, '第二次落地必须产生碰撞反馈并回到台面');
+assert.strictEqual(settled.offsetX, 0, '动画结束横向位移必须归零');
+assert.strictEqual(settled.lift, 0, '动画结束高度必须归零');
+assert.strictEqual(settled.impact, 0, '动画结束碰撞反馈必须归零');
+assert(reducedLaunch.offsetX < launch.offsetX && reducedLaunch.lift < launch.lift, '低动态模式必须缩短运动幅度');
+
 const rollDiceSource = extractFunction('rollDice');
 assert(rollDiceSource.includes('const transaction = createDiceRollTransaction();'), 'rollDice 必须先创建唯一 transaction');
 assert(!rollDiceSource.includes('Math.random'), 'rollDice 动画阶段不能再次调用 Math.random');
@@ -101,5 +119,7 @@ assert(
 assert(source.includes('DICE_PIP_POSITIONS'), '必须保留统一点位映射');
 assert(source.includes('drawDiceFacePolygon(top'), '必须绘制骰子顶部');
 assert(source.includes('drawDiceFacePolygon(right'), '必须绘制骰子右侧');
+assert(source.includes('diceMotionState(progress, size, reducedMotionEnabled)'), 'Canvas 骰子必须使用统一的轨迹状态');
+assert(source.includes('motion.impact > 0'), 'Canvas 骰子必须绘制两次落地反馈');
 
-console.log('PASS: C5 小游戏骰子 30 次 transaction、2/5 点、连点锁和实体三面绘制检查通过。');
+console.log('PASS: C5.1 小游戏骰子 30 次 transaction、2/5 点、两段弹跳、动态阴影、连点锁和实体三面绘制检查通过。');
