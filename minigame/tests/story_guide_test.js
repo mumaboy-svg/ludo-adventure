@@ -21,7 +21,7 @@ function extractFunction(name) {
   throw new Error(`函数 ${name} 未闭合`);
 }
 
-assert(source.includes("const GAME_VERSION = '2.20.7';"), '小游戏版本应为 2.20.7');
+assert(source.includes("const GAME_VERSION = '2.21.0';"), '小游戏版本应为 2.21.0');
 assert(source.includes("const STORY_GUIDE_STORAGE_KEY = 'ludo_story_guide_v1';"), '首局引导必须使用独立存储键');
 assert(source.includes("const TEACHING_GUIDE_STORAGE_KEY = 'ludo_teaching_guide_v1';"), '操作教学必须使用独立存储键');
 assert(!source.includes("ludo_minigame_state_v3', { completed"), '首局引导不得写入对局存档');

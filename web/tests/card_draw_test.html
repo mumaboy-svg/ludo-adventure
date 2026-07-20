@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>D4 抽卡体验测试</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; padding: 24px; color: #352518; background: #fff3d0;
+            font: 15px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        h1 { margin: 0 0 8px; font-size: 24px; }
+        #summary { margin-bottom: 18px; font-weight: 800; }
+        .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .case {
+            min-height: 88px; padding: 14px; border: 2px solid #e4bd68; border-radius: 8px;
+            background: #fff; box-shadow: 0 8px 18px #7848111a;
+        }
+        .case.pass { border-color: #4db768; }
+        .case.fail { border-color: #e65345; background: #fff0ed; }
+        iframe { position: fixed; width: 1px; height: 1px; border: 0; opacity: 0; pointer-events: none; }
+        @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <h1>网页版 D4 抽卡体验确定性测试</h1>
+    <div id="summary">正在载入正式游戏代码...</div>
+    <div class="grid" id="results"></div>
+    <iframe id="gameFrame" src="../index.html?card-draw-test=1" title="正式游戏代码"></iframe>
+    <script>
+        function addResult(label, passed, detail) {
+            const card = document.createElement("section");
+            card.className = `case ${passed ? "pass" : "fail"}`;
+            card.innerHTML = `<strong>${passed ? "PASS" : "FAIL"} · ${label}</strong><div>${detail}</div>`;
+            document.getElementById("results").appendChild(card);
+            return passed;
+        }
+
+        const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+
+        document.getElementById("gameFrame").addEventListener("load", async () => {
+            const game = document.getElementById("gameFrame").contentWindow;
+            const hooks = game.__cardDrawTestHooks;
+            let passed = 0;
+            let total = 0;
+            const check = (label, ok, detail) => {
+                total += 1;
+                if (addResult(label, ok, detail)) passed += 1;
+            };
+
+            const available = hooks
+                && hooks.version === "2.21.0"
+                && typeof hooks.show === "function"
+                && typeof hooks.complete === "function"
+                && typeof hooks.getState === "function";
+
+            check("测试 hooks 与版本", available, available ? "v2.21.0 抽卡 hooks 已载入" : "缺少 hooks 或版本不符");
+
+            if (available) {
+                let state = hooks.show("task");
+                check(
+                    "任务卡翻出状态",
+                    state.kind === "task" && state.modalClasses.includes("card-reveal") && !state.modalClasses.includes("king-card"),
+                    state.modalClasses.join(" / ")
+                );
+                check("任务确认文案", state.buttonText === "完成，继续", state.buttonText);
+
+                state = hooks.show("king");
+                check(
+                    "国王卡稀有状态",
+                    state.kind === "king"
+                        && state.modalClasses.includes("king-card")
+                        && state.modalClasses.includes("card-reveal")
+                        && state.backdropClasses.includes("king-open"),
+                    `${state.modalClasses.join(" / ")} · ${state.backdropClasses.join(" / ")}`
+                );
+
+                state = hooks.show("notice");
+                check(
+                    "普通提示不伪装挑战",
+                    state.kind === "notice"
+                        && state.buttonText === "知道了"
+                        && !state.modalClasses.includes("card-reveal")
+                        && !state.backdropClasses.includes("king-open"),
+                    `${state.buttonText} · ${state.modalClasses.join(" / ")}`
+                );
+
+                hooks.show("task");
+                hooks.complete();
+                state = hooks.getState();
+                check(
+                    "挑战完成确认",
+                    state.completing
+                        && state.modalClasses.includes("is-completing")
+                        && state.stampText.includes("挑战完成"),
+                    `${state.stampText} · ${state.modalClasses.join(" / ")}`
+                );
+                await wait(500);
+                state = hooks.getState();
+                check("完成后关闭", !state.open && !state.completing, `open=${state.open}; completing=${state.completing}`);
+
+                hooks.show("king");
+                hooks.close();
+                state = hooks.getState();
+                check(
+                    "关闭不等于完成",
+                    !state.open && !state.completing && !state.modalClasses.includes("is-completing"),
+                    `open=${state.open}; completing=${state.completing}`
+                );
+                await wait(180);
+
+                hooks.setMotionEnabled(false);
+                state = hooks.show("king");
+                check(
+                    "低动态模式",
+                    state.reducedMotion && state.kind === "king" && state.modalClasses.includes("card-reveal"),
+                    `reducedMotion=${state.reducedMotion}`
+                );
+                hooks.complete();
+                await wait(210);
+                state = hooks.getState();
+                check("低动态完成路径", !state.open && !state.completing, `open=${state.open}; completing=${state.completing}`);
+
+                check("加载页版本", state.loaderVersion === "v2.21.0", state.loaderVersion);
+                hooks.setMotionEnabled(true);
+                hooks.reset();
+            }
+
+            const summary = document.getElementById("summary");
+            summary.textContent = `${passed}/${total} 项通过；覆盖任务卡翻出、国王卡稀有态、完成确认、普通关闭与低动态模式。`;
+            summary.style.color = passed === total ? "#24703a" : "#a52c22";
+            document.title = passed === total ? "PASS · D4 抽卡体验测试" : "FAIL · D4 抽卡体验测试";
+        });
+    </script>
+</body>
+</html>

@@ -1156,8 +1156,19 @@
             background: radial-gradient(circle at 50% 42%, #39230a33, #120b07c7 74%);
             backdrop-filter: blur(3px); z-index: 99; padding: 16px;
             opacity: 0; transition: opacity .18s ease;
+            perspective: 1100px;
         }
         .modal-bg.open { opacity: 1; }
+        .modal-bg::before {
+            content: ""; position: absolute; width: min(92vw, 620px); aspect-ratio: 1;
+            border-radius: 50%; opacity: 0; pointer-events: none; transform: scale(.72) rotate(0deg);
+            background:
+                repeating-conic-gradient(from 4deg, #ffd95f00 0 9deg, #ffd95f66 10deg 13deg, #ffd95f00 14deg 25deg),
+                radial-gradient(circle, #fff4a9b8 0 8%, #ffc72f82 24%, #f28b1b26 52%, transparent 70%);
+            filter: blur(.4px) drop-shadow(0 0 28px #ffc62d99);
+            transition: opacity .16s ease;
+        }
+        .modal-bg.king-open::before { opacity: .9; animation: kingAuraSpin 8s linear infinite, kingAuraPulse 1.5s ease-in-out infinite alternate; }
         .modal {
             width: min(92vw, 560px); aspect-ratio: 1 / 1; border-radius: 0;
             padding: 0;
@@ -1166,12 +1177,21 @@
             color: #4d2b18; position: relative; overflow: hidden;
             transform: translateY(18px) scale(.94); opacity: 0;
             transition: transform .2s cubic-bezier(.2,.9,.25,1.18), opacity .16s ease;
+            transform-style: preserve-3d; backface-visibility: hidden;
         }
         .modal-bg.open .modal { transform: translateY(0) scale(1); opacity: 1; }
+        .modal-bg.open .modal.card-reveal { animation: taskCardReveal .42s cubic-bezier(.18,.84,.2,1.08) both; }
+        .modal-bg.open .modal.king-card.card-reveal { animation: kingCardReveal .58s cubic-bezier(.16,.78,.18,1.08) both; }
         .modal.king-card { background-image: url('./assets/images/ui/modal_king_card.webp'); color: #4a260e; }
         .modal::before {
             content: ""; position: absolute; inset: 0; pointer-events: none;
             background: none;
+        }
+        .modal.king-card::before {
+            background: linear-gradient(112deg, transparent 31%, #fff7bd00 39%, #fff7bdd6 48%, #fff7bd00 57%, transparent 66%);
+            transform: translateX(-125%);
+            mix-blend-mode: screen;
+            animation: kingCardSweep 1.7s .28s ease-in-out infinite;
         }
         .modal > * { position: relative; z-index: 1; }
         .modal small, .modal h2 {
@@ -1200,6 +1220,36 @@
         }
         .modal .modal-close:hover { filter: brightness(1.06); transform: translateY(-1px); }
         .modal .modal-close:active { transform: translateY(1px) scale(.96); }
+        .modal-complete-stamp {
+            position: absolute; left: 27%; right: 27%; top: 55%;
+            min-height: 54px; display: grid; grid-template-columns: auto auto; place-content: center; gap: 7px;
+            border: 3px solid #fff8b5; border-radius: 16px;
+            color: #fffde6; background: linear-gradient(145deg, #25ba63f2, #128445f5);
+            box-shadow: 0 10px 28px #0b542f72, inset 0 2px 0 #ffffff8c, 0 0 0 4px #1694514a;
+            font-size: clamp(15px, 3.6vw, 22px); font-weight: 1000; letter-spacing: 0;
+            opacity: 0; transform: rotate(-7deg) scale(.58); pointer-events: none;
+        }
+        .modal-complete-stamp span { font-size: 1.2em; line-height: 1; }
+        .modal.is-completing .modal-complete-stamp { animation: completeStamp .42s cubic-bezier(.16,.86,.22,1.2) forwards; }
+        .modal.is-completing pre, .modal.is-completing button:not(.modal-close) { opacity: .18; transition: opacity .12s ease; }
+        @keyframes taskCardReveal {
+            0% { opacity: 0; transform: translateY(38px) rotateY(-78deg) rotateZ(-4deg) scale(.82); }
+            58% { opacity: 1; transform: translateY(-8px) rotateY(8deg) rotateZ(1.5deg) scale(1.035); }
+            100% { opacity: 1; transform: translateY(0) rotateY(0) rotateZ(0) scale(1); }
+        }
+        @keyframes kingCardReveal {
+            0% { opacity: 0; transform: translateY(46px) rotateY(-86deg) rotateZ(-6deg) scale(.72); filter: brightness(1.45); }
+            50% { opacity: 1; transform: translateY(-12px) rotateY(10deg) rotateZ(2deg) scale(1.055); filter: brightness(1.3); }
+            100% { opacity: 1; transform: translateY(0) rotateY(0) rotateZ(0) scale(1); filter: brightness(1); }
+        }
+        @keyframes kingAuraSpin { to { transform: scale(.92) rotate(360deg); } }
+        @keyframes kingAuraPulse { from { filter: blur(.4px) drop-shadow(0 0 20px #ffc62d80); } to { filter: blur(.8px) drop-shadow(0 0 42px #fff16dcc); } }
+        @keyframes kingCardSweep { 0%, 22% { transform: translateX(-125%); } 66%, 100% { transform: translateX(125%); } }
+        @keyframes completeStamp {
+            0% { opacity: 0; transform: rotate(-9deg) scale(.55); }
+            72% { opacity: 1; transform: rotate(-4deg) scale(1.08); }
+            100% { opacity: 1; transform: rotate(-5deg) scale(1); }
+        }
         @media(max-width: 560px) {
             .modal {
                 width: min(94vw, 390px); border-radius: 0;
@@ -1207,6 +1257,14 @@
             .modal pre { left: 22%; right: 22%; top: 39%; bottom: 28%; font-size: clamp(15px, 4.7vw, 20px); }
             .modal button { left: 31%; right: 31%; bottom: 14.5%; min-height: 38px; font-size: 12px; }
             .modal .modal-close { left: auto; right: 14.5%; top: 14%; bottom: auto; width: 34px; min-height: 34px; font-size: 21px; }
+        }
+        html.reduced-motion .modal-bg.king-open::before,
+        html.reduced-motion .modal.king-card::before { animation: none; }
+        html.reduced-motion .modal-bg.open .modal.card-reveal {
+            animation: none; opacity: 1; transform: translateY(0) scale(1);
+        }
+        html.reduced-motion .modal.is-completing .modal-complete-stamp {
+            animation: none; opacity: 1; transform: rotate(-5deg) scale(1);
         }
         .guide-overlay {
             position: fixed; inset: 0; z-index: 101; display: none; place-items: center;
@@ -2393,7 +2451,7 @@
         <div class="web-loader-percent" id="webLoaderPercent">0%</div>
         <p class="web-loader-error" id="webLoaderError" hidden></p>
         <button class="web-loader-retry" id="webLoaderRetry" type="button" hidden>重新加载</button>
-        <div class="web-loader-version" id="webLoaderVersion">v2.20.7</div>
+        <div class="web-loader-version" id="webLoaderVersion">v2.21.0</div>
     </div>
 </div>
 <noscript><div class="web-loader-noscript">请开启 JavaScript 后重新进入游戏。</div></noscript>
@@ -2792,6 +2850,7 @@
         <h2 id="modalTitle">任务卡</h2>
         <pre id="modalBody"></pre>
         <button id="modalOk">完成，继续</button>
+        <div class="modal-complete-stamp" id="modalCompleteStamp" aria-hidden="true"><span>✓</span>挑战完成</div>
     </div>
 </div>
 
@@ -2820,7 +2879,7 @@
 
 <script>
 (() => {
-    const APP_VERSION = "2.20.7";
+    const APP_VERSION = "2.21.0";
     const STATE_KEY = "flight_adventure_v66_state";
     const TASK_KEY = "flight_adventure_v66_tasks";
     const AUDIO_SETTINGS_KEY = "flight_adventure_audio_v1";
@@ -3354,7 +3413,7 @@
         lastRoll: el("lastRoll"), rollBtn: el("rollBtn"), diceContainer: el("diceContainer"),
         playersList: el("playersList"), playerProgressMeta: el("playerProgressMeta"), log: el("log"), coordTip: el("coordTip"),
         modalBg: el("modalBg"), modal: document.querySelector("#modalBg .modal"), modalClose: el("modalClose"), modalSub: el("modalSub"), modalTitle: el("modalTitle"),
-        modalBody: el("modalBody"), modalOk: el("modalOk"),
+        modalBody: el("modalBody"), modalOk: el("modalOk"), modalCompleteStamp: el("modalCompleteStamp"),
         guideOverlay: el("guideOverlay"), guideKicker: el("guideKicker"), guideTitle: el("guideTitle"), guideBody: el("guideBody"),
         guideScene: el("guideScene"), guideHeroes: el("guideHeroes"), guideProgress: el("guideProgress"), guidePrimaryBtn: el("guidePrimaryBtn"), guideSkipBtn: el("guideSkipBtn"),
         backSetupBtn: el("backSetupBtn"), gameHomeBtn: el("gameHomeBtn"), debugCoordsBtn: el("debugCoordsBtn"), newGameBtn: el("newGameBtn"),
@@ -3376,6 +3435,8 @@
     let modalQueue = [];
     let modalOpen = false;
     let modalClosing = false;
+    let modalCompleting = false;
+    let modalCompleteTimer = null;
     let activeModal = null;
     let postMoveQueue = [];
     let postMoveTimer = null;
@@ -3706,7 +3767,7 @@
         els.setupClearDataBtn.onclick = clearAllLocalData;
         els.rollBtn.onclick = rollDice;
         els.diceContainer.onclick = rollDice;
-        els.modalOk.onclick = closeCurrentWebModal;
+        els.modalOk.onclick = completeCurrentWebModal;
         els.modalClose.onclick = closeCurrentWebModal;
         els.modalBg.onclick = (event) => { if (event.target === els.modalBg) closeCurrentWebModal(); };
         document.addEventListener("keydown", (event) => { if (event.key === "Escape" && modalOpen) closeCurrentWebModal(); });
@@ -3814,9 +3875,13 @@
 
     function closeModalForNavigation() {
         if (!modalOpen && !modalQueue.length) return;
+        clearTimeout(modalCompleteTimer);
         els.modalBg.style.display = "none";
+        els.modalBg.classList.remove("open", "king-open");
+        els.modal.classList.remove("card-reveal", "is-completing", "king-card");
         modalOpen = false;
         modalClosing = false;
+        modalCompleting = false;
         activeModal = null;
         modalQueue = [];
         postMoveQueue = [];
@@ -3824,7 +3889,7 @@
     }
 
     function closeCurrentWebModal() {
-        if (!modalOpen) return;
+        if (!modalOpen || modalCompleting) return;
         const showTeachingResult = teachingGuide.open && teachingGuide.step === "waiting-task" && !!activeModal;
         modalOpen = false;
         modalClosing = true;
@@ -3832,10 +3897,28 @@
         els.modalBg.classList.remove("open");
         setTimeout(() => {
             els.modalBg.style.display = "none";
+            els.modalBg.classList.remove("king-open");
+            els.modal.classList.remove("card-reveal", "is-completing", "king-card");
             modalClosing = false;
             if (showTeachingResult && showTeachingResultAfterFirstTask()) return;
             showNextModal();
         }, 160);
+    }
+
+    function completeCurrentWebModal() {
+        if (!modalOpen || modalClosing || modalCompleting) return;
+        if (!activeModal || !["task", "king"].includes(activeModal.kind)) {
+            closeCurrentWebModal();
+            return;
+        }
+        modalCompleting = true;
+        els.modal.classList.add("is-completing");
+        clearTimeout(modalCompleteTimer);
+        modalCompleteTimer = setTimeout(() => {
+            modalCompleting = false;
+            els.modal.classList.remove("is-completing");
+            closeCurrentWebModal();
+        }, motionEnabled ? 460 : 180);
     }
 
     function returnToSetupFromGame() {
@@ -4184,10 +4267,14 @@
         els.game.classList.add("active");
         els.game.style.display = "block";
         if (els.modalBg) {
+            clearTimeout(modalCompleteTimer);
             els.modalBg.style.display = "none";
-            els.modalBg.classList.remove("open");
+            els.modalBg.classList.remove("open", "king-open");
+            els.modal.classList.remove("card-reveal", "is-completing", "king-card");
             modalOpen = false;
             modalClosing = false;
+            modalCompleting = false;
+            activeModal = null;
             modalQueue = [];
         }
         renderAll();
@@ -4262,7 +4349,7 @@
                     const modeTask = pickModeTask("baseRoll", value);
                     const taskText = modeTask?.content || tasks.baseRoll[value] || `掷出${value}点任务`;
                     addLog(`${label(p)} 触发基地掷骰任务（点数${value}）。`, "task");
-                    enqueueModal(`🎲 ${modeTask?.title || `基地任务 ${value}点`}`, taskText, `${label(p)} · ${activeModeName()} · 基地${value}点`);
+                    enqueueModal(`🎲 ${modeTask?.title || `基地任务 ${value}点`}`, taskText, `${label(p)} · ${activeModeName()} · 基地${value}点`, "task");
                     endTurn(p);
                 } else {
                     endTurn(p);
@@ -4288,7 +4375,7 @@
         addLog(`${label(p)} 起飞进入起飞点。`, "good");
         addLog(`${label(p)} 触发起飞点任务。`, "task");
         const modeTask = pickModeTask("takeoff");
-        queuePostMoveModal(`🛫 ${modeTask?.title || "起飞点任务"}`, modeTask?.content || tasks.takeoff || "起飞任务未设置", `${label(p)} · ${activeModeName()} · 起飞`);
+        queuePostMoveModal(`🛫 ${modeTask?.title || "起飞点任务"}`, modeTask?.content || tasks.takeoff || "起飞任务未设置", `${label(p)} · ${activeModeName()} · 起飞`, "task");
     }
 
     function moveOuter(p, steps) {
@@ -4384,7 +4471,7 @@
             state.gameOver = true;
             addLog("游戏结束！", "bad");
             const finalTask = pickModeTask("final");
-            enqueueModal(`🏁 ${finalTask?.title || "游戏结束"}`, `最后一名：${label(p)}\n终极任务：\n${finalTask?.content || tasks.final}`, `${activeModeName()} · 终极任务`);
+            enqueueModal(`🏁 ${finalTask?.title || "游戏结束"}`, `最后一名：${label(p)}\n终极任务：\n${finalTask?.content || tasks.final}`, `${activeModeName()} · 终极任务`, "task");
             if (awardRescueBadge()) {
                 enqueueModal("🍬 糖果公主获救！", "四色飞行小勇士穿过糖果云海，把糖果公主送回了棉花糖云堡。\n\n获得：糖果云国救援徽章", "第一章 · 救援完成");
             }
@@ -4419,14 +4506,15 @@
             postMoveQueue.push({
                 title: `${triggerType === "straight" ? "➡️" : "📍"} ${commercialTask.title || "任务卡"}`,
                 body: commercialTask.content,
-                sub: `${label(p)} · ${activeModeName()} · ${triggerType === "straight" ? "直道" : "外圈"}`
+                sub: `${label(p)} · ${activeModeName()} · ${triggerType === "straight" ? "直道" : "外圈"}`,
+                kind: "task"
             });
             return;
         }
         const payload = p.status === "straight"
             ? { title: "➡️ 直道任务", body: tasks.straight[index-1], sub: `${label(p)} · 直道第${index}格` }
             : { title: "📍 外圈任务", body: tasks.outer[index % 12], sub: `${label(p)} · 外圈第${index+1}格` };
-        postMoveQueue.push(payload);
+        postMoveQueue.push({ ...payload, kind: "task" });
     }
 
     function queuePostMoveKing(p, reason) {
@@ -4435,12 +4523,13 @@
             postMoveQueue.push({
                 title: `👑 ${commercialKing.title || "国王卡"}`,
                 body: commercialKing.content,
-                sub: `${label(p)} · ${reason} · ${activeModeName()}`
+                sub: `${label(p)} · ${reason} · ${activeModeName()}`,
+                kind: "king"
             });
             return;
         }
         const i = Math.floor(Math.random() * 13);
-        postMoveQueue.push({ title: `👑 国王卡 ${RANKS[i]}`, body: tasks.king[i], sub: `${label(p)} · ${reason}` });
+        postMoveQueue.push({ title: `👑 国王卡 ${RANKS[i]}`, body: tasks.king[i], sub: `${label(p)} · ${reason}`, kind: "king" });
     }
 
     function queuePostMoveFinish(p) {
@@ -4467,8 +4556,8 @@ ${finalTask?.content || tasks.final}`, sub: `${activeModeName()} · 终极任务
         }
     }
 
-    function queuePostMoveModal(title, body, sub) {
-        postMoveQueue.push({ title, body, sub });
+    function queuePostMoveModal(title, body, sub, kind = "notice") {
+        postMoveQueue.push({ title, body, sub, kind });
     }
 
     function schedulePostMoveActions(delay = 0) {
@@ -4487,8 +4576,8 @@ ${finalTask?.content || tasks.final}`, sub: `${activeModeName()} · 终极任务
         showNextModal();
     }
 
-    function enqueueModal(title, body, sub) {
-        modalQueue.push({ title, body, sub });
+    function enqueueModal(title, body, sub, kind = "notice") {
+        modalQueue.push({ title, body, sub, kind });
         if (!modalOpen && !modalClosing) showNextModal();
     }
 
@@ -4496,9 +4585,16 @@ ${finalTask?.content || tasks.final}`, sub: `${activeModeName()} · 终极任务
         if (modalClosing) return;
         if (modalQueue.length === 0) { modalOpen = false; activeModal = null; renderAll(); schedulePostMoveActions(0); return; }
         const m = modalQueue.shift();
+        m.kind = m.kind === "king" || m.title.startsWith("👑") ? "king" : (m.kind === "task" ? "task" : "notice");
         activeModal = m;
         modalOpen = true;
-        els.modal.classList.toggle("king-card", m.title.startsWith("👑"));
+        modalCompleting = false;
+        clearTimeout(modalCompleteTimer);
+        els.modal.classList.remove("card-reveal", "is-completing", "king-card");
+        els.modal.classList.toggle("king-card", m.kind === "king");
+        els.modal.classList.toggle("card-reveal", m.kind === "task" || m.kind === "king");
+        els.modalBg.classList.toggle("king-open", m.kind === "king");
+        els.modalOk.textContent = m.kind === "task" || m.kind === "king" ? "完成，继续" : "知道了";
         els.modalTitle.textContent = m.title; els.modalSub.textContent = m.sub || ""; els.modalBody.textContent = m.body || "";
         els.modalBg.style.display = "grid";
         els.modalBg.classList.remove("open");
@@ -5073,6 +5169,61 @@ ${finalTask?.content || tasks.final}`, sub: `${activeModeName()} · 终极任务
                 rotation: Object.freeze({ ...lastDiceRotation })
             })
         });
+    }
+
+    const cardDrawParams = new URLSearchParams(location.search);
+    const cardDrawPreview = cardDrawParams.get("card-draw-preview");
+    if (cardDrawParams.get("card-draw-test") === "1" || ["task", "king", "complete"].includes(cardDrawPreview)) {
+        const resetCardDrawTest = () => {
+            clearTimeout(modalCompleteTimer);
+            modalQueue = [];
+            activeModal = null;
+            modalOpen = false;
+            modalClosing = false;
+            modalCompleting = false;
+            els.modalBg.style.display = "none";
+            els.modalBg.classList.remove("open", "king-open");
+            els.modal.classList.remove("card-reveal", "is-completing", "king-card");
+        };
+        window.__cardDrawTestHooks = Object.freeze({
+            version: APP_VERSION,
+            show(kind = "task") {
+                resetCardDrawTest();
+                const normalizedKind = ["task", "king"].includes(kind) ? kind : "notice";
+                const title = normalizedKind === "king" ? "👑 国王卡" : (normalizedKind === "task" ? "任务卡" : "系统提示");
+                enqueueModal(title, normalizedKind === "notice" ? "普通提示内容" : "完成这项挑战后继续飞行", "测试玩家", normalizedKind);
+                return this.getState();
+            },
+            complete: completeCurrentWebModal,
+            close: closeCurrentWebModal,
+            setMotionEnabled(enabled) {
+                motionEnabled = !!enabled;
+                applyMotionPreference();
+                return motionEnabled;
+            },
+            reset: resetCardDrawTest,
+            getState: () => Object.freeze({
+                kind: activeModal?.kind || null,
+                open: modalOpen,
+                closing: modalClosing,
+                completing: modalCompleting,
+                modalClasses: Object.freeze([...els.modal.classList]),
+                backdropClasses: Object.freeze([...els.modalBg.classList]),
+                buttonText: els.modalOk.textContent,
+                stampText: els.modalCompleteStamp.textContent.trim(),
+                reducedMotion: document.documentElement.classList.contains("reduced-motion"),
+                loaderVersion: document.getElementById("webLoaderVersion")?.textContent || ""
+            })
+        });
+        if (["task", "king", "complete"].includes(cardDrawPreview)) {
+            window.setTimeout(() => {
+                window.__cardDrawTestHooks.show(cardDrawPreview === "king" ? "king" : "task");
+                if (cardDrawPreview === "complete") {
+                    completeCurrentWebModal();
+                    window.clearTimeout(modalCompleteTimer);
+                }
+            }, 720);
+        }
     }
 
     if (new URLSearchParams(location.search).get("story-teaching-test") === "1") {

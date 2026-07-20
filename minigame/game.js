@@ -12,13 +12,19 @@ ctx.scale(dpr, dpr);
 
 const W = systemInfo.windowWidth;
 const H = systemInfo.windowHeight;
-const GAME_VERSION = '2.20.7';
+const GAME_VERSION = '2.21.0';
 const safeTop = systemInfo.safeArea ? systemInfo.safeArea.top : (systemInfo.statusBarHeight || 0);
 const safeBottom = systemInfo.safeArea ? Math.max(0, H - systemInfo.safeArea.bottom) : 0;
 const safeLeft = systemInfo.safeArea ? Math.max(0, systemInfo.safeArea.left || 0) : 0;
 const safeRight = systemInfo.safeArea ? Math.max(0, W - (systemInfo.safeArea.right || W)) : 0;
 const capsuleBottom = menuButton ? menuButton.bottom : safeTop + 44;
 const CLOUD_ENV_ID = 'cloudbase-d9gnr74k0d691fcd3';
+const CLOUD_SAVE_FUNCTION_NAME = 'cloudSave';
+const CLOUD_SAVE_KEYS = Object.freeze([
+  'ludo_minigame_state_v3',
+  'ludo_minigame_setup_v1',
+  'ludo_minigame_task_packs_v1'
+]);
 
 const ASSETS = {
   bg: 'assets/minigame/ui/home_bg_mobile.jpg',
@@ -70,6 +76,7 @@ let logText = '掷出 6 才能起飞';
 let modal = null;
 let modalQueue = [];
 let modalOpenedAt = 0;
+let modalCompletingAt = 0;
 let nicknameReviewPending = false;
 let settingsPage = 0;
 let settingsCategory = 'players';
@@ -98,6 +105,10 @@ const RESCUE_BADGE_STORAGE_KEY = 'ludo_rescue_badge_v1';
 const TEACHING_GUIDE_STORAGE_KEY = 'ludo_teaching_guide_v1';
 let storyGuide = { open: false, step: 0, pendingAction: '' };
 let teachingGuide = { open: false, pending: false, step: 'roll', lastRoll: null };
+let cloudSaveRestoreStarted = false;
+const cloudSavePendingData = {};
+const cloudSaveWriteTimers = {};
+const cloudSaveRequestChains = {};
 let gameLayout = null;
 const TASK_PACK_LABELS = { safe_family: '家庭安全', party_light: '聚会轻松', party_fun: '聚会搞笑', couple_light: '情侣互动', king: '国王卡' };
 const DEFAULT_TASK_PACKS = { safe_family: true, party_light: true, party_fun: true, couple_light: false, king: true };
@@ -294,7 +305,10 @@ function loadSetupPlayers() {
   if (changed) wx.setStorageSync('ludo_minigame_setup_v1', players);
   return players;
 }
-function saveSetupPlayers() { wx.setStorageSync('ludo_minigame_setup_v1', setupPlayers); }
+function saveSetupPlayers() {
+  wx.setStorageSync('ludo_minigame_setup_v1', setupPlayers);
+  if (typeof queueCloudSave === 'function') queueCloudSave('ludo_minigame_setup_v1', setupPlayers);
+}
 function hasCompletedStoryGuide() {
   const saved = wx.getStorageSync(STORY_GUIDE_STORAGE_KEY);
   return saved === true || saved?.completed === true;
@@ -365,6 +379,109 @@ function ensureCloudSecurity() {
   cloudSecurityReady = initCloudSecurity();
   return cloudSecurityReady;
 }
+function hasLocalCloudSave(key) {
+  const value = wx.getStorageSync(key);
+  return value !== undefined && value !== null && value !== '';
+}
+function cloneCloudSaveData(value) {
+  try { return JSON.parse(JSON.stringify(value)); } catch (error) { return null; }
+}
+function cloudSaveCall(data) {
+  if (!ensureCloudSecurity() || !wx.cloud || typeof wx.cloud.callFunction !== 'function') return Promise.resolve(null);
+  return Promise.resolve(wx.cloud.callFunction({
+    name: CLOUD_SAVE_FUNCTION_NAME,
+    data
+  })).then(response => response?.result || null).catch(() => null);
+}
+function queueCloudSaveRequest(key, request) {
+  const previous = cloudSaveRequestChains[key] || Promise.resolve();
+  const current = previous.catch(() => null).then(request);
+  cloudSaveRequestChains[key] = current;
+  return current.finally(() => {
+    if (cloudSaveRequestChains[key] === current) delete cloudSaveRequestChains[key];
+  });
+}
+function sanitizeCloudSaveData(key, value) {
+  if (key === 'ludo_minigame_state_v3') {
+    const stateCopy = cloneCloudSaveData(value);
+    const normalized = stateCopy ? normalizeState(stateCopy) : null;
+    return normalized && normalized.players.length >= 2 ? normalized : null;
+  }
+  if (key === 'ludo_minigame_setup_v1') {
+    if (!Array.isArray(value) || value.length < 2 || value.length > 16) return null;
+    return normalizeSetupPlayerNames(value.slice(0, 16).map((player, index) => ({
+      name: String(player?.name || ''),
+      color: ['R', 'Y', 'B', 'G'].includes(player?.color) ? player.color : ['R', 'Y', 'B', 'G'][index % 4],
+      nameReviewed: player?.nameReviewed === true
+    })));
+  }
+  if (key === 'ludo_minigame_task_packs_v1') {
+    const presets = ['family', 'party', 'couple', 'all', 'manual', 'custom'];
+    const packKeys = Object.keys(DEFAULT_TASK_PACKS);
+    if (!value || typeof value !== 'object' || !presets.includes(value.preset) || typeof value.enabled !== 'boolean') return null;
+    if (!value.packs || typeof value.packs !== 'object' || packKeys.some(name => typeof value.packs[name] !== 'boolean')) return null;
+    return {
+      enabled: value.enabled,
+      preset: value.preset,
+      packs: packKeys.reduce((result, name) => ({ ...result, [name]: value.packs[name] }), {})
+    };
+  }
+  return null;
+}
+function writeCloudSave(key, value) {
+  if (!CLOUD_SAVE_KEYS.includes(key)) return Promise.resolve(false);
+  const data = sanitizeCloudSaveData(key, value);
+  if (!data) return Promise.resolve(false);
+  return queueCloudSaveRequest(key, () => cloudSaveCall({ action: 'write', key, data }).then(result => result?.ok === true));
+}
+function queueCloudSave(key, value) {
+  if (!CLOUD_SAVE_KEYS.includes(key)) return;
+  const data = cloneCloudSaveData(value);
+  if (!data) return;
+  cloudSavePendingData[key] = data;
+  if (cloudSaveWriteTimers[key]) return;
+  cloudSaveWriteTimers[key] = setTimeout(() => {
+    delete cloudSaveWriteTimers[key];
+    const pending = cloudSavePendingData[key];
+    delete cloudSavePendingData[key];
+    writeCloudSave(key, pending).finally(() => {
+      if (cloudSavePendingData[key]) queueCloudSave(key, cloudSavePendingData[key]);
+    });
+  }, 280);
+}
+function deleteCloudSave(key) {
+  if (!CLOUD_SAVE_KEYS.includes(key)) return Promise.resolve(false);
+  return queueCloudSaveRequest(key, () => cloudSaveCall({ action: 'delete', key }).then(result => result?.ok === true));
+}
+function cancelQueuedCloudSaveWrites() {
+  CLOUD_SAVE_KEYS.forEach((key) => {
+    if (cloudSaveWriteTimers[key]) clearTimeout(cloudSaveWriteTimers[key]);
+    delete cloudSaveWriteTimers[key];
+    delete cloudSavePendingData[key];
+  });
+}
+function applyRestoredCloudSave(key, data) {
+  const normalized = sanitizeCloudSaveData(key, data);
+  if (!normalized || hasLocalCloudSave(key)) return false;
+  wx.setStorageSync(key, normalized);
+  if (key === 'ludo_minigame_state_v3') state = normalized;
+  if (key === 'ludo_minigame_setup_v1') setupPlayers = normalized;
+  if (key === 'ludo_minigame_task_packs_v1') taskPackSettings = normalized;
+  return true;
+}
+function restoreCloudSaves() {
+  if (cloudSaveRestoreStarted || !ensureCloudSecurity()) return;
+  cloudSaveRestoreStarted = true;
+  CLOUD_SAVE_KEYS.forEach((key) => {
+    if (hasLocalCloudSave(key)) return;
+    cloudSaveCall({ action: 'read', key }).then((result) => {
+      if (result?.ok && result.found) {
+        applyRestoredCloudSave(key, result.data);
+        render();
+      }
+    });
+  });
+}
 function newGameState() {
   const used = { R: 0, Y: 0, B: 0, G: 0 };
   return {
@@ -390,7 +507,10 @@ function newGameState() {
     gameOver: false
   };
 }
-function saveState() { wx.setStorageSync('ludo_minigame_state_v3', state); }
+function saveState() {
+  wx.setStorageSync('ludo_minigame_state_v3', state);
+  if (typeof queueCloudSave === 'function') queueCloudSave('ludo_minigame_state_v3', state);
+}
 function loadState() {
   const saved = wx.getStorageSync('ludo_minigame_state_v3') || null;
   if (!saved) return null;
@@ -481,7 +601,10 @@ function loadTaskPackSettings() {
     packs: { ...DEFAULT_TASK_PACKS, ...(saved?.packs || (hasSavedSettings ? {} : TASK_PACK_PRESETS.family.packs)) }
   };
 }
-function saveTaskPackSettings() { wx.setStorageSync('ludo_minigame_task_packs_v1', taskPackSettings); }
+function saveTaskPackSettings() {
+  wx.setStorageSync('ludo_minigame_task_packs_v1', taskPackSettings);
+  if (typeof queueCloudSave === 'function') queueCloudSave('ludo_minigame_task_packs_v1', taskPackSettings);
+}
 function commercialTaskModeActive() {
   return !!(taskPackSettings.enabled && commercialTaskLibrary?.modes && Array.isArray(commercialTaskLibrary?.tasks));
 }
@@ -627,8 +750,13 @@ function addLog(text, type = '') {
   state.logs.push({ text, type, at: Date.now() });
   if (state.logs.length > 180) state.logs = state.logs.slice(-180);
 }
-function showTask(title, body, actor = '', type = 'task') {
-  const next = { title, body, actor, type };
+function modalVisualType(title, type = 'auto') {
+  if (type === 'king' || String(title || '').includes('国王卡')) return 'king';
+  if (type === 'task') return 'task';
+  return 'notice';
+}
+function showTask(title, body, actor = '', type = 'auto') {
+  const next = { title, body, actor, type: modalVisualType(title, type) };
   if (modal || deferModals) modalQueue.push(next);
   else {
     modal = next;
@@ -637,13 +765,35 @@ function showTask(title, body, actor = '', type = 'task') {
 }
 function startModalAnimation() {
   modalOpenedAt = Date.now();
-  [0, 50, 100, 160, 220].forEach(delay => setTimeout(() => { if (modal) render(); }, delay));
+  modalCompletingAt = 0;
+  [0, 50, 100, 160, 220, 340, 520].forEach(delay => setTimeout(() => { if (modal) render(); }, delay));
 }
-function clearModals() { modal = null; modalQueue = []; modalOpenedAt = 0; }
+function clearModals() { modal = null; modalQueue = []; modalOpenedAt = 0; modalCompletingAt = 0; }
 function closeCurrentModal() {
+  if (modalCompletingAt) return;
   modal = modalQueue.shift() || null;
   if (modal) startModalAnimation();
   else modalOpenedAt = 0;
+}
+function completeCurrentModal() {
+  if (!modal || modalCompletingAt) return;
+  if (modal.type !== 'task' && modal.type !== 'king') {
+    closeCurrentModal();
+    return;
+  }
+  modalCompletingAt = Date.now();
+  const completedModal = modal;
+  const duration = reducedMotionEnabled ? 180 : 460;
+  [0, 90, 180, 300].forEach(delay => setTimeout(() => {
+    if (modal === completedModal) render();
+  }, delay));
+  setTimeout(() => {
+    if (modal !== completedModal || !modalCompletingAt) return;
+    modalCompletingAt = 0;
+    closeCurrentModal();
+    if (!modal && teachingGuide.open && teachingGuide.step === 'waitingTask') teachingGuide.step = 'result';
+    render();
+  }, duration);
 }
 function flushDeferredModal() {
   if (!modal) {
@@ -656,21 +806,21 @@ function triggerBaseRollTask(piece, value) {
   if (state.triggered[key]) return;
   state.triggered[key] = true;
   const commercial = pickTask(modeTaskList('baseRoll', value));
-  showTask(commercial?.title || `基地任务 ${value}点`, commercial?.content || tasks.baseRoll[value] || `掷出 ${value} 点任务`, commercial ? `${piece.name} · ${taskModeLabel()} · 基地${value}点` : piece.name);
+  showTask(commercial?.title || `基地任务 ${value}点`, commercial?.content || tasks.baseRoll[value] || `掷出 ${value} 点任务`, commercial ? `${piece.name} · ${taskModeLabel()} · 基地${value}点` : piece.name, 'task');
 }
 function triggerOuterTask(piece) {
   const commercial = pickTask(modeTaskList('outer'));
-  if (commercial) showTask(commercial.title || TASK_PACK_LABELS[commercial.pack] || '任务卡', commercial.content, `${piece.name} · ${TASK_PACK_LABELS[commercial.pack] || commercial.pack}`);
+  if (commercial) showTask(commercial.title || TASK_PACK_LABELS[commercial.pack] || '任务卡', commercial.content, `${piece.name} · ${TASK_PACK_LABELS[commercial.pack] || commercial.pack}`, 'task');
   else {
     const index = piece.outerIndex % tasks.outer.length;
-    showTask(`外圈任务`, tasks.outer[index], piece.name);
+    showTask(`外圈任务`, tasks.outer[index], piece.name, 'task');
   }
 }
 function triggerStraightTask(piece) {
   if (piece.straightIndex < 1 || piece.straightIndex > 5) return;
   const commercial = pickTask(modeTaskList('straight'));
-  if (commercial) showTask(commercial.title || TASK_PACK_LABELS[commercial.pack] || '任务卡', commercial.content, `${piece.name} · ${TASK_PACK_LABELS[commercial.pack] || commercial.pack}`);
-  else showTask(`直道任务 ${piece.straightIndex}`, tasks.straight[piece.straightIndex - 1], piece.name);
+  if (commercial) showTask(commercial.title || TASK_PACK_LABELS[commercial.pack] || '任务卡', commercial.content, `${piece.name} · ${TASK_PACK_LABELS[commercial.pack] || commercial.pack}`, 'task');
+  else showTask(`直道任务 ${piece.straightIndex}`, tasks.straight[piece.straightIndex - 1], piece.name, 'task');
 }
 function drawWrappedText(text, x, y, maxWidth, lineHeight, maxLines = 4) {
   const chars = Array.from(String(text || ''));
@@ -770,6 +920,7 @@ function finishInit() {
 function init() {
   if (loadingStarted) return;
   loadingStarted = true;
+  restoreCloudSaves();
   loadingError = '';
   loadingNonCriticalError = '';
   loadingProgress = 2;
@@ -871,7 +1022,12 @@ function startHomeAnimationLoop() {
   const tick = (now) => {
     const shouldAnimateLoading = !reducedMotionEnabled && !loaded && !loadingError;
     const shouldAnimateHome = !reducedMotionEnabled && scene === 'home' && loaded && !pieceAnimation;
-    if ((shouldAnimateLoading || shouldAnimateHome) && now - previous >= 42) {
+    const shouldAnimateModal = !reducedMotionEnabled && !!modal && (
+      modal.type === 'king'
+      || modalCompletingAt > 0
+      || now - modalOpenedAt < 560
+    );
+    if ((shouldAnimateLoading || shouldAnimateHome || shouldAnimateModal) && now - previous >= 42) {
       previous = now;
       render();
     }
@@ -1680,9 +1836,18 @@ function drawMiniProgress(y) {
 function drawModal() {
   if (!modal) return;
   buttons.push({ x: 0, y: 0, w: W, h: H, action: 'modalBackdrop' });
-  const progress = Math.min(1, Math.max(0, (Date.now() - modalOpenedAt) / 190));
+  const now = Date.now();
+  const isChallenge = modal.type === 'task' || modal.type === 'king';
+  const revealDuration = !isChallenge ? 190 : (modal.type === 'king' ? 520 : 390);
+  const progress = reducedMotionEnabled ? 1 : Math.min(1, Math.max(0, (now - modalOpenedAt) / revealDuration));
   const eased = 1 - Math.pow(1 - progress, 3);
-  const scale = .92 + eased * .08;
+  const reveal = isChallenge ? Math.min(1, progress / .78) : progress;
+  const flipScaleX = reducedMotionEnabled || !isChallenge
+    ? 1
+    : Math.max(.12, Math.abs(Math.cos((1 - reveal) * Math.PI * .46)));
+  const scale = isChallenge ? .84 + eased * .16 : .92 + eased * .08;
+  const lift = isChallenge ? (1 - eased) * 34 - Math.sin(progress * Math.PI) * 7 : (1 - eased) * 12;
+  const tilt = isChallenge && !reducedMotionEnabled ? (1 - eased) * -.055 : 0;
   ctx.fillStyle = `rgba(20,12,7,${.42 + eased * .27})`;
   ctx.fillRect(0, 0, W, H);
   const isKing = modal.type === 'king' || String(modal.title || '').includes('国王卡');
@@ -1690,10 +1855,54 @@ function drawModal() {
   const cardSize = Math.min(W - 18, H - Math.max(capsuleBottom + 24, 84) - 18, 390);
   const cx = Math.round((W - cardSize) / 2);
   const cy = Math.round(Math.max(capsuleBottom + 16, (H - cardSize) / 2 - 8));
+  if (isKing) {
+    const aura = reducedMotionEnabled ? 0 : (now - modalOpenedAt) / 1700;
+    ctx.save();
+    ctx.translate(W / 2, cy + cardSize / 2);
+    ctx.rotate(aura);
+    for (let index = 0; index < 18; index += 1) {
+      ctx.rotate(Math.PI / 9);
+      const rayWidth = cardSize * (index % 3 === 0 ? .038 : .018);
+      const rayLength = cardSize * (index % 2 === 0 ? .58 : .49);
+      const rayGradient = ctx.createLinearGradient(0, 0, 0, -rayLength);
+      rayGradient.addColorStop(0, 'rgba(255,235,122,.74)');
+      rayGradient.addColorStop(.62, 'rgba(255,194,45,.22)');
+      rayGradient.addColorStop(1, 'rgba(255,194,45,0)');
+      ctx.fillStyle = rayGradient;
+      ctx.beginPath();
+      ctx.moveTo(-rayWidth, 0);
+      ctx.lineTo(0, -rayLength);
+      ctx.lineTo(rayWidth, 0);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+    const sparklePhase = reducedMotionEnabled ? 0 : now / 360;
+    for (let index = 0; index < 10; index += 1) {
+      const angle = index * Math.PI * 2 / 10 + sparklePhase * (index % 2 ? .08 : -.06);
+      const radius = cardSize * (.43 + (index % 3) * .035);
+      const sx = W / 2 + Math.cos(angle) * radius;
+      const sy = cy + cardSize / 2 + Math.sin(angle) * radius;
+      const sparkle = 2.5 + (reducedMotionEnabled ? 0 : (Math.sin(sparklePhase + index) + 1) * 1.8);
+      ctx.fillStyle = index % 2 ? '#fff9bd' : '#ffd447';
+      ctx.beginPath();
+      ctx.moveTo(sx, sy - sparkle * 2);
+      ctx.lineTo(sx + sparkle * .65, sy - sparkle * .65);
+      ctx.lineTo(sx + sparkle * 2, sy);
+      ctx.lineTo(sx + sparkle * .65, sy + sparkle * .65);
+      ctx.lineTo(sx, sy + sparkle * 2);
+      ctx.lineTo(sx - sparkle * .65, sy + sparkle * .65);
+      ctx.lineTo(sx - sparkle * 2, sy);
+      ctx.lineTo(sx - sparkle * .65, sy - sparkle * .65);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
   ctx.save();
   ctx.globalAlpha = .45 + eased * .55;
-  ctx.translate(W / 2, cy + cardSize / 2);
-  ctx.scale(scale, scale);
+  ctx.translate(W / 2, cy + cardSize / 2 + lift);
+  ctx.rotate(tilt);
+  ctx.scale(scale * flipScaleX, scale);
   ctx.translate(-W / 2, -(cy + cardSize / 2));
   ctx.shadowColor = isKing ? 'rgba(255,189,37,.62)' : 'rgba(255,255,255,.52)';
   ctx.shadowBlur = 24;
@@ -1746,7 +1955,7 @@ function drawModal() {
   ctx.fillStyle = '#542d0e';
   ctx.font = '900 14px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('完成，继续', confirmX + confirmW / 2, confirmY + 21);
+  ctx.fillText(isChallenge ? '完成，继续' : '知道了', confirmX + confirmW / 2, confirmY + 21);
   ctx.textAlign = 'left';
   const closeSize = 36;
   const closeX = Math.round(cx + cardSize * .77);
@@ -1759,8 +1968,31 @@ function drawModal() {
   ctx.fillText('×', closeX + closeSize / 2, closeY + closeSize / 2 + 1);
   ctx.textAlign = 'left';
   ctx.restore();
-  buttons.push({ x: confirmX, y: confirmY, w: confirmW, h: 42, action: 'closeModal' });
-  buttons.push({ x: closeX, y: closeY, w: closeSize, h: closeSize, action: 'closeModal' });
+  if (modalCompletingAt) {
+    const completeProgress = reducedMotionEnabled ? 1 : Math.min(1, (now - modalCompletingAt) / 360);
+    const completeEase = 1 - Math.pow(1 - completeProgress, 3);
+    const stampW = Math.round(cardSize * .46);
+    const stampH = 58;
+    const stampX = Math.round(W / 2 - stampW / 2);
+    const stampY = Math.round(cy + cardSize * .54);
+    ctx.save();
+    ctx.globalAlpha = completeEase;
+    ctx.translate(W / 2, stampY + stampH / 2);
+    ctx.rotate(-.08);
+    ctx.scale(.58 + completeEase * .42, .58 + completeEase * .42);
+    ctx.translate(-W / 2, -(stampY + stampH / 2));
+    fillRoundGradient(stampX, stampY, stampW, stampH, 16, [[0, '#36ce78'], [1, '#118447']], true);
+    strokeRoundRect(stampX, stampY, stampW, stampH, 16, '#fff7a8', 3);
+    ctx.fillStyle = '#fffde9';
+    ctx.font = `1000 ${Math.max(16, Math.round(cardSize * .052))}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('✓ 挑战完成', W / 2, stampY + stampH / 2 + 1);
+    ctx.restore();
+  }
+  if (!modalCompletingAt) {
+    buttons.push({ x: confirmX, y: confirmY, w: confirmW, h: 42, action: isChallenge ? 'completeModal' : 'closeModal' });
+    buttons.push({ x: closeX, y: closeY, w: closeSize, h: closeSize, action: 'closeModal' });
+  }
 }
 
 function normalizeDiceValue(value) {
@@ -3384,13 +3616,15 @@ function showTaskManageMenu() {
 function confirmClearAllData() {
   wx.showModal({
     title: '清空全部数据？',
-    content: '这会删除游戏存档、玩家设置、声音与动态偏好、自定义任务和任务模式，操作不能撤销。',
+    content: '这会删除本机和云端的游戏存档、玩家设置、声音与动态偏好、自定义任务和任务模式，操作不能撤销。',
     confirmText: '确认清空',
     confirmColor: '#d94b3d',
     success(res) {
       if (!res.confirm) return;
       ['ludo_minigame_state_v3', 'ludo_minigame_setup_v1', 'ludo_minigame_tasks_v1', 'ludo_minigame_bgm_enabled_v1', 'ludo_minigame_reduced_motion_v1', 'ludo_minigame_task_packs_v1', RESCUE_BADGE_STORAGE_KEY, TEACHING_GUIDE_STORAGE_KEY]
         .forEach(key => wx.removeStorageSync(key));
+      cancelQueuedCloudSaveWrites();
+      CLOUD_SAVE_KEYS.forEach(key => deleteCloudSave(key));
       setupPlayers = defaultSetupPlayers();
       tasks = clone(DEFAULT_TASKS);
       backgroundMusicEnabled = true;
@@ -3658,7 +3892,7 @@ function finishPiece(piece) {
     }).join('\n');
     const finalTask = pickTask(modeTaskList('final'));
     const finalText = finalTask?.content || tasks.final;
-    showTask(finalTask?.title || '游戏结束', `${ranking}\n\n终极任务：\n${finalText}`, finalTask ? `${taskModeLabel()} · 终局` : '终局');
+    showTask(finalTask?.title || '游戏结束', `${ranking}\n\n终极任务：\n${finalText}`, finalTask ? `${taskModeLabel()} · 终局` : '终局', 'task');
     if (receivedRescueBadge) {
       showTask('糖果公主获救！', '四色飞行小勇士穿过糖果云海，带糖果公主回到了棉花糖云堡。\n\n获得：糖果云国救援徽章', '第一章 · 救援完成', 'reward');
     }
@@ -3779,7 +4013,7 @@ function resolveDiceRoll(value) {
       appendMovePoint(outerPath[piece.outerIndex], 'fly');
       addLog(`${piece.name} 起飞，再掷一次`);
       const takeoffTask = pickTask(modeTaskList('takeoff'));
-      showTask(takeoffTask?.title || '起飞任务', takeoffTask?.content || tasks.takeoff, takeoffTask ? `${piece.name} · ${taskModeLabel()} · 起飞` : piece.name);
+      showTask(takeoffTask?.title || '起飞任务', takeoffTask?.content || tasks.takeoff, takeoffTask ? `${piece.name} · ${taskModeLabel()} · 起飞` : piece.name, 'task');
     } else {
       addLog(`${piece.name} 未起飞，轮到下一位`);
       if (value >= 2 && value <= 5) triggerBaseRollTask(piece, value);
@@ -3993,6 +4227,9 @@ function handleAction(action) {
   if (action.startsWith('taskEdit:')) {
     const [, category, rawIndex] = action.split(':');
     editTaskItem(category, Number(rawIndex));
+  }
+  if (action === 'completeModal') {
+    completeCurrentModal();
   }
   if (action === 'closeModal' || action === 'modalBackdrop') {
     closeCurrentModal();
