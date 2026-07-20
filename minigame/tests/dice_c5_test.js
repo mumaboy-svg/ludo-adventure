@@ -60,7 +60,7 @@ const {
   diceSideValues
 } = sandbox.module.exports;
 
-assert(source.includes("const GAME_VERSION = '2.20.1';"), '小游戏版本应为 2.20.1');
+assert(source.includes("const GAME_VERSION = '2.20.5';"), '小游戏版本应为 2.20.5');
 assert.strictEqual(normalizeDiceValue(2), 2);
 assert.strictEqual(normalizeDiceValue(5), 5);
 assert.strictEqual(normalizeDiceValue('bad'), 1);
@@ -93,6 +93,7 @@ for (let finalValue = 1; finalValue <= 6; finalValue += 1) {
 }
 
 const launch = diceMotionState(.24, 60, false);
+const flipEdge = diceMotionState(.07, 60, false);
 const firstImpact = diceMotionState(.56, 60, false);
 const rebound = diceMotionState(.66, 60, false);
 const secondImpact = diceMotionState(.82, 60, false);
@@ -106,6 +107,10 @@ assert.strictEqual(settled.offsetX, 0, '动画结束横向位移必须归零');
 assert.strictEqual(settled.lift, 0, '动画结束高度必须归零');
 assert.strictEqual(settled.impact, 0, '动画结束碰撞反馈必须归零');
 assert(reducedLaunch.offsetX < launch.offsetX && reducedLaunch.lift < launch.lift, '低动态模式必须缩短运动幅度');
+assert(Math.abs(launch.tumble) > Math.PI, '首段抛出必须产生可见翻转角度');
+assert(Math.abs(Math.cos(flipEdge.tumble)) < .35, '翻转途中骰身必须经过明显的立方体朝向变化');
+assert.strictEqual(settled.tumble, 0, '动画结束翻转角度必须归零');
+assert(reducedLaunch.tumble < launch.tumble, '低动态模式必须缩短翻转幅度');
 
 const rollDiceSource = extractFunction('rollDice');
 assert(rollDiceSource.includes('const transaction = createDiceRollTransaction();'), 'rollDice 必须先创建唯一 transaction');
@@ -117,12 +122,19 @@ assert(
   '最终点数必须在结束 rolling 状态前先绘制落定帧'
 );
 assert(source.includes('DICE_PIP_POSITIONS'), '必须保留统一点位映射');
-assert(source.includes('drawDiceFacePolygon(top'), '必须绘制骰子顶部');
-assert(source.includes('drawDiceFacePolygon(right'), '必须绘制骰子右侧');
+assert(source.includes('drawDiceCubeFace(face.points'), '必须按可见面绘制骰子立方体');
 assert(source.includes('diceMotionState(progress, size, reducedMotionEnabled)'), 'Canvas 骰子必须使用统一的轨迹状态');
 assert(source.includes('motion.impact > 0'), 'Canvas 骰子必须绘制两次落地反馈');
 assert(extractFunction('diceMotionState').includes('p < .56') && extractFunction('diceMotionState').includes('p < .82'), '小游戏轨迹必须与网页版使用同一组三阶段接触时机');
-assert(source.includes('const pipRadius = Math.max(2.3, size * .077);'), '骰点尺寸必须随骰身尺寸按网页版比例缩放');
+assert(source.includes('const flipIntensity = rolling ? (reducedMotionEnabled ? .28 : 1) : 0;'), '低动态模式必须保留更轻的骰身翻转反馈');
+assert(source.includes('function rotateDiceCubePoint(point, angleX, angleY)'), 'Canvas 骰子必须以两个旋转轴计算立方体顶点');
+assert(source.includes('function projectDiceCubePoint(point, angleX, angleY, perspective)'), 'Canvas 骰子必须把立方体顶点投影到屏幕');
+assert(source.includes('const cubeFaces = ['), 'Canvas 骰子必须绘制六个立方体面并由可见面筛选');
+assert(source.includes('.filter(face => face.visible)'), 'Canvas 骰子必须只绘制面向镜头的立方体面');
+assert(source.includes('const faceValuesBySide = {'), 'Canvas 骰子必须为立方体六个面保留正反点数映射');
+assert(source.includes('const angleX = rolling ? -.55 + spin : 0;'), '骰子静止时必须取消 X 轴倾斜，仅保留结果正面');
+assert(source.includes('const angleY = rolling ? -.68 + spin * .68 : 0;'), '骰子静止时必须取消 Y 轴倾斜，仅保留结果正面');
+assert(source.includes('const pipRadius = Math.max(2.15, size * .07);'), '骰点尺寸必须随立方体面尺寸缩放');
 assert(rollDiceSource.includes('const duration = reducedMotionEnabled ? 180 : 820;'), '小游戏骰子时长必须与网页版常规/低动态时长同步');
 
-console.log('PASS: 小游戏骰子 30 次 transaction、2/5 点、网页版三阶段轨迹、动态阴影、连点锁和实体三面绘制检查通过。');
+console.log('PASS: 小游戏骰子 30 次 transaction、2/5 点、三阶段翻转/弹跳、动态阴影、连点锁、滚动立方体和静止单结果面检查通过。');

@@ -12,7 +12,7 @@ ctx.scale(dpr, dpr);
 
 const W = systemInfo.windowWidth;
 const H = systemInfo.windowHeight;
-const GAME_VERSION = '2.20.1';
+const GAME_VERSION = '2.20.5';
 const safeTop = systemInfo.safeArea ? systemInfo.safeArea.top : (systemInfo.statusBarHeight || 0);
 const safeBottom = systemInfo.safeArea ? Math.max(0, H - systemInfo.safeArea.bottom) : 0;
 const safeLeft = systemInfo.safeArea ? Math.max(0, systemInfo.safeArea.left || 0) : 0;
@@ -94,7 +94,11 @@ let backgroundMusicEnabled = wx.getStorageSync('ludo_minigame_bgm_enabled_v1') !
 let reducedMotionEnabled = wx.getStorageSync('ludo_minigame_reduced_motion_v1') === true;
 let visualAnimationLoopStarted = false;
 const STORY_GUIDE_STORAGE_KEY = 'ludo_story_guide_v1';
+const RESCUE_BADGE_STORAGE_KEY = 'ludo_rescue_badge_v1';
+const TEACHING_GUIDE_STORAGE_KEY = 'ludo_teaching_guide_v1';
 let storyGuide = { open: false, step: 0, pendingAction: '' };
+let teachingGuide = { open: false, pending: false, step: 'roll', lastRoll: null };
+let gameLayout = null;
 const TASK_PACK_LABELS = { safe_family: '家庭安全', party_light: '聚会轻松', party_fun: '聚会搞笑', couple_light: '情侣互动', king: '国王卡' };
 const DEFAULT_TASK_PACKS = { safe_family: true, party_light: true, party_fun: true, couple_light: false, king: true };
 const TASK_PACK_PRESETS = {
@@ -298,6 +302,38 @@ function hasCompletedStoryGuide() {
 function markStoryGuideCompleted() {
   wx.setStorageSync(STORY_GUIDE_STORAGE_KEY, { completed: true, completedAt: Date.now() });
 }
+function hasRescueBadge() {
+  const saved = wx.getStorageSync(RESCUE_BADGE_STORAGE_KEY);
+  return saved === true || saved?.completed === true;
+}
+function awardRescueBadge() {
+  if (hasRescueBadge()) return false;
+  wx.setStorageSync(RESCUE_BADGE_STORAGE_KEY, { completed: true, completedAt: Date.now() });
+  return true;
+}
+function hasCompletedTeachingGuide() {
+  const saved = wx.getStorageSync(TEACHING_GUIDE_STORAGE_KEY);
+  return saved === true || saved?.completed === true;
+}
+function markTeachingGuideCompleted() {
+  wx.setStorageSync(TEACHING_GUIDE_STORAGE_KEY, { completed: true, completedAt: Date.now() });
+}
+function requestTeachingGuide() {
+  if (!hasCompletedTeachingGuide()) teachingGuide.pending = true;
+}
+function startTeachingGuideForFreshGame() {
+  if (!teachingGuide.pending || hasCompletedTeachingGuide()) return;
+  teachingGuide = { open: true, pending: false, step: 'roll', lastRoll: null };
+}
+function completeTeachingGuide() {
+  markTeachingGuideCompleted();
+  teachingGuide = { open: false, pending: false, step: 'done', lastRoll: teachingGuide.lastRoll };
+}
+function advanceTeachingGuide() {
+  if (!teachingGuide.open) return;
+  if (teachingGuide.step === 'result') teachingGuide.step = 'task';
+  else if (teachingGuide.step === 'task') completeTeachingGuide();
+}
 function openStoryGuide(pendingAction = '') {
   storyGuide = { open: true, step: 0, pendingAction };
 }
@@ -310,6 +346,7 @@ function finishStoryGuide() {
   const pendingAction = storyGuide.pendingAction;
   markStoryGuideCompleted();
   storyGuide = { open: false, step: 0, pendingAction: '' };
+  if (pendingAction === 'new' || pendingAction === 'quick') requestTeachingGuide();
   if (pendingAction === 'new') scene = 'settings';
   if (pendingAction === 'quick') confirmStartFreshGame('糖果云国救援开始：掷出 6 才能起飞');
 }
@@ -1209,6 +1246,83 @@ function drawStoryGuide() {
   buttons.push({ x: primaryX, y: buttonY, w: primaryW, h: buttonH, action: 'storyGuideNext' });
 }
 
+function drawTeachingGuide() {
+  if (!teachingGuide.open || !gameLayout) return;
+  const pulse = reducedMotionEnabled ? 1 : 1 + Math.sin((Date.now() - bootTime) / 420) * .035;
+  const compact = H < 720 || W > H;
+
+  ctx.fillStyle = 'rgba(31,20,42,.44)';
+  ctx.fillRect(0, 0, W, H);
+
+  if (teachingGuide.step === 'roll') {
+    const { rollX, rollY, rollW, rollH } = gameLayout;
+    ctx.save();
+    ctx.translate(rollX + rollW / 2, rollY + rollH / 2);
+    ctx.scale(pulse, pulse);
+    ctx.translate(-(rollX + rollW / 2), -(rollY + rollH / 2));
+    fillRoundGradient(rollX - 5, rollY - 5, rollW + 10, rollH + 10, 22,
+      [[0, 'rgba(255,255,255,.34)'], [1, 'rgba(255,205,77,.36)']], false);
+    strokeRoundRect(rollX - 5, rollY - 5, rollW + 10, rollH + 10, 22, '#fff6a1', 3);
+    ctx.restore();
+
+    const cardW = Math.min(W - 40, 350);
+    const cardH = compact ? 76 : 84;
+    const cardX = (W - cardW) / 2;
+    const cardY = Math.max(safeTop + 14, gameLayout.diceY - cardH - 18);
+    fillRoundGradient(cardX, cardY, cardW, cardH, 18, [[0, '#fff9e6'], [1, '#ffdca9']], true);
+    strokeRoundRect(cardX, cardY, cardW, cardH, 18, 'rgba(255,255,255,.94)', 2);
+    ctx.fillStyle = '#914d10';
+    ctx.font = `900 ${compact ? 14 : 16}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('第一步：掷骰子', W / 2, cardY + 25);
+    ctx.fillStyle = '#5f3c26';
+    ctx.font = `800 ${compact ? 12 : 13}px sans-serif`;
+    ctx.fillText('点击发光的骰子，替小勇士呼唤顺风。', W / 2, cardY + 51);
+    ctx.textAlign = 'left';
+    buttons.push({ x: 0, y: 0, w: W, h: H, action: 'teachingBackdrop' });
+    buttons.push({ x: rollX, y: rollY, w: rollW, h: rollH, action: 'teachingRoll' });
+    return;
+  }
+
+  const isResult = teachingGuide.step === 'result';
+  const cardW = Math.min(W - 42, 360);
+  const cardH = compact ? 194 : 220;
+  const cardX = (W - cardW) / 2;
+  const cardY = Math.max(safeTop + 22, (H - cardH) / 2 - (compact ? 8 : 18));
+  const title = isResult ? '第二步：看懂这次行动' : '第三步：认识任务卡';
+  const value = Number(teachingGuide.lastRoll);
+  const body = isResult
+    ? (value === 6
+      ? '你掷出了 6 点，小勇士从彩虹机场起飞。掷出 6 后还能再掷一次，继续带它飞向云堡。'
+      : `你掷出了 ${Number.isFinite(value) ? value : '-'} 点。基地里的小勇士需要掷出 6 才能起飞；轮到下一位时，继续观察大家的行动。`)
+    : '刚才弹出的就是任务卡。按卡片提示完成小挑战，关闭卡片后就能继续掷骰、移动和救援。';
+  const buttonText = isResult ? '下一步' : '开始救援';
+  const buttonW = 132;
+  const buttonH = 44;
+  const buttonX = cardX + cardW - buttonW - 20;
+  const buttonY = cardY + cardH - buttonH - 18;
+
+  fillRoundGradient(cardX, cardY, cardW, cardH, 24, [[0, '#fff8df'], [.52, '#ffe7b4'], [1, '#ffd1bd']], true);
+  strokeRoundRect(cardX, cardY, cardW, cardH, 24, 'rgba(255,255,255,.95)', 2);
+  ctx.fillStyle = '#a25b17';
+  ctx.font = `900 ${compact ? 17 : 19}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText(title, W / 2, cardY + 38);
+  const fitted = fitModalText(body, cardW - 44, compact ? 4 : 5, compact ? 12 : 14);
+  const lineH = Math.round(fitted.size * 1.5);
+  ctx.fillStyle = '#5f3c26';
+  ctx.font = `800 ${fitted.size}px sans-serif`;
+  fitted.lines.forEach((line, index) => ctx.fillText(line, W / 2, cardY + 70 + index * lineH));
+  fillRoundGradient(buttonX, buttonY, buttonW, buttonH, buttonH / 2, [[0, '#fff07b'], [.55, '#ffbf3f'], [1, '#ed7f2f']], true);
+  strokeRoundRect(buttonX, buttonY, buttonW, buttonH, buttonH / 2, 'rgba(255,255,255,.92)', 2);
+  ctx.fillStyle = '#69370b';
+  ctx.font = `900 ${compact ? 13 : 15}px sans-serif`;
+  ctx.fillText(buttonText, buttonX + buttonW / 2, buttonY + buttonH * .62);
+  ctx.textAlign = 'left';
+  buttons.push({ x: 0, y: 0, w: W, h: H, action: 'teachingBackdrop' });
+  buttons.push({ x: buttonX, y: buttonY, w: buttonW, h: buttonH, action: 'teachingNext' });
+}
+
 function drawMenuButton(x, y, w, h, title, sub, icon, action, primary, order = 0) {
   const palette = action === 'new'
     ? [[0, 'rgba(255,244,142,.98)'], [1, 'rgba(255,193,53,.96)']]
@@ -1441,6 +1555,19 @@ function drawGame() {
   ctx.restore();
   buttons.push({ x: actionX, y: diceY + 6, w: actionW, h: diceH - 12, action: state.gameOver ? 'records' : 'roll' });
   buttons.push({ x: diceBoxX - 6, y: diceBoxY - 6, w: diceSize + 12, h: diceSize + 12, action: state.gameOver ? 'records' : 'roll' });
+  gameLayout = {
+    diceX,
+    diceY,
+    diceW,
+    diceH,
+    diceBoxX,
+    diceBoxY,
+    diceSize,
+    rollX: diceBoxX - 6,
+    rollY: diceY + 4,
+    rollW: diceX + diceW - diceBoxX + 6,
+    rollH: diceH - 8
+  };
 
   const contentW = W - 92;
   const mainGap = W < 400 ? 7 : 10;
@@ -1628,7 +1755,7 @@ function diceAnimationFrameValue(finalValue, frameIndex) {
 
 function diceMotionState(progress, size, reducedMotion) {
   const p = Math.max(0, Math.min(1, Number(progress) || 0));
-  if (p >= 1) return { offsetX: 0, lift: 0, impact: 0, scale: 1, rotation: 0 };
+  if (p >= 1) return { offsetX: 0, lift: 0, impact: 0, scale: 1, rotation: 0, tumble: 0 };
   const compact = size <= 42;
   const medium = size <= 50;
   const profile = compact
@@ -1643,6 +1770,7 @@ function diceMotionState(progress, size, reducedMotion) {
   let impact = 0;
   let scale = 1;
   let rotation = 0;
+  let tumble = 0;
 
   if (p < .56) {
     const t = p / .56;
@@ -1651,6 +1779,7 @@ function diceMotionState(progress, size, reducedMotion) {
     lift = heightRatio * profile.firstApex * motionScale;
     scale = 1 - (1 - profile.airScale) * heightRatio * motionScale;
     rotation = -.08 + t * .22;
+    tumble = t * Math.PI * 4;
   } else if (p < .82) {
     const t = (p - .56) / .26;
     const heightRatio = Math.sin(Math.PI * t) * .42;
@@ -1659,6 +1788,7 @@ function diceMotionState(progress, size, reducedMotion) {
     impact = Math.max(0, 1 - t / .22);
     scale = 1 - (1 - profile.airScale) * heightRatio * motionScale;
     rotation = .14 - t * .18;
+    tumble = Math.PI * 4 + t * Math.PI * 4;
   } else {
     const t = (p - .82) / .18;
     const eased = easeOutCubic(t);
@@ -1667,6 +1797,7 @@ function diceMotionState(progress, size, reducedMotion) {
     impact = Math.max(0, 1 - t / .30) * .7;
     scale = 1 + Math.sin(Math.PI * t) * .035 * motionScale;
     rotation = -.04 * (1 - eased);
+    tumble = Math.PI * 8 + Math.sin(Math.PI * t) * Math.PI * .18;
   }
 
   return {
@@ -1674,7 +1805,8 @@ function diceMotionState(progress, size, reducedMotion) {
     lift,
     impact,
     scale: scale - impact * .045,
-    rotation: reducedMotion ? 0 : rotation
+    rotation: reducedMotion ? 0 : rotation,
+    tumble: reducedMotion ? tumble * .22 : tumble
   };
 }
 
@@ -1730,6 +1862,58 @@ function drawDicePipsOnRect(x, y, size, value, radius) {
   });
 }
 
+function rotateDiceCubePoint(point, angleX, angleY) {
+  const cosX = Math.cos(angleX);
+  const sinX = Math.sin(angleX);
+  const cosY = Math.cos(angleY);
+  const sinY = Math.sin(angleY);
+  const rotatedY = point.y * cosX - point.z * sinX;
+  const rotatedZ = point.y * sinX + point.z * cosX;
+  return {
+    x: point.x * cosY + rotatedZ * sinY,
+    y: rotatedY,
+    z: -point.x * sinY + rotatedZ * cosY
+  };
+}
+
+function projectDiceCubePoint(point, angleX, angleY, perspective) {
+  const rotated = rotateDiceCubePoint(point, angleX, angleY);
+  const scale = perspective / Math.max(1, perspective - rotated.z);
+  return {
+    x: rotated.x * scale,
+    y: rotated.y * scale,
+    z: rotated.z
+  };
+}
+
+function drawDiceCubeFace(points, value, colors, radius, showValue) {
+  const gradient = ctx.createLinearGradient(points[0].x, points[0].y, points[2].x, points[2].y);
+  gradient.addColorStop(0, colors.light);
+  gradient.addColorStop(1, colors.dark);
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  points.slice(1).forEach(point => ctx.lineTo(point.x, point.y));
+  ctx.closePath();
+  ctx.fillStyle = gradient;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(90,52,20,.68)';
+  ctx.lineWidth = 1.55;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  if (showValue) {
+    drawDicePipsOnQuad(points, value, radius);
+    return;
+  }
+
+  const center = quadPoint(points, .5, .5);
+  ctx.fillStyle = '#30251c';
+  ctx.font = `900 ${Math.round(radius * 4.6)}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('?', center.x, center.y + radius * 1.5);
+  ctx.textAlign = 'left';
+}
+
 function drawDice(x, y, size, value) {
   const hasValue = Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 6;
   const faceValues = diceSideValues(value);
@@ -1737,7 +1921,7 @@ function drawDice(x, y, size, value) {
   const progress = activeDiceRoll ? clamp(elapsed / activeDiceRoll.duration, 0, 1) : 1;
   const motion = rolling
     ? diceMotionState(progress, size, reducedMotionEnabled)
-    : { offsetX: 0, lift: 0, impact: 0, scale: 1, rotation: 0 };
+    : { offsetX: 0, lift: 0, impact: 0, scale: 1, rotation: 0, tumble: 0 };
   const shadowScale = 1 - Math.min(.42, motion.lift / Math.max(1, size) * 1.95) + motion.impact * .08;
   const shadowAlpha = .20 + Math.min(.16, motion.impact * .14 + (1 - shadowScale) * .18);
   const shadowBlur = 2 + motion.impact * 7 + motion.lift / Math.max(1, size) * 5;
@@ -1767,50 +1951,111 @@ function drawDice(x, y, size, value) {
   ctx.translate(centerX + motion.offsetX, centerY - motion.lift);
   ctx.rotate(motion.rotation);
   ctx.scale(motion.scale, motion.scale);
-  ctx.translate(-centerX, -centerY);
-
-  const frontSize = size * .62;
-  const depth = size * (.15 + (rolling && !reducedMotionEnabled ? Math.sin(progress * Math.PI * 5) * .022 : 0));
-  const frontX = x + size * .10;
-  const frontY = y + size * .25;
-  const top = [
-    { x: frontX, y: frontY },
-    { x: frontX + frontSize, y: frontY },
-    { x: frontX + frontSize + depth, y: frontY - depth },
-    { x: frontX + depth, y: frontY - depth }
+  const flipIntensity = rolling ? (reducedMotionEnabled ? .28 : 1) : 0;
+  const cubeHalf = size * .31;
+  const perspective = size * 3.2;
+  const spin = motion.tumble * flipIntensity;
+  const angleX = rolling ? -.55 + spin : 0;
+  const angleY = rolling ? -.68 + spin * .68 : 0;
+  const faceValuesBySide = {
+    front: faceValues.front,
+    back: 7 - faceValues.front,
+    top: faceValues.top,
+    bottom: 7 - faceValues.top,
+    right: faceValues.right,
+    left: 7 - faceValues.right
+  };
+  const cubeFaces = [
+    {
+      name: 'front',
+      normal: { x: 0, y: 0, z: 1 },
+      points: [
+        { x: -cubeHalf, y: -cubeHalf, z: cubeHalf },
+        { x: cubeHalf, y: -cubeHalf, z: cubeHalf },
+        { x: cubeHalf, y: cubeHalf, z: cubeHalf },
+        { x: -cubeHalf, y: cubeHalf, z: cubeHalf }
+      ],
+      colors: { light: '#fffdf8', dark: '#eab95c' }
+    },
+    {
+      name: 'back',
+      normal: { x: 0, y: 0, z: -1 },
+      points: [
+        { x: cubeHalf, y: -cubeHalf, z: -cubeHalf },
+        { x: -cubeHalf, y: -cubeHalf, z: -cubeHalf },
+        { x: -cubeHalf, y: cubeHalf, z: -cubeHalf },
+        { x: cubeHalf, y: cubeHalf, z: -cubeHalf }
+      ],
+      colors: { light: '#f5d991', dark: '#b67428' }
+    },
+    {
+      name: 'top',
+      normal: { x: 0, y: -1, z: 0 },
+      points: [
+        { x: -cubeHalf, y: -cubeHalf, z: -cubeHalf },
+        { x: cubeHalf, y: -cubeHalf, z: -cubeHalf },
+        { x: cubeHalf, y: -cubeHalf, z: cubeHalf },
+        { x: -cubeHalf, y: -cubeHalf, z: cubeHalf }
+      ],
+      colors: { light: '#fffef9', dark: '#efc36c' }
+    },
+    {
+      name: 'bottom',
+      normal: { x: 0, y: 1, z: 0 },
+      points: [
+        { x: -cubeHalf, y: cubeHalf, z: cubeHalf },
+        { x: cubeHalf, y: cubeHalf, z: cubeHalf },
+        { x: cubeHalf, y: cubeHalf, z: -cubeHalf },
+        { x: -cubeHalf, y: cubeHalf, z: -cubeHalf }
+      ],
+      colors: { light: '#e2ae57', dark: '#9e5d22' }
+    },
+    {
+      name: 'right',
+      normal: { x: 1, y: 0, z: 0 },
+      points: [
+        { x: cubeHalf, y: -cubeHalf, z: cubeHalf },
+        { x: cubeHalf, y: -cubeHalf, z: -cubeHalf },
+        { x: cubeHalf, y: cubeHalf, z: -cubeHalf },
+        { x: cubeHalf, y: cubeHalf, z: cubeHalf }
+      ],
+      colors: { light: '#f4c96f', dark: '#bd7028' }
+    },
+    {
+      name: 'left',
+      normal: { x: -1, y: 0, z: 0 },
+      points: [
+        { x: -cubeHalf, y: -cubeHalf, z: -cubeHalf },
+        { x: -cubeHalf, y: -cubeHalf, z: cubeHalf },
+        { x: -cubeHalf, y: cubeHalf, z: cubeHalf },
+        { x: -cubeHalf, y: cubeHalf, z: -cubeHalf }
+      ],
+      colors: { light: '#efbd64', dark: '#a45f20' }
+    }
   ];
-  const right = [
-    { x: frontX + frontSize, y: frontY },
-    { x: frontX + frontSize + depth, y: frontY - depth },
-    { x: frontX + frontSize + depth, y: frontY + frontSize - depth },
-    { x: frontX + frontSize, y: frontY + frontSize }
-  ];
-  const pipRadius = Math.max(2.3, size * .077);
+  const visibleFaces = cubeFaces
+    .map(face => {
+      const normal = rotateDiceCubePoint(face.normal, angleX, angleY);
+      const points = face.points.map(point => projectDiceCubePoint(point, angleX, angleY, perspective));
+      return {
+        ...face,
+        points,
+        depth: points.reduce((sum, point) => sum + point.z, 0) / points.length,
+        visible: normal.z > .035
+      };
+    })
+    .filter(face => face.visible)
+    .sort((a, b) => a.depth - b.depth);
 
-  drawDiceFacePolygon(top, faceValues.top, '#fffdf5', '#efc36c', pipRadius * .72);
-  drawDiceFacePolygon(right, faceValues.right, '#f4c96f', '#bd7028', pipRadius * .72);
-
-  const frontGradient = ctx.createLinearGradient(frontX, frontY, frontX + frontSize, frontY + frontSize);
-  frontGradient.addColorStop(0, '#fffdf8');
-  frontGradient.addColorStop(.62, '#fff0c5');
-  frontGradient.addColorStop(1, '#eab95c');
   ctx.shadowColor = 'rgba(54,29,14,.28)';
-  ctx.shadowBlur = rolling ? 6 : 4;
-  ctx.shadowOffsetY = 3;
-  fillRoundRect(frontX, frontY, frontSize, frontSize, Math.max(7, size * .11), frontGradient, false);
+  ctx.shadowBlur = rolling ? 7 : 4;
+  ctx.shadowOffsetY = 4;
+  const pipRadius = Math.max(2.15, size * .07);
+  visibleFaces.forEach(face => {
+    drawDiceCubeFace(face.points, faceValuesBySide[face.name], face.colors, pipRadius, hasValue);
+  });
   ctx.shadowBlur = 0;
   ctx.shadowOffsetY = 0;
-  strokeRoundRect(frontX, frontY, frontSize, frontSize, Math.max(7, size * .11), 'rgba(90,52,20,.68)', 1.5);
-
-  if (hasValue) {
-    drawDicePipsOnRect(frontX, frontY, frontSize, faceValues.front, pipRadius);
-  } else {
-    ctx.fillStyle = '#30251c';
-    ctx.font = `900 ${Math.round(size * .36)}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.fillText('?', frontX + frontSize / 2, frontY + frontSize * .67);
-    ctx.textAlign = 'left';
-  }
   ctx.restore();
 }
 
@@ -2133,6 +2378,7 @@ function render() {
   else if (scene === 'records') drawRecordsPage();
   else if (scene === 'pieces') drawPieceTest();
   if (scene === 'home') drawStoryGuide();
+  if (scene === 'game') drawTeachingGuide();
   drawModal();
 }
 
@@ -3068,7 +3314,7 @@ function confirmClearAllData() {
     confirmColor: '#d94b3d',
     success(res) {
       if (!res.confirm) return;
-      ['ludo_minigame_state_v3', 'ludo_minigame_setup_v1', 'ludo_minigame_tasks_v1', 'ludo_minigame_bgm_enabled_v1', 'ludo_minigame_reduced_motion_v1', 'ludo_minigame_task_packs_v1']
+      ['ludo_minigame_state_v3', 'ludo_minigame_setup_v1', 'ludo_minigame_tasks_v1', 'ludo_minigame_bgm_enabled_v1', 'ludo_minigame_reduced_motion_v1', 'ludo_minigame_task_packs_v1', RESCUE_BADGE_STORAGE_KEY, TEACHING_GUIDE_STORAGE_KEY]
         .forEach(key => wx.removeStorageSync(key));
       setupPlayers = defaultSetupPlayers();
       tasks = clone(DEFAULT_TASKS);
@@ -3330,6 +3576,7 @@ function finishPiece(piece) {
   showTask('到达终点', `${piece.name} 第 ${piece.finishPlace} 名到达终点！`);
   if (state.finishOrder.length === state.players.length) {
     state.gameOver = true;
+    const receivedRescueBadge = awardRescueBadge();
     const ranking = state.finishOrder.map((id, i) => {
       const ranked = state.players.find((player) => player.id === id);
       return `${i + 1}. ${ranked ? ranked.name : '玩家'}`;
@@ -3337,6 +3584,9 @@ function finishPiece(piece) {
     const finalTask = pickTask(modeTaskList('final'));
     const finalText = finalTask?.content || tasks.final;
     showTask(finalTask?.title || '游戏结束', `${ranking}\n\n终极任务：\n${finalText}`, finalTask ? `${taskModeLabel()} · 终局` : '终局');
+    if (receivedRescueBadge) {
+      showTask('糖果公主获救！', '四色飞行小勇士穿过糖果云海，带糖果公主回到了棉花糖云堡。\n\n获得：糖果云国救援徽章', '第一章 · 救援完成', 'reward');
+    }
   }
 }
 
@@ -3420,6 +3670,9 @@ function finishAnimatedMove(piece) {
     deferModals = false;
     pendingMoveTrack = [];
     flushDeferredModal();
+    if (teachingGuide.open && teachingGuide.step === 'moving') {
+      teachingGuide.step = modal ? 'waitingTask' : 'result';
+    }
     saveState();
     render();
   };
@@ -3435,6 +3688,10 @@ function resolveDiceRoll(value) {
     saveState();
     render();
     return;
+  }
+  if (teachingGuide.open && teachingGuide.step === 'roll') {
+    teachingGuide.step = 'moving';
+    teachingGuide.lastRoll = value;
   }
   beginMoveTrack(piece);
   deferModals = true;
@@ -3507,6 +3764,7 @@ function startFreshGame(message) {
   clearModals();
   saveState();
   scene = 'game';
+  startTeachingGuideForFreshGame();
   announceCurrentPlayerHud();
 }
 
@@ -3567,11 +3825,20 @@ function handleAction(action) {
   }
   if (action === 'storyGuideSkip') finishStoryGuide();
   if (action === 'storyGuideBackdrop') return;
+  if (action === 'teachingBackdrop') return;
+  if (action === 'teachingRoll' && teachingGuide.open && teachingGuide.step === 'roll') rollDice();
+  if (action === 'teachingNext') advanceTeachingGuide();
   if (action === 'new') {
-    if (!startStoryGuideForAction('new')) scene = 'settings';
+    if (!startStoryGuideForAction('new')) {
+      requestTeachingGuide();
+      scene = 'settings';
+    }
   }
   if (action === 'quick') {
-    if (!startStoryGuideForAction('quick')) confirmStartFreshGame('快速开始：掷出 6 才能起飞');
+    if (!startStoryGuideForAction('quick')) {
+      requestTeachingGuide();
+      confirmStartFreshGame('快速开始：掷出 6 才能起飞');
+    }
   }
   if (action === 'continue') continueSavedGame();
   if (action === 'noSavedContinue') showTask('暂无存档', '请先设置玩家并开始新游戏，或从大厅选择快速开始。');
@@ -3651,7 +3918,10 @@ function handleAction(action) {
     const [, category, rawIndex] = action.split(':');
     editTaskItem(category, Number(rawIndex));
   }
-  if (action === 'closeModal' || action === 'modalBackdrop') closeCurrentModal();
+  if (action === 'closeModal' || action === 'modalBackdrop') {
+    closeCurrentModal();
+    if (!modal && teachingGuide.open && teachingGuide.step === 'waitingTask') teachingGuide.step = 'result';
+  }
   if (action === 'roll' && !modal && !rolling && !pieceAnimation) rollDice();
   if (action === 'tasksDemo') showTask('示例任务', tasks.outer[0]);
   if (action === 'editTakeoff') editTaskText('编辑起飞任务', tasks.takeoff, value => { tasks.takeoff = value; });
