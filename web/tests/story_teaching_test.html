@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>故事教学测试</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; padding: 24px; color: #352518; background: #fff3d0;
+            font: 15px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        h1 { margin: 0 0 8px; font-size: 24px; }
+        #summary { margin-bottom: 18px; font-weight: 800; }
+        .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .case {
+            min-height: 88px; padding: 14px; border: 2px solid #e4bd68; border-radius: 8px;
+            background: #fff; box-shadow: 0 8px 18px #7848111a;
+        }
+        .case.pass { border-color: #4db768; }
+        .case.fail { border-color: #e65345; background: #fff0ed; }
+        iframe { position: fixed; width: 1px; height: 1px; border: 0; opacity: 0; pointer-events: none; }
+        @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <h1>网页版故事教学确定性测试</h1>
+    <div id="summary">正在载入正式游戏代码...</div>
+    <div class="grid" id="results"></div>
+    <iframe id="gameFrame" src="../index.html?story-teaching-test=1" title="正式游戏代码"></iframe>
+    <script>
+        function addResult(label, passed, detail) {
+            const card = document.createElement("section");
+            card.className = `case ${passed ? "pass" : "fail"}`;
+            card.innerHTML = `<strong>${passed ? "PASS" : "FAIL"} · ${label}</strong><div>${detail}</div>`;
+            document.getElementById("results").appendChild(card);
+            return passed;
+        }
+
+        document.getElementById("gameFrame").addEventListener("load", () => {
+            const game = document.getElementById("gameFrame").contentWindow;
+            const hooks = game.__storyTeachingTestHooks;
+            let passed = 0;
+            let total = 0;
+            const check = (label, ok, detail) => {
+                total += 1;
+                if (addResult(label, ok, detail)) passed += 1;
+            };
+
+            const available = hooks
+                && hooks.version === "2.20.5"
+                && typeof hooks.clearGuideStorageForTest === "function"
+                && typeof hooks.getGuideState === "function";
+            check("测试 hooks", available, available ? "正式故事教学 hooks 已载入" : "缺少测试 hooks 或版本不符");
+
+            if (available) {
+                hooks.clearGuideStorageForTest();
+                const keys = hooks.storageKeys;
+                check(
+                    "独立本地键",
+                    keys.story === "flight_adventure_story_guide_v1"
+                        && keys.teaching === "flight_adventure_teaching_guide_v1"
+                        && keys.rescue === "flight_adventure_rescue_badge_v1",
+                    `${keys.story} / ${keys.teaching} / ${keys.rescue}`
+                );
+
+                hooks.openStoryGuide("story");
+                hooks.advanceStoryGuide();
+                let state = hooks.getGuideState();
+                check("两页故事", state.story.open && state.story.step === 1, `当前故事页：${state.story.step + 1}`);
+                hooks.finishStoryGuide();
+                state = hooks.getGuideState();
+                check("故事完成", state.storyCompleted && !state.story.open, "故事完成状态独立写入");
+
+                hooks.requestTeachingGuide();
+                hooks.startTeachingGuideForFreshGame();
+                state = hooks.getGuideState();
+                check("真实骰子教学起点", state.teaching.open && state.teaching.step === "roll", `教学步骤：${state.teaching.step}`);
+                hooks.setTeachingWaitingForTaskForTest(6);
+                hooks.showTeachingResultAfterFirstTask();
+                state = hooks.getGuideState();
+                check("首次任务后结果说明", state.teaching.step === "result", `教学步骤：${state.teaching.step}`);
+                hooks.advanceTeachingGuide();
+                state = hooks.getGuideState();
+                check("任务卡说明", state.teaching.step === "task", `教学步骤：${state.teaching.step}`);
+                hooks.advanceTeachingGuide();
+                state = hooks.getGuideState();
+                check("教学完成", state.teachingCompleted && !state.teaching.open, "首局教学完成状态独立写入");
+
+                const firstBadge = hooks.awardRescueBadge();
+                const secondBadge = hooks.awardRescueBadge();
+                state = hooks.getGuideState();
+                check("救援徽章只授予一次", firstBadge && !secondBadge && state.rescueAwarded, "首次授予，后续结算不重复阻塞");
+                hooks.clearGuideStorageForTest();
+            }
+
+            const summary = document.getElementById("summary");
+            summary.textContent = `${passed}/${total} 项通过；覆盖故事、真实骰子教学步骤与首次救援徽章。`;
+            summary.style.color = passed === total ? "#24703a" : "#a52c22";
+            document.title = passed === total ? "PASS · 故事教学测试" : "FAIL · 故事教学测试";
+        });
+    </script>
+</body>
+</html>

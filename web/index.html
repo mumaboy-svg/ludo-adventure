@@ -1208,6 +1208,60 @@
             .modal button { left: 31%; right: 31%; bottom: 14.5%; min-height: 38px; font-size: 12px; }
             .modal .modal-close { left: auto; right: 14.5%; top: 14%; bottom: auto; width: 34px; min-height: 34px; font-size: 21px; }
         }
+        .guide-overlay {
+            position: fixed; inset: 0; z-index: 101; display: none; place-items: center;
+            padding: 18px; background: linear-gradient(180deg, #2b1858b8, #150b27dd);
+            backdrop-filter: blur(4px);
+        }
+        .guide-overlay.open { display: grid; }
+        .guide-card {
+            width: min(92vw, 520px); min-height: min(580px, 78svh); display: grid; align-content: center;
+            gap: 14px; padding: clamp(24px, 6vw, 42px); border: 3px solid #fff9;
+            background: linear-gradient(150deg, #fffdf2 0%, #fff4c5 55%, #ffd99b 100%);
+            color: #4e2c1a; box-shadow: 0 24px 60px #12081f8c, inset 0 2px 0 #fff;
+            text-align: center;
+        }
+        .guide-card::before {
+            content: "✦"; color: #e46b62; font-size: 32px; line-height: 1;
+            text-shadow: -42px 12px 0 #3da7dc, 42px 18px 0 #f1bb2d;
+        }
+        .guide-kicker { margin: 0; color: #a64b37; font-size: 12px; font-weight: 1000; letter-spacing: .08em; }
+        .guide-card h2 { margin: 0; color: #603218; font-size: clamp(25px, 6vw, 38px); line-height: 1.15; }
+        .guide-card p { margin: 0; color: #765135; font-size: clamp(15px, 3.8vw, 18px); line-height: 1.7; font-weight: 800; }
+        .guide-heroes {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 3px auto 1px; width: min(100%, 320px);
+        }
+        .guide-hero {
+            aspect-ratio: 1; display: grid; place-items: center; border: 2px solid #fff;
+            border-radius: 50%; color: #fff; font-size: clamp(21px, 7vw, 34px);
+            box-shadow: inset 0 2px 0 #fff8, 0 5px 10px #5c2e2030;
+        }
+        .guide-hero.red { background: #ef5b50; } .guide-hero.yellow { background: #e7b62a; }
+        .guide-hero.blue { background: #41aee4; } .guide-hero.green { background: #46bf69; }
+        .guide-progress { color: #95673e; font-size: 12px; font-weight: 1000; }
+        .guide-actions { display: flex; justify-content: center; gap: 10px; margin-top: 4px; }
+        .guide-actions button { min-width: 142px; min-height: 46px; }
+        .guide-overlay.roll-lock { z-index: 100; place-items: end center; padding-bottom: max(16px, env(safe-area-inset-bottom)); pointer-events: none; }
+        .guide-overlay.roll-lock .guide-card {
+            min-height: auto; width: min(90vw, 430px); padding: 18px 22px; gap: 7px;
+            background: #fff9deee; pointer-events: none; box-shadow: 0 10px 30px #12081f7a;
+        }
+        .guide-overlay.roll-lock .guide-card::before { font-size: 22px; }
+        .guide-overlay.roll-lock .guide-actions { display: none; }
+        .dice-container.teaching-target {
+            z-index: 102; box-shadow: inset 0 2px 0 #fff, 0 0 0 5px #fff8, 0 0 0 10px #ffd758bb, 0 0 34px 12px #fff0a8;
+            animation: teachingDicePulse 1.05s ease-in-out infinite;
+        }
+        @keyframes teachingDicePulse {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.06); filter: brightness(1.12); }
+        }
+        .reduced-motion .dice-container.teaching-target { animation: none; }
+        @media(max-width: 560px) {
+            .guide-card { min-height: min(520px, 76svh); padding: 24px 20px; }
+            .guide-card p { line-height: 1.6; }
+            .guide-overlay.roll-lock .guide-card { min-height: auto; }
+        }
         @media(max-width: 860px), (orientation: portrait) {
             .home-hero, .setup, .task-center, .game-grid { grid-template-columns: 1fr; }
             .top { display: none; }
@@ -2252,7 +2306,7 @@
         <div class="web-loader-percent" id="webLoaderPercent">0%</div>
         <p class="web-loader-error" id="webLoaderError" hidden></p>
         <button class="web-loader-retry" id="webLoaderRetry" type="button" hidden>重新加载</button>
-        <div class="web-loader-version" id="webLoaderVersion">v2.15.3</div>
+        <div class="web-loader-version" id="webLoaderVersion">v2.20.5</div>
     </div>
 </div>
 <noscript><div class="web-loader-noscript">请开启 JavaScript 后重新进入游戏。</div></noscript>
@@ -2307,6 +2361,7 @@
                     <button class="tool-card" id="homeTaskBtn"><img src="./assets/images/ui/icon_tasks.webp" alt=""><strong>任务中心</strong><span>读取、编辑、导出任务</span></button>
                     <button class="tool-card" id="homeSetupBtn"><img src="./assets/images/ui/icon_settings.webp" alt=""><strong>设置</strong><span>玩家、颜色和开局配置</span></button>
                     <button class="tool-card" id="homeTestBtn"><img src="./assets/images/ui/icon_piece_test.webp" alt=""><strong>棋子测试</strong><span>查看飞机显示效果</span></button>
+                    <button class="tool-card" id="homeStoryBtn"><span class="tool-card-story-icon" aria-hidden="true">✦</span><strong>糖果云国故事</strong><span>重新查看救援启程信</span></button>
                 </div>
             </div>
         </div>
@@ -2637,14 +2692,34 @@
     </div>
 </div>
 
+<div class="guide-overlay" id="guideOverlay" role="dialog" aria-modal="true" aria-live="polite" aria-labelledby="guideTitle">
+    <section class="guide-card">
+        <p class="guide-kicker" id="guideKicker">糖果云国启程信</p>
+        <h2 id="guideTitle">云堡的求救信</h2>
+        <p id="guideBody"></p>
+        <div class="guide-heroes" id="guideHeroes" aria-hidden="true" hidden>
+            <span class="guide-hero red">✈</span><span class="guide-hero yellow">✈</span>
+            <span class="guide-hero blue">✈</span><span class="guide-hero green">✈</span>
+        </div>
+        <div class="guide-progress" id="guideProgress"></div>
+        <div class="guide-actions">
+            <button class="secondary" id="guideSkipBtn" type="button">稍后再看</button>
+            <button id="guidePrimaryBtn" type="button">继续</button>
+        </div>
+    </section>
+</div>
+
 <script>
 (() => {
-    const APP_VERSION = "2.15.3";
+    const APP_VERSION = "2.20.5";
     const STATE_KEY = "flight_adventure_v66_state";
     const TASK_KEY = "flight_adventure_v66_tasks";
     const AUDIO_SETTINGS_KEY = "flight_adventure_audio_v1";
     const PLAYER_SETTINGS_KEY = "flight_adventure_players_v1";
     const VISUAL_SETTINGS_KEY = "flight_adventure_visual_v1";
+    const STORY_GUIDE_STORAGE_KEY = "flight_adventure_story_guide_v1";
+    const TEACHING_GUIDE_STORAGE_KEY = "flight_adventure_teaching_guide_v1";
+    const RESCUE_BADGE_STORAGE_KEY = "flight_adventure_rescue_badge_v1";
     const TASK_LIBRARY_URL = "./assets/tasks/commercial_v2_3_tasks.json";
     const COMMERCIAL_TASK_LIBRARY_KEY = "flight_adventure_commercial_tasks_v1";
     const TASK_PACK_SETTINGS_KEY = "flight_adventure_task_packs_v1";
@@ -2840,6 +2915,28 @@
             value: createDiceValue(randomSource),
             startedAt: Date.now()
         });
+    }
+
+    function cancelDiceRollAnimation() {
+        if (diceAnimationFrame) cancelAnimationFrame(diceAnimationFrame);
+        diceAnimationFrame = null;
+        activeDiceRoll = null;
+        rolling = false;
+
+        const diceMotion = document.getElementById('diceMotion');
+        const diceShadow = document.getElementById('diceShadow');
+        const diceImpactRing = document.getElementById('diceImpactRing');
+        if (diceMotion) diceMotion.style.transform = 'translate(-50%, -50%)';
+        if (diceShadow) {
+            diceShadow.style.transform = 'translate(-50%, -50%)';
+            diceShadow.style.opacity = '';
+            diceShadow.style.filter = '';
+        }
+        if (diceImpactRing) {
+            diceImpactRing.style.marginLeft = '';
+            diceImpactRing.classList.remove('pulse');
+        }
+        if (state) renderDiceFaces(state.lastRoll || 1);
     }
 
     function animateDiceRoll(transaction, callback) {
@@ -3128,7 +3225,7 @@
         kingTasks: el("kingTasks"), finalPunish: el("finalPunish"),
         takeoffTask: el("takeoffTask"), baseRollTasks: el("baseRollTasks"),
         topHomeBtn: el("topHomeBtn"), homeContinueBtn: el("homeContinueBtn"), homeNewGameBtn: el("homeNewGameBtn"),
-        quickStartBtn: el("quickStartBtn"), homeTaskBtn: el("homeTaskBtn"), homeSetupBtn: el("homeSetupBtn"), homeTestBtn: el("homeTestBtn"),
+        quickStartBtn: el("quickStartBtn"), homeTaskBtn: el("homeTaskBtn"), homeSetupBtn: el("homeSetupBtn"), homeTestBtn: el("homeTestBtn"), homeStoryBtn: el("homeStoryBtn"),
         saveSummary: el("saveSummary"), taskCountTotal: el("taskCountTotal"), playerCountTotal: el("playerCountTotal"), homeSaveState: el("homeSaveState"),
         setupBackHomeBtn: el("setupBackHomeBtn"), setupTaskBtn: el("setupTaskBtn"), setupContinueBtn: el("setupContinueBtn"),
         setupTaskTotal: el("setupTaskTotal"), setupSaveState: el("setupSaveState"), setupClearDataBtn: el("setupClearDataBtn"), musicToggleBtn: el("musicToggleBtn"), musicStatusText: el("musicStatusText"),
@@ -3149,6 +3246,8 @@
         playersList: el("playersList"), playerProgressMeta: el("playerProgressMeta"), log: el("log"), coordTip: el("coordTip"),
         modalBg: el("modalBg"), modal: document.querySelector("#modalBg .modal"), modalClose: el("modalClose"), modalSub: el("modalSub"), modalTitle: el("modalTitle"),
         modalBody: el("modalBody"), modalOk: el("modalOk"),
+        guideOverlay: el("guideOverlay"), guideKicker: el("guideKicker"), guideTitle: el("guideTitle"), guideBody: el("guideBody"),
+        guideHeroes: el("guideHeroes"), guideProgress: el("guideProgress"), guidePrimaryBtn: el("guidePrimaryBtn"), guideSkipBtn: el("guideSkipBtn"),
         backSetupBtn: el("backSetupBtn"), gameHomeBtn: el("gameHomeBtn"), debugCoordsBtn: el("debugCoordsBtn"), newGameBtn: el("newGameBtn"),
         gameProgressBtn: el("gameProgressBtn"), gameRecordsBtn: el("gameRecordsBtn"),
         progressBackGameBtn: el("progressBackGameBtn"), progressHomeBtn: el("progressHomeBtn"),
@@ -3168,12 +3267,15 @@
     let modalQueue = [];
     let modalOpen = false;
     let modalClosing = false;
+    let activeModal = null;
     let postMoveQueue = [];
     let postMoveTimer = null;
     let animationLock = false;
     let lastPiecePositions = new Map();
     let pieceMoveTracks = new Map();
     let piecesRenderedOnce = false;
+    let storyGuide = { open: false, step: 0, pendingAction: "" };
+    let teachingGuide = { open: false, pending: false, step: "roll", lastRoll: null };
 
     const WEB_CRITICAL_ASSETS = [
         { type: "image", url: "./assets/images/ui/home_bg_desktop.webp" },
@@ -3205,6 +3307,7 @@
         document.title = `飞行棋 · 大冒险 v${APP_VERSION}`;
         el("appTitle").textContent = `飞行棋 · 大冒险 v${APP_VERSION}`;
         el("homeVersion").textContent = `v${APP_VERSION}`;
+        el("webLoaderVersion").textContent = `v${APP_VERSION}`;
         applyMotionPreference();
         renderBoard();
         renderSetupPlayers();
@@ -3216,6 +3319,138 @@
         updateDashboard();
         showHome();
         if (!commercialTaskLibrary?.modes) loadCommercialTaskLibrary({ silent: true });
+    }
+
+    function storageCompleted(key) {
+        try {
+            const saved = JSON.parse(localStorage.getItem(key) || "null");
+            return saved === true || saved?.completed === true;
+        } catch {
+            return false;
+        }
+    }
+
+    function markStorageCompleted(key) {
+        try { localStorage.setItem(key, JSON.stringify({ completed: true, completedAt: Date.now() })); } catch {}
+    }
+
+    function hasCompletedStoryGuide() { return storageCompleted(STORY_GUIDE_STORAGE_KEY); }
+    function hasCompletedTeachingGuide() { return storageCompleted(TEACHING_GUIDE_STORAGE_KEY); }
+    function hasRescueBadge() { return storageCompleted(RESCUE_BADGE_STORAGE_KEY); }
+
+    function requestTeachingGuide() {
+        if (!hasCompletedTeachingGuide()) teachingGuide.pending = true;
+    }
+
+    function startTeachingGuideForFreshGame() {
+        if (!teachingGuide.pending || hasCompletedTeachingGuide()) return;
+        teachingGuide = { open: true, pending: false, step: "roll", lastRoll: null };
+        renderGuideOverlay();
+    }
+
+    function completeTeachingGuide() {
+        markStorageCompleted(TEACHING_GUIDE_STORAGE_KEY);
+        teachingGuide = { open: false, pending: false, step: "done", lastRoll: teachingGuide.lastRoll };
+        renderGuideOverlay();
+    }
+
+    function awardRescueBadge() {
+        if (hasRescueBadge()) return false;
+        markStorageCompleted(RESCUE_BADGE_STORAGE_KEY);
+        return true;
+    }
+
+    function openStoryGuide(pendingAction = "story") {
+        storyGuide = { open: true, step: 0, pendingAction };
+        renderGuideOverlay();
+    }
+
+    function startStoryGuideForAction(action) {
+        if (hasCompletedStoryGuide()) return false;
+        openStoryGuide(action);
+        return true;
+    }
+
+    function finishStoryGuide() {
+        const pendingAction = storyGuide.pendingAction;
+        markStorageCompleted(STORY_GUIDE_STORAGE_KEY);
+        storyGuide = { open: false, step: 0, pendingAction: "" };
+        renderGuideOverlay();
+        if (pendingAction === "setup" || pendingAction === "quick") requestTeachingGuide();
+        if (pendingAction === "setup") showSetup();
+        if (pendingAction === "quick") startGame();
+    }
+
+    function advanceStoryGuide() {
+        if (!storyGuide.open) return;
+        if (storyGuide.step === 0) {
+            storyGuide.step = 1;
+            renderGuideOverlay();
+        } else {
+            finishStoryGuide();
+        }
+    }
+
+    function advanceTeachingGuide() {
+        if (!teachingGuide.open) return;
+        if (teachingGuide.step === "result") {
+            teachingGuide.step = "task";
+            renderGuideOverlay();
+        } else if (teachingGuide.step === "task") {
+            completeTeachingGuide();
+            showNextModal();
+        }
+    }
+
+    function showTeachingResultAfterFirstTask() {
+        if (!teachingGuide.open || teachingGuide.step !== "waiting-task") return false;
+        teachingGuide.step = "result";
+        renderGuideOverlay();
+        return true;
+    }
+
+    function renderGuideOverlay() {
+        const storyOpen = storyGuide.open;
+        const teachingOpen = teachingGuide.open;
+        const open = storyOpen || (teachingOpen && teachingGuide.step !== "waiting-task");
+        els.guideOverlay.classList.toggle("open", open);
+        els.guideOverlay.classList.toggle("roll-lock", teachingOpen && teachingGuide.step === "roll");
+        els.diceContainer.classList.toggle("teaching-target", teachingOpen && teachingGuide.step === "roll");
+        if (!open) return;
+
+        const isStory = storyOpen;
+        const isFirstStoryPage = isStory && storyGuide.step === 0;
+        const isRollStep = teachingOpen && teachingGuide.step === "roll";
+        els.guideKicker.textContent = isStory ? "糖果云国启程信" : "首局飞行教学";
+        els.guideTitle.textContent = isStory
+            ? (isFirstStoryPage ? "云堡的求救信" : "四色飞行小勇士")
+            : (isRollStep ? "先掷一次真实骰子" : teachingGuide.step === "result" ? `你掷出了 ${teachingGuide.lastRoll} 点` : "这就是任务卡");
+        els.guideBody.textContent = isStory
+            ? (isFirstStoryPage
+                ? "乌云偷走了糖果云国的彩虹糖心，糖果公主被困在棉花糖云堡。她把求救信送给了正在训练的飞行小勇士。"
+                : "红、黄、蓝、绿四架小飞机决定结伴穿过糖果云海。轮到你时掷骰前进，最先抵达终点，也要一起完成这场救援。")
+            : (isRollStep
+                ? "发光骰子是第一步。请直接点击它，骰子会照常随机落点、移动并触发真实任务。"
+                : teachingGuide.step === "result"
+                    ? `基地里的小飞机要掷出 6 点才能起飞。刚才的 ${teachingGuide.lastRoll} 点已经按原规则结算，下一次轮到你时继续观察机会。`
+                    : "每次落点、起飞或国王卡都会带来一张真实任务卡。完成卡片后，救援队就能继续向云堡前进。");
+        els.guideHeroes.hidden = !isStory || isFirstStoryPage;
+        els.guideProgress.textContent = isStory ? `故事 ${storyGuide.step + 1} / 2` : (isRollStep ? "点击发光骰子继续" : "首局教学");
+        els.guideSkipBtn.hidden = !isStory;
+        els.guidePrimaryBtn.hidden = isRollStep;
+        els.guidePrimaryBtn.textContent = isStory
+            ? (isFirstStoryPage ? "认识勇士" : "开始救援")
+            : (teachingGuide.step === "result" ? "我明白了" : "开始救援");
+    }
+
+    function clearOwnedGameData() {
+        [
+            STATE_KEY, TASK_KEY, AUDIO_SETTINGS_KEY, PLAYER_SETTINGS_KEY, VISUAL_SETTINGS_KEY,
+            COMMERCIAL_TASK_LIBRARY_KEY, TASK_PACK_SETTINGS_KEY, TEACHING_GUIDE_STORAGE_KEY,
+            RESCUE_BADGE_STORAGE_KEY
+        ].forEach(key => {
+            try { localStorage.removeItem(key); } catch {}
+        });
     }
 
 
@@ -3304,11 +3539,22 @@
     function bind() {
         els.topHomeBtn.onclick = goHome;
         els.homeContinueBtn.onclick = continueGame;
-        els.homeNewGameBtn.onclick = showSetup;
-        els.quickStartBtn.onclick = startGame;
+        els.homeNewGameBtn.onclick = () => {
+            if (!startStoryGuideForAction("setup")) {
+                requestTeachingGuide();
+                showSetup();
+            }
+        };
+        els.quickStartBtn.onclick = () => {
+            if (!startStoryGuideForAction("quick")) {
+                requestTeachingGuide();
+                startGame();
+            }
+        };
         els.homeTaskBtn.onclick = showTaskCenter;
         els.homeSetupBtn.onclick = showSetup;
         els.homeTestBtn.onclick = () => { window.location.href = "./tests/test_planes.html"; };
+        els.homeStoryBtn.onclick = () => openStoryGuide("story");
         els.setupBackHomeBtn.onclick = goHome;
         els.setupTaskBtn.onclick = showTaskCenter;
         els.setupContinueBtn.onclick = continueGame;
@@ -3341,8 +3587,8 @@
         document.querySelectorAll("[data-task-mode]").forEach(btn => btn.onclick = () => selectTaskMode(btn.dataset.taskMode));
         els.fillDemoBtn.onclick = () => { tasks = JSON.parse(JSON.stringify(demoTasks)); saveTasks(); renderTaskEditors(); updateDashboard(); alert("已填充示例任务。"); };
         const clearAllLocalData = () => {
-            if (confirm("确定清空全部数据？这会删除游戏存档、玩家设置、自定义任务和声音偏好，操作不能撤销。")) {
-                localStorage.clear();
+            if (confirm("确定清空全部数据？这会删除游戏存档、玩家设置、自定义任务和声音偏好；糖果云国故事会保留，操作不能撤销。")) {
+                clearOwnedGameData();
                 location.reload();
             }
         };
@@ -3354,6 +3600,21 @@
         els.modalClose.onclick = closeCurrentWebModal;
         els.modalBg.onclick = (event) => { if (event.target === els.modalBg) closeCurrentWebModal(); };
         document.addEventListener("keydown", (event) => { if (event.key === "Escape" && modalOpen) closeCurrentWebModal(); });
+        document.addEventListener("click", (event) => {
+            if (
+                teachingGuide.open
+                && teachingGuide.step === "roll"
+                && !els.diceContainer.contains(event.target)
+            ) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+            }
+        }, true);
+        els.guidePrimaryBtn.onclick = () => {
+            if (storyGuide.open) advanceStoryGuide();
+            else advanceTeachingGuide();
+        };
+        els.guideSkipBtn.onclick = finishStoryGuide;
         els.backSetupBtn.onclick = returnToSetupFromGame;
         els.gameHomeBtn.onclick = goHome;
         els.gameProgressBtn.onclick = showProgressPage;
@@ -3363,7 +3624,14 @@
         els.recordsBackGameBtn.onclick = showGame;
         els.recordsHomeBtn.onclick = goHome;
         els.debugCoordsBtn.onclick = toggleDebugCoords;
-        els.newGameBtn.onclick = () => { if (confirm("重开游戏？")) { localStorage.removeItem(STATE_KEY); state = null; showSetup(); } };
+        els.newGameBtn.onclick = () => {
+            if (confirm("重开游戏？")) {
+                cancelDiceRollAnimation();
+                localStorage.removeItem(STATE_KEY);
+                state = null;
+                showSetup();
+            }
+        };
         els.board.onmousemove = updateCoordTip;
         els.board.onclick = updateCoordTip;
     }
@@ -3388,6 +3656,7 @@
 
     function persistBeforeNavigation() {
         if (els.taskCenter.classList.contains("active")) saveTasksFromEditors();
+        cancelDiceRollAnimation();
         if (state) saveState();
         closeModalForNavigation();
     }
@@ -3438,6 +3707,7 @@
         els.modalBg.style.display = "none";
         modalOpen = false;
         modalClosing = false;
+        activeModal = null;
         modalQueue = [];
         postMoveQueue = [];
         clearTimeout(postMoveTimer);
@@ -3445,12 +3715,15 @@
 
     function closeCurrentWebModal() {
         if (!modalOpen) return;
+        const showTeachingResult = teachingGuide.open && teachingGuide.step === "waiting-task" && !!activeModal;
         modalOpen = false;
         modalClosing = true;
+        activeModal = null;
         els.modalBg.classList.remove("open");
         setTimeout(() => {
             els.modalBg.style.display = "none";
             modalClosing = false;
+            if (showTeachingResult && showTeachingResultAfterFirstTask()) return;
             showNextModal();
         }, 160);
     }
@@ -3458,7 +3731,10 @@
     function returnToSetupFromGame() {
         if (state) saveState();
         const ok = !state || state.gameOver || confirm("当前游戏已自动保存。返回设置后，如果点击“开始游戏”会创建新局并覆盖当前进度，确定返回设置？");
-        if (ok) showSetup();
+        if (ok) {
+            cancelDiceRollAnimation();
+            showSetup();
+        }
     }
 
     function showHome() {
@@ -3770,6 +4046,7 @@
         lastPiecePositions = new Map();
         piecesRenderedOnce = false;
         showGame();
+        startTeachingGuideForFreshGame();
     }
 
     function continueGame() {
@@ -3858,6 +4135,11 @@
             if (activeDiceRoll?.id !== transaction.id) return;
             state.lastRoll = value;
             addLog(`${label(p)} 掷出 ${value}。`, "hot");
+            if (teachingGuide.open && teachingGuide.step === "roll") {
+                teachingGuide.step = "waiting-task";
+                teachingGuide.lastRoll = value;
+                renderGuideOverlay();
+            }
             if (value === 1) queuePostMoveKing(p, "掷出1点");
 
             if (p.status === "base") {
@@ -3991,6 +4273,9 @@
             addLog("游戏结束！", "bad");
             const finalTask = pickModeTask("final");
             enqueueModal(`🏁 ${finalTask?.title || "游戏结束"}`, `最后一名：${label(p)}\n终极任务：\n${finalTask?.content || tasks.final}`, `${activeModeName()} · 终极任务`);
+            if (awardRescueBadge()) {
+                enqueueModal("🍬 糖果公主获救！", "四色飞行小勇士穿过糖果云海，把糖果公主送回了棉花糖云堡。\n\n获得：糖果云国救援徽章", "第一章 · 救援完成");
+            }
         }
     }
 
@@ -4060,6 +4345,13 @@
             postMoveQueue.push({ title: "🏁 游戏结束", body: `最后一名：${label(p)}
 终极惩罚：
 ${finalTask?.content || tasks.final}`, sub: `${activeModeName()} · 终极任务` });
+            if (awardRescueBadge()) {
+                postMoveQueue.push({
+                    title: "🍬 糖果公主获救！",
+                    body: "四色飞行小勇士穿过糖果云海，把糖果公主送回了棉花糖云堡。\n\n获得：糖果云国救援徽章",
+                    sub: "第一章 · 救援完成"
+                });
+            }
         }
     }
 
@@ -4079,7 +4371,7 @@ ${finalTask?.content || tasks.final}`, sub: `${activeModeName()} · 终极任务
             return;
         }
         const items = postMoveQueue.splice(0);
-        modalQueue.push(...items.map(item => ({ title: item.title, body: item.body, sub: item.sub })));
+        modalQueue.push(...items.map(item => ({ title: item.title, body: item.body, sub: item.sub, kind: item.kind })));
         showNextModal();
     }
 
@@ -4090,8 +4382,9 @@ ${finalTask?.content || tasks.final}`, sub: `${activeModeName()} · 终极任务
 
     function showNextModal() {
         if (modalClosing) return;
-        if (modalQueue.length === 0) { modalOpen = false; renderAll(); schedulePostMoveActions(0); return; }
+        if (modalQueue.length === 0) { modalOpen = false; activeModal = null; renderAll(); schedulePostMoveActions(0); return; }
         const m = modalQueue.shift();
+        activeModal = m;
         modalOpen = true;
         els.modal.classList.toggle("king-card", m.title.startsWith("👑"));
         els.modalTitle.textContent = m.title; els.modalSub.textContent = m.sub || ""; els.modalBody.textContent = m.body || "";
@@ -4649,6 +4942,44 @@ ${finalTask?.content || tasks.final}`, sub: `${activeModeName()} · 终极任务
             getDiceVisualState: () => Object.freeze({
                 result: Number(document.getElementById('diceCube')?.dataset.finalRoll || 1),
                 rotation: Object.freeze({ ...lastDiceRotation })
+            })
+        });
+    }
+
+    if (new URLSearchParams(location.search).get("story-teaching-test") === "1") {
+        window.__storyTeachingTestHooks = Object.freeze({
+            version: APP_VERSION,
+            storageKeys: Object.freeze({
+                story: STORY_GUIDE_STORAGE_KEY,
+                teaching: TEACHING_GUIDE_STORAGE_KEY,
+                rescue: RESCUE_BADGE_STORAGE_KEY
+            }),
+            clearGuideStorageForTest() {
+                localStorage.removeItem(STORY_GUIDE_STORAGE_KEY);
+                localStorage.removeItem(TEACHING_GUIDE_STORAGE_KEY);
+                localStorage.removeItem(RESCUE_BADGE_STORAGE_KEY);
+                storyGuide = { open: false, step: 0, pendingAction: "" };
+                teachingGuide = { open: false, pending: false, step: "roll", lastRoll: null };
+                renderGuideOverlay();
+            },
+            openStoryGuide,
+            advanceStoryGuide,
+            finishStoryGuide,
+            requestTeachingGuide,
+            startTeachingGuideForFreshGame,
+            setTeachingWaitingForTaskForTest(value = 6) {
+                teachingGuide = { open: true, pending: false, step: "waiting-task", lastRoll: Number(value) || 6 };
+                renderGuideOverlay();
+            },
+            showTeachingResultAfterFirstTask,
+            advanceTeachingGuide,
+            awardRescueBadge,
+            getGuideState: () => Object.freeze({
+                story: Object.freeze({ ...storyGuide }),
+                teaching: Object.freeze({ ...teachingGuide }),
+                storyCompleted: hasCompletedStoryGuide(),
+                teachingCompleted: hasCompletedTeachingGuide(),
+                rescueAwarded: hasRescueBadge()
             })
         });
     }

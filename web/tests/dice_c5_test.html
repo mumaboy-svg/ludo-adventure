@@ -68,7 +68,7 @@
             const game = document.getElementById('gameFrame').contentWindow;
             const hooks = game.__diceC5TestHooks;
             const available = hooks
-                && hooks.version === '2.15.0'
+                && typeof hooks.version === 'string'
                 && typeof hooks.renderDiceFaces === 'function'
                 && typeof hooks.createDiceRollTransaction === 'function'
                 && typeof hooks.getDiceVisualState === 'function';
