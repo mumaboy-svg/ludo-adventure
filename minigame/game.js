@@ -12,7 +12,7 @@ ctx.scale(dpr, dpr);
 
 const W = systemInfo.windowWidth;
 const H = systemInfo.windowHeight;
-const GAME_VERSION = '2.20.6';
+const GAME_VERSION = '2.20.7';
 const safeTop = systemInfo.safeArea ? systemInfo.safeArea.top : (systemInfo.statusBarHeight || 0);
 const safeBottom = systemInfo.safeArea ? Math.max(0, H - systemInfo.safeArea.bottom) : 0;
 const safeLeft = systemInfo.safeArea ? Math.max(0, systemInfo.safeArea.left || 0) : 0;
@@ -472,10 +472,13 @@ function loadTasks() { return wx.getStorageSync('ludo_minigame_tasks_v1') || clo
 function saveTasks() { wx.setStorageSync('ludo_minigame_tasks_v1', tasks); }
 function loadTaskPackSettings() {
   const saved = wx.getStorageSync('ludo_minigame_task_packs_v1');
+  const hasSavedSettings = !!(saved && typeof saved === 'object' && (
+    typeof saved.preset === 'string' || Object.prototype.hasOwnProperty.call(saved, 'enabled') || saved.packs
+  ));
   return {
-    enabled: !!saved?.enabled,
-    preset: String(saved?.preset || (saved?.enabled ? 'custom' : 'manual')),
-    packs: { ...DEFAULT_TASK_PACKS, ...(saved?.packs || {}) }
+    enabled: hasSavedSettings ? !!saved.enabled : true,
+    preset: typeof saved?.preset === 'string' ? saved.preset : (hasSavedSettings ? (saved?.enabled ? 'custom' : 'manual') : 'family'),
+    packs: { ...DEFAULT_TASK_PACKS, ...(saved?.packs || (hasSavedSettings ? {} : TASK_PACK_PRESETS.family.packs)) }
   };
 }
 function saveTaskPackSettings() { wx.setStorageSync('ludo_minigame_task_packs_v1', taskPackSettings); }
@@ -2474,7 +2477,7 @@ function settingsPageSize() {
 
 function drawSettings() {
   buttons = [];
-  drawTopTitle('游戏设置', '玩家配置 · 声音画面 · 数据管理', 'settingsBg');
+  drawTopTitle('游戏设置', '玩家配置 · 冒险风格 · 声音画面 · 数据管理', 'settingsBg');
   const landscape = W > H;
   const panelX = Math.max(24, safeLeft + 12);
   const panelRight = Math.max(24, safeRight + 12);
@@ -2554,9 +2557,12 @@ function drawSettingsPlayersSection(x, y, w, h, landscape) {
     const cardY = cardsY + row * (cardH + 6);
     drawSettingsPlayerCard(cardX, cardY, cardW, cardH, player, index);
   });
+  const rows = landscape ? Math.ceil(players.length / 2) : players.length;
+  const pickerY = cardsY + rows * (cardH + 6) + 2;
+  const pickerH = drawSetupTaskModePicker(x, pickerY, w, landscape);
 
   if (!landscape) {
-    const toolsY = Math.min(y + h - 38, cardsY + players.length * (cardH + 6) + 4);
+    const toolsY = Math.min(y + h - 38, Math.max(pickerY + pickerH + 5, cardsY + players.length * (cardH + 6) + 4));
     const toolGap = 7;
     const toolW = (w - toolGap * 3) / 4;
     drawPanelButton(x, toolsY, toolW, 34, '上一页', 'setupPrev', false);
@@ -2564,6 +2570,46 @@ function drawSettingsPlayersSection(x, y, w, h, landscape) {
     drawPanelButton(x + (toolW + toolGap) * 2, toolsY, toolW, 34, '添加', 'setupAdd', false);
     drawPanelButton(x + (toolW + toolGap) * 3, toolsY, toolW, 34, '保存设置', 'saveSetupPreferences', true);
   }
+}
+
+function drawSetupTaskModePicker(x, y, w, landscape) {
+  const modes = [
+    ['family', '家庭'],
+    ['party', '聚会'],
+    ['couple', '情侣'],
+    ['all', '轻松全集'],
+    ['manual', '手动任务']
+  ];
+  const columns = landscape ? 5 : 3;
+  const gap = 5;
+  const buttonH = landscape ? 30 : 28;
+  const rows = Math.ceil(modes.length / columns);
+  const headH = landscape ? 20 : 22;
+  const totalH = headH + rows * buttonH + Math.max(0, rows - 1) * gap;
+  fillRoundRect(x, y, w, totalH, 12, 'rgba(239,249,255,.92)', true);
+  strokeRoundRect(x, y, w, totalH, 12, 'rgba(255,255,255,.92)', 2);
+  ctx.fillStyle = '#493522';
+  ctx.font = `900 ${landscape ? 11 : 12}px sans-serif`;
+  ctx.fillText(`本局冒险风格 · 当前：${taskModeLabel()}`, x + 9, y + (landscape ? 14 : 16));
+
+  const buttonW = (w - gap * (columns - 1) - 10) / columns;
+  modes.forEach(([name, label], index) => {
+    const col = index % columns;
+    const row = Math.floor(index / columns);
+    const selected = taskPackSettings.enabled
+      ? taskPackSettings.preset === name
+      : name === 'manual';
+    drawPanelButton(
+      x + 5 + col * (buttonW + gap),
+      y + headH + row * (buttonH + gap),
+      buttonW,
+      buttonH,
+      label,
+      `setupTaskPreset:${name}`,
+      selected
+    );
+  });
+  return totalH;
 }
 
 function drawSettingsPlayerCard(x, y, w, h, player, index) {
@@ -3888,6 +3934,7 @@ function handleAction(action) {
     if (['players', 'visual', 'data'].includes(category)) settingsCategory = category;
   }
   if (action === 'clearAllData') confirmClearAllData();
+  if (action.startsWith('setupTaskPreset:')) setTaskPackPreset(action.split(':')[1]);
   if (action.startsWith('taskPreset:')) selectTaskMode(action.split(':')[1]);
   if (action === 'taskModes') taskView = 'modes';
   if (action === 'saveManualTasks') { setTaskPackPreset('manual'); saveTasks(); showTask('任务已保存', '手动任务已保存到本机。'); }

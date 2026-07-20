@@ -21,7 +21,7 @@ function extractFunction(name) {
   throw new Error(`函数 ${name} 未闭合`);
 }
 
-assert(source.includes("const GAME_VERSION = '2.20.6';"), '小游戏版本应为 2.20.6');
+assert(source.includes("const GAME_VERSION = '2.20.7';"), '小游戏版本应为 2.20.7');
 assert(source.includes("const STORY_GUIDE_STORAGE_KEY = 'ludo_story_guide_v1';"), '首局引导必须使用独立存储键');
 assert(source.includes("const TEACHING_GUIDE_STORAGE_KEY = 'ludo_teaching_guide_v1';"), '操作教学必须使用独立存储键');
 assert(!source.includes("ludo_minigame_state_v3', { completed"), '首局引导不得写入对局存档');
@@ -138,4 +138,52 @@ assert(resolveDiceSource.includes('if (value >= 2 && value <= 5) triggerBaseRoll
 assert(resolveDiceSource.includes("showTask(takeoffTask?.title || '起飞任务'"), '首掷 6 点必须保留真实起飞任务卡');
 assert(source.includes("drawHomeStoryPill"), '首页必须提供故事重看入口');
 
-console.log('PASS: 糖果云国故事与操作教学、跳过/完成分流、旧存档隔离、重看入口和低动态保护检查通过。');
+const taskPackStorage = {};
+const taskPackSandbox = {
+  wx: {
+    getStorageSync(key) { return taskPackStorage[key]; },
+    setStorageSync(key, value) { taskPackStorage[key] = value; }
+  }
+};
+const taskPackFunctions = ['loadTaskPackSettings', 'saveTaskPackSettings', 'setTaskPackPreset']
+  .map(extractFunction)
+  .join('\n');
+vm.runInNewContext(
+  `const DEFAULT_TASK_PACKS = { safe_family: true, party_light: true, party_fun: true, couple_light: false, king: true };
+   const TASK_PACK_PRESETS = {
+     family: { enabled: true, packs: { safe_family: true, party_light: false, party_fun: false, couple_light: false, king: true } },
+     party: { enabled: true, packs: { safe_family: false, party_light: true, party_fun: true, couple_light: false, king: true } },
+     couple: { enabled: true, packs: { safe_family: false, party_light: false, party_fun: false, couple_light: true, king: true } },
+     all: { enabled: true, packs: { safe_family: true, party_light: true, party_fun: true, couple_light: false, king: true } },
+     manual: { enabled: false, packs: DEFAULT_TASK_PACKS }
+   };
+   ${taskPackFunctions}
+   let taskPackSettings = loadTaskPackSettings();
+   this.api = {
+     get: () => ({ ...taskPackSettings }),
+     reload: () => { taskPackSettings = loadTaskPackSettings(); return { ...taskPackSettings }; },
+     select: name => { setTaskPackPreset(name); return { ...taskPackSettings }; }
+   };`,
+  taskPackSandbox
+);
+assert.deepStrictEqual(
+  JSON.parse(JSON.stringify(taskPackSandbox.api.get())),
+  { enabled: true, preset: 'family', packs: { safe_family: true, party_light: false, party_fun: false, couple_light: false, king: true } },
+  '首次进入新游戏设置必须默认家庭冒险'
+);
+taskPackStorage.ludo_minigame_task_packs_v1 = { enabled: false, preset: 'manual', packs: {} };
+assert.strictEqual(taskPackSandbox.api.reload().preset, 'manual', '已保存手动任务不能被家庭默认覆盖');
+taskPackStorage.ludo_minigame_task_packs_v1 = { enabled: true, preset: 'party', packs: {} };
+assert.strictEqual(taskPackSandbox.api.reload().preset, 'party', '已保存聚会模式不能被家庭默认覆盖');
+assert.strictEqual(taskPackSandbox.api.select('manual').enabled, false, '手动任务必须保持关闭商业任务库');
+assert(extractFunction('drawSettingsPlayersSection').includes('drawSetupTaskModePicker'), '新游戏设置玩家页必须显示冒险风格选择');
+assert(source.includes("function drawSetupTaskModePicker"), '小游戏必须绘制五项紧凑冒险风格选择');
+assert(handleActionSource.includes("action.startsWith('setupTaskPreset:')"), '新游戏设置页必须能切换冒险风格');
+const quickActionStart = handleActionSource.indexOf("if (action === 'quick')");
+const quickActionEnd = handleActionSource.indexOf("if (action === 'continue')", quickActionStart);
+assert(
+  quickActionStart >= 0 && quickActionEnd > quickActionStart && !handleActionSource.slice(quickActionStart, quickActionEnd).includes('setTaskPackPreset'),
+  '快速开始必须沿用已保存的冒险风格'
+);
+
+console.log('PASS: 新游戏冒险风格、糖果云国故事与操作教学、跳过/完成分流、旧存档隔离、重看入口和低动态保护检查通过。');

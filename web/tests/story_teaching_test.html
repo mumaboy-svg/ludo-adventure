@@ -48,14 +48,43 @@
             };
 
             const available = hooks
-                && hooks.version === "2.20.5"
+                && hooks.version === "2.20.7"
                 && typeof hooks.clearGuideStorageForTest === "function"
-                && typeof hooks.getGuideState === "function";
+                && typeof hooks.getGuideState === "function"
+                && typeof hooks.reloadTaskPackSettingsForTest === "function";
             check("测试 hooks", available, available ? "正式故事教学 hooks 已载入" : "缺少测试 hooks 或版本不符");
 
             if (available) {
                 hooks.clearGuideStorageForTest();
                 const keys = hooks.storageKeys;
+                game.localStorage.removeItem(keys.taskPacks);
+                let taskSettings = hooks.reloadTaskPackSettingsForTest();
+                check(
+                    "首次默认家庭冒险",
+                    taskSettings.enabled && taskSettings.mode === "family",
+                    `首次模式：${taskSettings.mode}`
+                );
+                game.localStorage.setItem(keys.taskPacks, JSON.stringify({ enabled: false, mode: "manual", packs: {} }));
+                taskSettings = hooks.reloadTaskPackSettingsForTest();
+                check(
+                    "已保存手动任务不被覆盖",
+                    !taskSettings.enabled && taskSettings.mode === "manual",
+                    `已保存模式：${taskSettings.mode}`
+                );
+                game.localStorage.setItem(keys.taskPacks, JSON.stringify({ enabled: true, mode: "party", packs: {} }));
+                taskSettings = hooks.reloadTaskPackSettingsForTest();
+                check(
+                    "已保存聚会模式不被覆盖",
+                    taskSettings.enabled && taskSettings.mode === "party",
+                    `已保存模式：${taskSettings.mode}`
+                );
+                const setupModes = [...game.document.querySelectorAll(".setup-task-mode-button[data-task-mode]")];
+                check(
+                    "新游戏风格入口",
+                    setupModes.length === 5
+                        && ["family", "party", "couple", "all-light", "manual"].every(mode => setupModes.some(button => button.dataset.taskMode === mode)),
+                    setupModes.map(button => button.dataset.taskMode).join(" / ")
+                );
                 const storyImages = [...game.document.querySelectorAll("#guideScene img, #guideHeroes img")].map(image => image.getAttribute("src"));
                 check(
                     "故事抠图正式引用",
@@ -117,10 +146,12 @@
                 state = hooks.getGuideState();
                 check("救援徽章只授予一次", firstBadge && !secondBadge && state.rescueAwarded, "首次授予，后续结算不重复阻塞");
                 hooks.clearGuideStorageForTest();
+                game.localStorage.removeItem(keys.taskPacks);
+                hooks.reloadTaskPackSettingsForTest();
             }
 
             const summary = document.getElementById("summary");
-            summary.textContent = `${passed}/${total} 项通过；覆盖故事、真实骰子教学步骤与首次救援徽章。`;
+            summary.textContent = `${passed}/${total} 项通过；覆盖新游戏冒险风格、故事、真实骰子教学步骤与首次救援徽章。`;
             summary.style.color = passed === total ? "#24703a" : "#a52c22";
             document.title = passed === total ? "PASS · 故事教学测试" : "FAIL · 故事教学测试";
         });
