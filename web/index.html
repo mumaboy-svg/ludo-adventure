@@ -786,8 +786,15 @@
             z-index: 32;
             filter: drop-shadow(0 10px 14px #0008) drop-shadow(0 0 24px currentColor) brightness(1.15);
         }
+        .piece.flying::after {
+            content: ""; position: absolute; left: 17px; top: 31px; z-index: -1;
+            width: 34px; height: 10px; border-radius: 50%; transform: translate(-50%, -50%);
+            background: #2d1b1470; filter: blur(3px);
+            animation: pieceFlightShadow .32s ease-in-out infinite alternate;
+        }
         .piece.flying .piece-img { animation: flyWobble .22s ease-in-out infinite alternate; }
         @keyframes flyWobble { to { transform: translateY(-6px) rotate(10deg) scale(1.14); } }
+        @keyframes pieceFlightShadow { to { width: 25px; height: 7px; opacity: .48; } }
         .piece-img {
             width: 34px; height: 34px; flex-shrink: 0;
         }
@@ -804,14 +811,34 @@
         }
         .piece.current::before {
             content: ""; position: absolute; left: 17px; top: 17px; z-index: -1;
-            width: 48px; height: 48px; border-radius: 50%; transform: translate(-50%, -50%);
-            background: radial-gradient(circle, #fff 0 26%, currentColor 45%, transparent 68%);
-            opacity: .72; animation: pieceRing 1.05s ease-in-out infinite alternate;
+            width: 50px; height: 50px; border-radius: 50%; transform: translate(-50%, -50%);
+            background: radial-gradient(circle, #fff0 0 43%, #fff 45% 50%, currentColor 54% 62%, transparent 66%);
+            filter: drop-shadow(0 0 7px currentColor);
+            opacity: .9; animation: pieceRing 1.05s ease-in-out infinite alternate;
         }
         .piece.current .piece-img { animation: pieceFloat .72s ease-in-out infinite alternate; }
+        .piece.landed { z-index: 34; }
+        .piece.landed::after {
+            content: ""; position: absolute; left: 17px; top: 24px; z-index: -1;
+            width: 24px; height: 10px; border: 3px solid currentColor; border-radius: 50%;
+            transform: translate(-50%, -50%) scale(.45);
+            opacity: .92; filter: drop-shadow(0 0 5px currentColor);
+            animation: pieceLandingRing .46s cubic-bezier(.16,.75,.3,1) forwards;
+        }
+        .piece.landed .piece-img { animation: pieceLandBounce .46s cubic-bezier(.2,.78,.25,1); }
         @keyframes pulse { to { filter: drop-shadow(0 5px 7px #0007) drop-shadow(0 0 18px #fff) drop-shadow(0 0 22px currentColor) brightness(1.18); } }
-        @keyframes pieceRing { to { width: 62px; height: 62px; opacity: .34; } }
+        @keyframes pieceRing { to { width: 58px; height: 58px; opacity: .54; } }
         @keyframes pieceFloat { to { transform: translateY(-3px) scale(1.05); } }
+        @keyframes pieceLandingRing {
+            70% { opacity: .6; }
+            to { width: 58px; height: 22px; transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
+        @keyframes pieceLandBounce {
+            0% { transform: translateY(-7px) scale(1.08,.94); }
+            38% { transform: translateY(2px) scale(.92,1.1); }
+            68% { transform: translateY(-2px) scale(1.04,.98); }
+            100% { transform: translateY(0) scale(1); }
+        }
         .side { display: grid; gap: 12px; }
         .side .card { border-radius: 26px; }
         .side .card h3 { margin-top: 0; color: #473019; text-shadow: 0 2px 0 #fff8; }
@@ -2192,9 +2219,14 @@
         html.reduced-motion .status.turn-changed .current-player-avatar img,
         html.reduced-motion .piece.current::before,
         html.reduced-motion .piece.current .piece-img,
+        html.reduced-motion .piece.flying::after,
+        html.reduced-motion .piece.flying .piece-img,
+        html.reduced-motion .piece.landed::after,
+        html.reduced-motion .piece.landed .piece-img,
         html.reduced-motion .player-card.current .player-avatar {
             animation: none !important;
         }
+        html.reduced-motion .piece.landed::after { display: none; }
         html.reduced-motion .settings-nav-button,
         html.reduced-motion .task-mode-button,
         html.reduced-motion .setup-task-mode-button,
@@ -2434,6 +2466,13 @@
         }
         @media (prefers-reduced-motion: reduce) {
             .web-loader, .web-loader-fill, .web-loader-plane { transition: none !important; }
+            .piece.current::before,
+            .piece.current .piece-img,
+            .piece.flying::after,
+            .piece.flying .piece-img,
+            .piece.landed::after,
+            .piece.landed .piece-img { animation: none !important; }
+            .piece.landed::after { display: none; }
         }
 
     </style>
@@ -2451,7 +2490,7 @@
         <div class="web-loader-percent" id="webLoaderPercent">0%</div>
         <p class="web-loader-error" id="webLoaderError" hidden></p>
         <button class="web-loader-retry" id="webLoaderRetry" type="button" hidden>重新加载</button>
-        <div class="web-loader-version" id="webLoaderVersion">v2.21.0</div>
+        <div class="web-loader-version" id="webLoaderVersion">v2.22.1</div>
     </div>
 </div>
 <noscript><div class="web-loader-noscript">请开启 JavaScript 后重新进入游戏。</div></noscript>
@@ -2879,7 +2918,7 @@
 
 <script>
 (() => {
-    const APP_VERSION = "2.21.0";
+    const APP_VERSION = "2.22.1";
     const STATE_KEY = "flight_adventure_v66_state";
     const TASK_KEY = "flight_adventure_v66_tasks";
     const AUDIO_SETTINGS_KEY = "flight_adventure_audio_v1";
@@ -4663,6 +4702,15 @@ ${finalTask?.content || tasks.final}`, sub: `${activeModeName()} · 终极任务
         piece.classList.toggle('flying', flying);
     }
 
+    function markPieceLanded(piece) {
+        if (!piece) return;
+        clearTimeout(piece._landingTimer);
+        piece.classList.remove('landed');
+        void piece.offsetWidth;
+        piece.classList.add('landed');
+        piece._landingTimer = setTimeout(() => piece.classList.remove('landed'), 520);
+    }
+
     function animatePieceMove(p, fromPos, toPos, onDone) {
         const pieceEl = document.querySelector(`.piece[data-piece-id="${p.id}"]`);
         if (!pieceEl) { if (onDone) onDone(); return; }
@@ -4693,6 +4741,7 @@ ${finalTask?.content || tasks.final}`, sub: `${activeModeName()} · 终极任务
                 pieceEl.style.top = toPos.y + "%";
                 pieceEl.style.transform = 'translate(-50%,-50%)';
                 pieceEl.classList.remove('flying');
+                markPieceLanded(pieceEl);
                 if (wrap) wrap._flightTimer = setTimeout(() => wrap.classList.remove('flight-focus'), 900);
                 if (onDone) onDone();
             }
@@ -4763,6 +4812,7 @@ ${finalTask?.content || tasks.final}`, sub: `${activeModeName()} · 终极任务
             if (!b) {
                 piece.style.transform = `translate(-50%,-50%) translate(${off.x}px,${off.y}px)`;
                 piece.classList.remove('flying');
+                markPieceLanded(piece);
                 return;
             }
             const start = performance.now();

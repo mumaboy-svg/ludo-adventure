@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>D1.1 棋子反馈测试</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; padding: 24px; color: #352518; background: #fff3d0;
+            font: 15px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        h1 { margin: 0 0 8px; font-size: 24px; }
+        #summary { margin-bottom: 18px; font-weight: 800; }
+        .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .case {
+            min-height: 88px; padding: 14px; border: 2px solid #e4bd68; border-radius: 8px;
+            background: #fff; box-shadow: 0 8px 18px #7848111a;
+        }
+        .case.pass { border-color: #4db768; }
+        .case.fail { border-color: #e65345; background: #fff0ed; }
+        @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <h1>网页版 D1.1 棋子反馈确定性测试</h1>
+    <div id="summary">正在读取正式游戏代码...</div>
+    <div class="grid" id="results"></div>
+    <script>
+        function addResult(label, passed, detail) {
+            const card = document.createElement("section");
+            card.className = `case ${passed ? "pass" : "fail"}`;
+            card.innerHTML = `<strong>${passed ? "PASS" : "FAIL"} · ${label}</strong><div>${detail}</div>`;
+            document.getElementById("results").appendChild(card);
+            return passed;
+        }
+
+        fetch("../index.html", { cache: "no-store" }).then(response => response.text()).then(source => {
+            let passed = 0;
+            let total = 0;
+            const moveStart = source.indexOf("function animatePieceMove(");
+            const moveEnd = source.indexOf("\n    function renderPieces(", moveStart);
+            const moveSource = moveStart >= 0 && moveEnd > moveStart ? source.slice(moveStart, moveEnd) : "";
+            const check = (label, ok, detail) => {
+                total += 1;
+                if (addResult(label, ok, detail)) passed += 1;
+            };
+
+            check("版本同步", source.includes('const APP_VERSION = "2.22.1";'), "网页版应为 v2.22.1");
+            check("当前棋子玩家色光环", source.includes(".piece.current::before") && source.includes("drop-shadow(0 0 7px currentColor)"), "当前态保留细光环，不覆盖棋盘格");
+            check("移动阴影", source.includes(".piece.flying::after") && source.includes("@keyframes pieceFlightShadow"), "移动时绘制脚下椭圆阴影");
+            check("落地扩散环", source.includes(".piece.landed::after") && source.includes("@keyframes pieceLandingRing"), "落地时显示短促扩散环");
+            check("落地压缩回弹", source.includes("@keyframes pieceLandBounce") && source.includes(".piece.landed .piece-img"), "落地棋子进行一次压缩回弹");
+            check("两条移动路径均落地", (source.match(/markPieceLanded\(/g) || []).length >= 3, "飞跃和逐格移动完成后都调用落地反馈");
+            check("反馈不阻塞回调", moveSource.indexOf("markPieceLanded(pieceEl);") < moveSource.lastIndexOf("if (onDone) onDone();"), "飞跃落地反馈在最终完成回调前启动");
+            check("低动态保护", source.includes("html.reduced-motion .piece.landed::after") && source.includes(".piece.landed::after { display: none; }"), "低动态模式保留静态当前态并关闭落地运动");
+
+            const summary = document.getElementById("summary");
+            summary.textContent = `${passed}/${total} 项通过；覆盖当前态、移动阴影、落地反馈、双路径接入和低动态保护。`;
+            summary.style.color = passed === total ? "#24703a" : "#a52c22";
+            document.title = passed === total ? "PASS · D1.1 棋子反馈测试" : "FAIL · D1.1 棋子反馈测试";
+        }).catch(error => {
+            document.getElementById("summary").textContent = `读取失败：${error.message}`;
+            document.title = "FAIL · D1.1 棋子反馈测试";
+        });
+    </script>
+</body>
+</html>

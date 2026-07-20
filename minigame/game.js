@@ -12,7 +12,7 @@ ctx.scale(dpr, dpr);
 
 const W = systemInfo.windowWidth;
 const H = systemInfo.windowHeight;
-const GAME_VERSION = '2.21.0';
+const GAME_VERSION = '2.22.1';
 const safeTop = systemInfo.safeArea ? systemInfo.safeArea.top : (systemInfo.statusBarHeight || 0);
 const safeBottom = systemInfo.safeArea ? Math.max(0, H - systemInfo.safeArea.bottom) : 0;
 const safeLeft = systemInfo.safeArea ? Math.max(0, systemInfo.safeArea.left || 0) : 0;
@@ -93,6 +93,7 @@ let activeDiceRoll = null;
 let currentPlayerHudFeedback = { playerId: '', startedAt: 0 };
 let pressedButtonFeedback = { action: '', startedAt: 0 };
 let pieceAnimation = null;
+let pieceLandingFeedback = null;
 let pendingMoveTrack = [];
 let deferModals = false;
 let backgroundMusic = null;
@@ -802,9 +803,6 @@ function flushDeferredModal() {
   }
 }
 function triggerBaseRollTask(piece, value) {
-  const key = `base-${piece.id}-${value}`;
-  if (state.triggered[key]) return;
-  state.triggered[key] = true;
   const commercial = pickTask(modeTaskList('baseRoll', value));
   showTask(commercial?.title || `基地任务 ${value}点`, commercial?.content || tasks.baseRoll[value] || `掷出 ${value} 点任务`, commercial ? `${piece.name} · ${taskModeLabel()} · 基地${value}点` : piece.name, 'task');
 }
@@ -1002,6 +1000,7 @@ function setBackgroundMusicEnabled(enabled) {
 
 function setReducedMotionEnabled(enabled) {
   reducedMotionEnabled = !!enabled;
+  if (reducedMotionEnabled) pieceLandingFeedback = null;
   wx.setStorageSync('ludo_minigame_reduced_motion_v1', reducedMotionEnabled);
   render();
 }
@@ -1706,7 +1705,7 @@ function drawGame() {
   ctx.restore();
   drawImageContain(images.board, boardX, boardY, boardSize, boardSize);
   if (boardDebug) drawBoardDebugLabels(boardX, boardY, boardSize);
-  state.players.forEach((piece) => drawPiece(piece, boardX, boardY, boardSize));
+  state.players.forEach((piece) => drawPiece(piece, boardX, boardY, boardSize, player?.id));
 
   const panelY = boardY + boardSize + boardPanelGap;
   fillRoundGradient(24, panelY, W - 48, panelH, 28,
@@ -2342,14 +2341,17 @@ function animationPosition(pieceId) {
       const hop = Math.sin(Math.PI * ease) * segment.arc;
       return {
         x: segment.from.x + (segment.to.x - segment.from.x) * ease,
-        y: segment.from.y + (segment.to.y - segment.from.y) * ease - hop
+        y: segment.from.y + (segment.to.y - segment.from.y) * ease - hop,
+        hop,
+        progress: ease,
+        direction: segment.to.x >= segment.from.x ? 1 : -1
       };
     }
     consumed = end;
   }
-  return pieceAnimation.segments.length
-    ? pieceAnimation.segments[pieceAnimation.segments.length - 1].to
-    : null;
+  if (!pieceAnimation.segments.length) return null;
+  const target = pieceAnimation.segments[pieceAnimation.segments.length - 1].to;
+  return { ...target, hop: 0, progress: 1, direction: 1 };
 }
 
 function startPieceAnimation(piece, track, onDone) {
@@ -2364,8 +2366,8 @@ function startPieceAnimation(piece, track, onDone) {
     segments.push({
       from: previous.pos,
       to: current.pos,
-      duration: current.kind === 'fly' ? 900 : 230,
-      arc: current.kind === 'fly' ? 7 : 1.3
+      duration: reducedMotionEnabled ? (current.kind === 'fly' ? 300 : 90) : (current.kind === 'fly' ? 900 : 230),
+      arc: reducedMotionEnabled ? 0 : (current.kind === 'fly' ? 7 : 1.3)
     });
   }
   pieceAnimation = { pieceId: piece.id, segments, startedAt: Date.now() };
@@ -2377,6 +2379,7 @@ function startPieceAnimation(piece, track, onDone) {
       return;
     }
     pieceAnimation = null;
+    startPieceLandingFeedback(piece.id);
     if (onDone) onDone();
   };
   scheduleFrame(tick);
@@ -2385,6 +2388,28 @@ function startPieceAnimation(piece, track, onDone) {
 function scheduleFrame(callback) {
   if (requestFrame) requestFrame(callback);
   else setTimeout(() => callback(Date.now()), 16);
+}
+
+function startPieceLandingFeedback(pieceId) {
+  if (!pieceId || reducedMotionEnabled) {
+    pieceLandingFeedback = null;
+    return;
+  }
+  const startedAt = Date.now();
+  const duration = 480;
+  pieceLandingFeedback = { pieceId, startedAt, duration };
+  const tick = () => {
+    if (!pieceLandingFeedback || pieceLandingFeedback.startedAt !== startedAt) return;
+    const elapsed = Date.now() - startedAt;
+    if (elapsed >= duration || scene !== 'game') {
+      pieceLandingFeedback = null;
+      render();
+      return;
+    }
+    render();
+    scheduleFrame(tick);
+  };
+  scheduleFrame(tick);
 }
 
 function beginMoveTrack(piece) {
@@ -2396,11 +2421,79 @@ function appendMovePoint(pos, kind = 'step') {
   pendingMoveTrack.push({ pos: { x: pos.x, y: pos.y }, kind });
 }
 
-function drawPiece(piece, boardX, boardY, boardSize) {
-  const pos = animationPosition(piece.id) || pieceCoord(piece);
+function drawPiece(piece, boardX, boardY, boardSize, currentPieceId) {
+  const motion = animationPosition(piece.id);
+  const pos = motion || pieceCoord(piece);
   const px = boardX + boardSize * pos.x / 100;
   const py = boardY + boardSize * pos.y / 100;
-  if (images[piece.img]) drawImageContain(images[piece.img], px - 17, py - 17, 34, 34);
+  const colorMap = { R: '#ef4b3e', Y: '#f4c82f', B: '#28aee7', G: '#43c95e' };
+  const pieceColor = colorMap[piece.color] || '#f4c82f';
+  const isCurrent = piece.id === currentPieceId && piece.status !== 'finished';
+  const landingElapsed = pieceLandingFeedback?.pieceId === piece.id
+    ? Date.now() - pieceLandingFeedback.startedAt
+    : -1;
+  const landingProgress = landingElapsed >= 0
+    ? clamp(landingElapsed / pieceLandingFeedback.duration, 0, 1)
+    : -1;
+
+  ctx.save();
+  if (isCurrent) {
+    const pulse = reducedMotionEnabled ? 0 : (Math.sin((Date.now() - bootTime) / 360) + 1) / 2;
+    const ringRadius = 21 + pulse * 3;
+    ctx.globalAlpha = reducedMotionEnabled ? .78 : .66 + pulse * .18;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 5;
+    ctx.shadowColor = pieceColor;
+    ctx.shadowBlur = 8 + pulse * 5;
+    ctx.beginPath();
+    ctx.arc(px, py + 2, ringRadius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = pieceColor;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(px, py + 2, ringRadius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  if (motion) {
+    const hopPixels = boardSize * (motion.hop || 0) / 100;
+    const shadowScale = 1 - Math.min(.36, Math.abs(motion.hop || 0) * .035);
+    ctx.globalAlpha = .34;
+    ctx.fillStyle = '#2d1b14';
+    ctx.shadowBlur = 5;
+    ctx.beginPath();
+    ctx.ellipse(px, py + hopPixels + 15, 15 * shadowScale, 4.5 * shadowScale, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  if (landingProgress >= 0 && landingProgress < 1 && !reducedMotionEnabled) {
+    const eased = 1 - Math.pow(1 - landingProgress, 3);
+    ctx.globalAlpha = (1 - landingProgress) * .9;
+    ctx.strokeStyle = pieceColor;
+    ctx.lineWidth = 3 - landingProgress * 1.5;
+    ctx.shadowColor = pieceColor;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.ellipse(px, py + 12, 12 + eased * 20, 4 + eased * 7, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  if (images[piece.img]) {
+    ctx.save();
+    ctx.translate(px, py);
+    if (motion && !reducedMotionEnabled) {
+      const lift = Math.sin(Math.PI * (motion.progress || 0));
+      ctx.rotate((motion.direction || 1) * lift * .1);
+      ctx.scale(1 + lift * .08, 1 + lift * .04);
+    } else if (landingProgress >= 0 && landingProgress < 1 && !reducedMotionEnabled) {
+      const rebound = Math.sin(Math.PI * Math.min(1, landingProgress * 1.2)) * (1 - landingProgress);
+      ctx.translate(0, -rebound * 7);
+      ctx.scale(1 + rebound * .06, 1 - rebound * .08);
+    }
+    drawImageContain(images[piece.img], -17, -17, 34, 34);
+    ctx.restore();
+  }
   fillRoundRect(px + 10, py - 12, 44, 22, 9, 'rgba(0,0,0,.62)');
   ctx.fillStyle = '#fff';
   ctx.font = '900 11px sans-serif';

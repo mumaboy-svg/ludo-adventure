@@ -21,7 +21,7 @@ function extractFunction(name) {
   throw new Error(`函数 ${name} 未闭合`);
 }
 
-assert(source.includes("const GAME_VERSION = '2.21.0';"), '小游戏版本应为 2.21.0');
+assert(source.includes("const GAME_VERSION = '2.22.1';"), '小游戏版本应为 2.22.1');
 
 const sandbox = { module: { exports: {} }, String };
 vm.runInNewContext(

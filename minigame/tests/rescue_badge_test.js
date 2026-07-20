@@ -21,7 +21,7 @@ function extractFunction(name) {
   throw new Error(`函数 ${name} 未闭合`);
 }
 
-assert(source.includes("const GAME_VERSION = '2.21.0';"), '小游戏版本应为 2.21.0');
+assert(source.includes("const GAME_VERSION = '2.22.1';"), '小游戏版本应为 2.22.1');
 assert(source.includes("const RESCUE_BADGE_STORAGE_KEY = 'ludo_rescue_badge_v1';"), '救援徽章必须使用独立存储键');
 assert(!source.includes("ludo_minigame_state_v3', { rescue"), '救援徽章不得写入对局存档');
 
