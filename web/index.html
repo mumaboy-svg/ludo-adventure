@@ -1228,20 +1228,33 @@
         .guide-kicker { margin: 0; color: #a64b37; font-size: 12px; font-weight: 1000; letter-spacing: .08em; }
         .guide-card h2 { margin: 0; color: #603218; font-size: clamp(25px, 6vw, 38px); line-height: 1.15; }
         .guide-card p { margin: 0; color: #765135; font-size: clamp(15px, 3.8vw, 18px); line-height: 1.7; font-weight: 800; }
+        .guide-scene {
+            position: relative; width: min(100%, 360px); height: clamp(160px, 30vw, 220px); margin: -5px auto 0;
+        }
+        .guide-scene[hidden], .guide-heroes[hidden] { display: none; }
+        .guide-scene img { position: absolute; display: block; object-fit: contain; filter: drop-shadow(0 8px 10px #5c2e2030); }
+        .guide-scene .guide-castle { width: 66%; right: -2%; bottom: 0; }
+        .guide-scene .guide-princess { width: 34%; left: 4%; bottom: -2%; z-index: 1; }
         .guide-heroes {
             display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 3px auto 1px; width: min(100%, 320px);
         }
         .guide-hero {
-            aspect-ratio: 1; display: grid; place-items: center; border: 2px solid #fff;
-            border-radius: 50%; color: #fff; font-size: clamp(21px, 7vw, 34px);
-            box-shadow: inset 0 2px 0 #fff8, 0 5px 10px #5c2e2030;
+            aspect-ratio: 1.18; display: grid; place-items: center; border-bottom: 3px solid var(--hero-color);
+            background: linear-gradient(180deg, var(--hero-tint), #fff0); box-shadow: 0 7px 10px #5c2e2024;
         }
-        .guide-hero.red { background: #ef5b50; } .guide-hero.yellow { background: #e7b62a; }
-        .guide-hero.blue { background: #41aee4; } .guide-hero.green { background: #46bf69; }
+        .guide-hero img { display: block; width: 122%; max-width: none; height: 122%; object-fit: contain; filter: drop-shadow(0 4px 3px #5c2e2030); }
+        .guide-hero.red { --hero-color: #ef5b50; --hero-tint: #fff1eb; }
+        .guide-hero.yellow { --hero-color: #e7b62a; --hero-tint: #fff6d7; }
+        .guide-hero.blue { --hero-color: #41aee4; --hero-tint: #e9f7ff; }
+        .guide-hero.green { --hero-color: #46bf69; --hero-tint: #ebfaef; }
         .guide-progress { color: #95673e; font-size: 12px; font-weight: 1000; }
         .guide-actions { display: flex; justify-content: center; gap: 10px; margin-top: 4px; }
         .guide-actions button { min-width: 142px; min-height: 46px; }
-        .guide-overlay.roll-lock { z-index: 100; place-items: end center; padding-bottom: max(16px, env(safe-area-inset-bottom)); pointer-events: none; }
+        .guide-overlay.roll-lock {
+            z-index: 100; place-items: start center;
+            padding-top: max(16px, env(safe-area-inset-top)); padding-bottom: 16px;
+            background: transparent; backdrop-filter: none; pointer-events: none;
+        }
         .guide-overlay.roll-lock .guide-card {
             min-height: auto; width: min(90vw, 430px); padding: 18px 22px; gap: 7px;
             background: #fff9deee; pointer-events: none; box-shadow: 0 10px 30px #12081f7a;
@@ -1249,14 +1262,32 @@
         .guide-overlay.roll-lock .guide-card::before { font-size: 22px; }
         .guide-overlay.roll-lock .guide-actions { display: none; }
         .dice-container.teaching-target {
-            z-index: 102; box-shadow: inset 0 2px 0 #fff, 0 0 0 5px #fff8, 0 0 0 10px #ffd758bb, 0 0 34px 12px #fff0a8;
-            animation: teachingDicePulse 1.05s ease-in-out infinite;
+            position: relative; isolation: isolate; z-index: 102; cursor: pointer;
+            box-shadow: inset 0 2px 0 #fff, 0 0 0 5px #fff, 0 0 0 12px #ffd449, 0 0 0 18px #fff6bbcc, 0 0 42px 18px #ffd436, 0 0 72px 26px #fff7b6;
+            animation: teachingDicePulse 1.2s ease-in-out infinite;
+        }
+        .dice-container.teaching-target::before {
+            content: ""; position: absolute; inset: -24px; z-index: -1; border: 3px solid #fffdf0;
+            box-shadow: 0 0 0 5px #ffc928, 0 0 34px 12px #fff3a6; pointer-events: none;
+            animation: teachingDiceRing 1.2s ease-out infinite;
+        }
+        .dice-container.teaching-target::after {
+            content: "点我掷骰"; position: absolute; left: 50%; bottom: calc(100% + 22px); z-index: 1;
+            transform: translateX(-50%); padding: 6px 10px; color: #5a3315; background: #fffdf0;
+            border: 2px solid #ffc928; box-shadow: 0 5px 0 #d8891d, 0 10px 20px #2b185866;
+            font-size: 13px; font-weight: 1000; line-height: 1; white-space: nowrap; pointer-events: none;
         }
         @keyframes teachingDicePulse {
-            0%, 100% { transform: scale(1); filter: brightness(1); }
-            50% { transform: scale(1.06); filter: brightness(1.12); }
+            0%, 100% { transform: scale(1); filter: brightness(1.08) saturate(1.08); }
+            50% { transform: scale(1.1); filter: brightness(1.34) saturate(1.22); }
         }
-        .reduced-motion .dice-container.teaching-target { animation: none; }
+        @keyframes teachingDiceRing {
+            0% { opacity: .95; transform: scale(.9); }
+            70% { opacity: 0; transform: scale(1.28); }
+            100% { opacity: 0; transform: scale(1.28); }
+        }
+        .reduced-motion .dice-container.teaching-target,
+        .reduced-motion .dice-container.teaching-target::before { animation: none; }
         @media(max-width: 560px) {
             .guide-card { min-height: min(520px, 76svh); padding: 24px 20px; }
             .guide-card p { line-height: 1.6; }
@@ -2306,7 +2337,7 @@
         <div class="web-loader-percent" id="webLoaderPercent">0%</div>
         <p class="web-loader-error" id="webLoaderError" hidden></p>
         <button class="web-loader-retry" id="webLoaderRetry" type="button" hidden>重新加载</button>
-        <div class="web-loader-version" id="webLoaderVersion">v2.20.5</div>
+        <div class="web-loader-version" id="webLoaderVersion">v2.20.6</div>
     </div>
 </div>
 <noscript><div class="web-loader-noscript">请开启 JavaScript 后重新进入游戏。</div></noscript>
@@ -2696,10 +2727,16 @@
     <section class="guide-card">
         <p class="guide-kicker" id="guideKicker">糖果云国启程信</p>
         <h2 id="guideTitle">云堡的求救信</h2>
+        <div class="guide-scene" id="guideScene" aria-hidden="true">
+            <img class="guide-princess" src="./assets/images/story-guide/princess-candy.webp" alt="">
+            <img class="guide-castle" src="./assets/images/story-guide/cloud-castle.webp" alt="">
+        </div>
         <p id="guideBody"></p>
         <div class="guide-heroes" id="guideHeroes" aria-hidden="true" hidden>
-            <span class="guide-hero red">✈</span><span class="guide-hero yellow">✈</span>
-            <span class="guide-hero blue">✈</span><span class="guide-hero green">✈</span>
+            <span class="guide-hero red"><img src="./assets/images/story-guide/hero-red.webp" alt=""></span>
+            <span class="guide-hero yellow"><img src="./assets/images/story-guide/hero-yellow.webp" alt=""></span>
+            <span class="guide-hero blue"><img src="./assets/images/story-guide/hero-blue.webp" alt=""></span>
+            <span class="guide-hero green"><img src="./assets/images/story-guide/hero-green.webp" alt=""></span>
         </div>
         <div class="guide-progress" id="guideProgress"></div>
         <div class="guide-actions">
@@ -2711,7 +2748,7 @@
 
 <script>
 (() => {
-    const APP_VERSION = "2.20.5";
+    const APP_VERSION = "2.20.6";
     const STATE_KEY = "flight_adventure_v66_state";
     const TASK_KEY = "flight_adventure_v66_tasks";
     const AUDIO_SETTINGS_KEY = "flight_adventure_audio_v1";
@@ -3247,7 +3284,7 @@
         modalBg: el("modalBg"), modal: document.querySelector("#modalBg .modal"), modalClose: el("modalClose"), modalSub: el("modalSub"), modalTitle: el("modalTitle"),
         modalBody: el("modalBody"), modalOk: el("modalOk"),
         guideOverlay: el("guideOverlay"), guideKicker: el("guideKicker"), guideTitle: el("guideTitle"), guideBody: el("guideBody"),
-        guideHeroes: el("guideHeroes"), guideProgress: el("guideProgress"), guidePrimaryBtn: el("guidePrimaryBtn"), guideSkipBtn: el("guideSkipBtn"),
+        guideScene: el("guideScene"), guideHeroes: el("guideHeroes"), guideProgress: el("guideProgress"), guidePrimaryBtn: el("guidePrimaryBtn"), guideSkipBtn: el("guideSkipBtn"),
         backSetupBtn: el("backSetupBtn"), gameHomeBtn: el("gameHomeBtn"), debugCoordsBtn: el("debugCoordsBtn"), newGameBtn: el("newGameBtn"),
         gameProgressBtn: el("gameProgressBtn"), gameRecordsBtn: el("gameRecordsBtn"),
         progressBackGameBtn: el("progressBackGameBtn"), progressHomeBtn: el("progressHomeBtn"),
@@ -3434,6 +3471,7 @@
                 : teachingGuide.step === "result"
                     ? `基地里的小飞机要掷出 6 点才能起飞。刚才的 ${teachingGuide.lastRoll} 点已经按原规则结算，下一次轮到你时继续观察机会。`
                     : "每次落点、起飞或国王卡都会带来一张真实任务卡。完成卡片后，救援队就能继续向云堡前进。");
+        els.guideScene.hidden = !isStory || !isFirstStoryPage;
         els.guideHeroes.hidden = !isStory || isFirstStoryPage;
         els.guideProgress.textContent = isStory ? `故事 ${storyGuide.step + 1} / 2` : (isRollStep ? "点击发光骰子继续" : "首局教学");
         els.guideSkipBtn.hidden = !isStory;

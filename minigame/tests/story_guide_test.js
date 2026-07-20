@@ -21,20 +21,24 @@ function extractFunction(name) {
   throw new Error(`函数 ${name} 未闭合`);
 }
 
-assert(source.includes("const GAME_VERSION = '2.20.5';"), '小游戏版本应为 2.20.5');
+assert(source.includes("const GAME_VERSION = '2.20.6';"), '小游戏版本应为 2.20.6');
 assert(source.includes("const STORY_GUIDE_STORAGE_KEY = 'ludo_story_guide_v1';"), '首局引导必须使用独立存储键');
 assert(source.includes("const TEACHING_GUIDE_STORAGE_KEY = 'ludo_teaching_guide_v1';"), '操作教学必须使用独立存储键');
 assert(!source.includes("ludo_minigame_state_v3', { completed"), '首局引导不得写入对局存档');
-[
-  'guide_princess_candy.webp',
-  'guide_cloud_castle.webp',
-  'guide_hero_red.webp',
-  'guide_hero_yellow.webp',
-  'guide_hero_blue.webp',
-  'guide_hero_green.webp'
-].forEach(fileName => {
+const storyAssetPairs = [
+  ['guide_princess_candy.webp', 'princess-candy.webp'],
+  ['guide_cloud_castle.webp', 'cloud-castle.webp'],
+  ['guide_hero_red.webp', 'hero-red.webp'],
+  ['guide_hero_yellow.webp', 'hero-yellow.webp'],
+  ['guide_hero_blue.webp', 'hero-blue.webp'],
+  ['guide_hero_green.webp', 'hero-green.webp']
+];
+storyAssetPairs.forEach(([fileName, webFileName]) => {
   const assetPath = path.resolve(__dirname, '..', 'packages', 'game-assets', 'assets', 'minigame', 'ui', 'story-guide', fileName);
-  assert(fs.existsSync(assetPath), `缺少首局引导临时素材：${fileName}`);
+  const webAssetPath = path.resolve(__dirname, '..', '..', 'web', 'assets', 'images', 'story-guide', webFileName);
+  assert(fs.existsSync(assetPath), `缺少首局引导正式素材：${fileName}`);
+  assert(fs.existsSync(webAssetPath), `缺少网页故事正式素材：${webFileName}`);
+  assert(Buffer.compare(fs.readFileSync(assetPath), fs.readFileSync(webAssetPath)) === 0, `小游戏与网页故事素材必须同步：${fileName}`);
 });
 
 const storage = {};
@@ -112,6 +116,7 @@ assert(drawStorySource.includes("['guideHeroB', 'planeB']"), '蓝色小勇士必
 assert(drawStorySource.includes("['guideHeroG', 'planeG']"), '绿色小勇士必须保留新素材与旧素材回退');
 assert(drawStorySource.includes('images.guidePrincess') && drawStorySource.includes('images.guideCloudCastle'), '第一页必须使用糖果公主与棉花糖云堡临时素材');
 assert(drawStorySource.includes('糖果公主') && drawStorySource.includes('云堡'), '引导必须包含糖果公主与云堡故事设定');
+assert(drawStorySource.includes('heroGap') && !drawStorySource.includes('const column = index % 2'), '第二页四位小勇士必须与网页一致横排展示');
 assert(drawStorySource.includes('reducedMotionEnabled'), '低动态模式必须有引导动画降级');
 assert(source.includes("if (scene === 'home') drawStoryGuide();"), '首页必须在正常 UI 后绘制引导覆盖层');
 assert(source.includes("if (scene === 'game') drawTeachingGuide();"), '操作教学必须覆盖在真实棋盘之上');
@@ -120,6 +125,9 @@ assert(drawTeachingSource.includes('第一步：掷骰子'), '操作教学必须
 assert(drawTeachingSource.includes('第二步：看懂这次行动'), '操作教学必须解释骰子结果');
 assert(drawTeachingSource.includes('第三步：认识任务卡'), '操作教学必须解释任务卡');
 assert(drawTeachingSource.includes('reducedMotionEnabled'), '操作教学必须兼容低动态模式');
+assert(drawTeachingSource.includes('点我掷骰'), '操作教学必须提供真实骰子的明确指向标签');
+assert(drawTeachingSource.includes('focusX') && drawTeachingSource.includes('spotlightY'), '操作教学必须保留骰子周围的明亮聚焦区');
+assert(drawTeachingSource.includes('const cardY = safeTop + 14;'), '掷骰说明卡必须固定顶部，不能压住骰子');
 assert(extractFunction('finishStoryGuide').includes('requestTeachingGuide()'), '故事完成后必须为新局请求操作教学');
 assert(extractFunction('startFreshGame').includes('startTeachingGuideForFreshGame()'), '新局开始时必须启动待处理教学');
 assert(extractFunction('finishAnimatedMove').includes("teachingGuide.step = modal ? 'waitingTask' : 'result'"), '首次骰子结算后必须等待任务卡或显示结果说明');

@@ -12,7 +12,7 @@ ctx.scale(dpr, dpr);
 
 const W = systemInfo.windowWidth;
 const H = systemInfo.windowHeight;
-const GAME_VERSION = '2.20.5';
+const GAME_VERSION = '2.20.6';
 const safeTop = systemInfo.safeArea ? systemInfo.safeArea.top : (systemInfo.statusBarHeight || 0);
 const safeBottom = systemInfo.safeArea ? Math.max(0, H - systemInfo.safeArea.bottom) : 0;
 const safeLeft = systemInfo.safeArea ? Math.max(0, systemInfo.safeArea.left || 0) : 0;
@@ -1140,10 +1140,10 @@ function drawStoryGuide() {
   const cardY = Math.round(Math.max(top, (H - cardH) / 2));
   const compact = cardH < 400;
   const isSecondPage = storyGuide.step === 1;
-  const title = isSecondPage ? '四位飞行小勇士' : '糖果公主的求救信';
+  const title = isSecondPage ? '四色飞行小勇士' : '云堡的求救信';
   const body = isSecondPage
-    ? '红、黄、蓝、绿四位飞行小勇士，从彩虹机场出发。每一次掷骰都是一阵顺风；任务卡是勇气试炼，国王卡是云国魔法。最先抵达云堡的小勇士，将带回糖果公主的笑容。'
-    : '糖果云国的彩虹糖心被乌云偷走，糖果公主被困在棉花糖云堡。红、黄、蓝、绿四位飞行小勇士正在集结，等你带领他们穿过糖果航线，开始这场救援。';
+    ? '红、黄、蓝、绿四架小飞机决定结伴穿过糖果云海。轮到你时掷骰前进，最先抵达终点，也要一起完成这场救援。'
+    : '乌云偷走了糖果云国的彩虹糖心，糖果公主被困在棉花糖云堡。她把求救信送给了正在训练的飞行小勇士。';
 
   ctx.fillStyle = 'rgba(29,19,38,.64)';
   ctx.fillRect(0, 0, W, H);
@@ -1179,16 +1179,15 @@ function drawStoryGuide() {
       ['guideHeroB', 'planeB'],
       ['guideHeroG', 'planeG']
     ];
-    const gridW = Math.min(cardW - 52, compact ? 278 : 334);
-    const cellW = gridW / 2;
-    const cellH = artH / 2;
+    const gridW = Math.min(cardW - 40, compact ? 286 : 348);
+    const heroGap = Math.min(10, gridW * .035);
+    const cellW = (gridW - heroGap * (heroAssets.length - 1)) / heroAssets.length;
+    const cellH = artH * .84;
     const gridX = cardX + (cardW - gridW) / 2;
     heroAssets.forEach(([guideKey, fallbackKey], index) => {
-      const column = index % 2;
-      const row = Math.floor(index / 2);
       const float = reducedMotionEnabled ? 0 : Math.sin((Date.now() - bootTime) / 430 + index * 1.15) * 3;
       const image = images[guideKey] || images[fallbackKey];
-      if (image) drawImageContain(image, gridX + column * cellW + 2, artY + row * cellH - 2 + float, cellW - 4, cellH + 4);
+      if (image) drawImageContain(image, gridX + index * (cellW + heroGap), artY + (artH - cellH) / 2 + float, cellW, cellH);
     });
   } else if (images.guidePrincess || images.guideCloudCastle) {
     const castleW = Math.min(cardW * .61, compact ? 205 : 250);
@@ -1251,24 +1250,36 @@ function drawTeachingGuide() {
   const pulse = reducedMotionEnabled ? 1 : 1 + Math.sin((Date.now() - bootTime) / 420) * .035;
   const compact = H < 720 || W > H;
 
-  ctx.fillStyle = 'rgba(31,20,42,.44)';
-  ctx.fillRect(0, 0, W, H);
-
   if (teachingGuide.step === 'roll') {
     const { rollX, rollY, rollW, rollH } = gameLayout;
+    const focusPad = Math.max(14, Math.round(rollH * .24));
+    const focusX = gameLayout.diceBoxX - focusPad;
+    const focusY = gameLayout.diceBoxY - focusPad;
+    const focusW = gameLayout.diceSize + focusPad * 2;
+    const focusH = gameLayout.diceSize + focusPad * 2;
+    const spotlightY = Math.max(0, focusY);
+    const spotlightBottom = Math.min(H, focusY + focusH);
+    const spotlightLeft = Math.max(0, focusX);
+    const spotlightRight = Math.min(W, focusX + focusW);
+    ctx.fillStyle = 'rgba(31,20,42,.44)';
+    ctx.fillRect(0, 0, W, spotlightY);
+    ctx.fillRect(0, spotlightY, spotlightLeft, spotlightBottom - spotlightY);
+    ctx.fillRect(spotlightRight, spotlightY, W - spotlightRight, spotlightBottom - spotlightY);
+    ctx.fillRect(0, spotlightBottom, W, H - spotlightBottom);
     ctx.save();
-    ctx.translate(rollX + rollW / 2, rollY + rollH / 2);
+    ctx.translate(focusX + focusW / 2, focusY + focusH / 2);
     ctx.scale(pulse, pulse);
-    ctx.translate(-(rollX + rollW / 2), -(rollY + rollH / 2));
-    fillRoundGradient(rollX - 5, rollY - 5, rollW + 10, rollH + 10, 22,
-      [[0, 'rgba(255,255,255,.34)'], [1, 'rgba(255,205,77,.36)']], false);
-    strokeRoundRect(rollX - 5, rollY - 5, rollW + 10, rollH + 10, 22, '#fff6a1', 3);
+    ctx.translate(-(focusX + focusW / 2), -(focusY + focusH / 2));
+    fillRoundGradient(focusX - 5, focusY - 5, focusW + 10, focusH + 10, 24,
+      [[0, 'rgba(255,255,255,.68)'], [.52, 'rgba(255,235,130,.56)'], [1, 'rgba(255,184,42,.44)']], false);
+    strokeRoundRect(focusX - 10, focusY - 10, focusW + 20, focusH + 20, 28, 'rgba(255,253,240,.96)', 4);
+    strokeRoundRect(focusX - 18, focusY - 18, focusW + 36, focusH + 36, 34, 'rgba(255,201,40,.88)', 3);
     ctx.restore();
 
     const cardW = Math.min(W - 40, 350);
     const cardH = compact ? 76 : 84;
     const cardX = (W - cardW) / 2;
-    const cardY = Math.max(safeTop + 14, gameLayout.diceY - cardH - 18);
+    const cardY = safeTop + 14;
     fillRoundGradient(cardX, cardY, cardW, cardH, 18, [[0, '#fff9e6'], [1, '#ffdca9']], true);
     strokeRoundRect(cardX, cardY, cardW, cardH, 18, 'rgba(255,255,255,.94)', 2);
     ctx.fillStyle = '#914d10';
@@ -1278,12 +1289,30 @@ function drawTeachingGuide() {
     ctx.fillStyle = '#5f3c26';
     ctx.font = `800 ${compact ? 12 : 13}px sans-serif`;
     ctx.fillText('点击发光的骰子，替小勇士呼唤顺风。', W / 2, cardY + 51);
+    const calloutW = 94;
+    const calloutH = 28;
+    const calloutX = Math.max(8, Math.min(W - calloutW - 8, gameLayout.diceBoxX + gameLayout.diceSize / 2 - calloutW / 2));
+    const calloutY = Math.max(cardY + cardH + 14, focusY - calloutH - 12);
+    fillRoundGradient(calloutX, calloutY, calloutW, calloutH, 14, [[0, '#fffdf0'], [1, '#ffe36e']], true);
+    strokeRoundRect(calloutX, calloutY, calloutW, calloutH, 14, '#ffc928', 2);
+    ctx.fillStyle = '#61330e';
+    ctx.font = `900 ${compact ? 12 : 13}px sans-serif`;
+    ctx.fillText('点我掷骰', calloutX + calloutW / 2, calloutY + calloutH * .66);
+    ctx.fillStyle = '#ffc928';
+    ctx.beginPath();
+    ctx.moveTo(calloutX + calloutW / 2 - 7, calloutY + calloutH);
+    ctx.lineTo(calloutX + calloutW / 2 + 7, calloutY + calloutH);
+    ctx.lineTo(calloutX + calloutW / 2, Math.min(focusY - 2, calloutY + calloutH + 12));
+    ctx.closePath();
+    ctx.fill();
     ctx.textAlign = 'left';
     buttons.push({ x: 0, y: 0, w: W, h: H, action: 'teachingBackdrop' });
     buttons.push({ x: rollX, y: rollY, w: rollW, h: rollH, action: 'teachingRoll' });
     return;
   }
 
+  ctx.fillStyle = 'rgba(31,20,42,.44)';
+  ctx.fillRect(0, 0, W, H);
   const isResult = teachingGuide.step === 'result';
   const cardW = Math.min(W - 42, 360);
   const cardH = compact ? 194 : 220;

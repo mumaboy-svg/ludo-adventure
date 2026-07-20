@@ -56,6 +56,31 @@
             if (available) {
                 hooks.clearGuideStorageForTest();
                 const keys = hooks.storageKeys;
+                const storyImages = [...game.document.querySelectorAll("#guideScene img, #guideHeroes img")].map(image => image.getAttribute("src"));
+                check(
+                    "故事抠图正式引用",
+                    storyImages.length === 6 && storyImages.every(src => src && src.startsWith("./assets/images/story-guide/")),
+                    storyImages.join(" / ")
+                );
+                hooks.openStoryGuide("story");
+                check(
+                    "故事页插图分步显示",
+                    !game.document.getElementById("guideScene").hidden
+                        && game.document.getElementById("guideHeroes").hidden
+                        && game.getComputedStyle(game.document.getElementById("guideHeroes")).display === "none",
+                    "第一页只显示公主与云堡，四色勇士留在第二页"
+                );
+                hooks.finishStoryGuide();
+                const diceTargetRule = [...game.document.styleSheets]
+                    .flatMap(sheet => {
+                        try { return [...sheet.cssRules]; } catch { return []; }
+                    })
+                    .find(rule => rule.selectorText === ".dice-container.teaching-target");
+                check(
+                    "骰子高亮保持真实点击层级",
+                    diceTargetRule && diceTargetRule.style.zIndex === "102" && diceTargetRule.style.cursor === "pointer",
+                    diceTargetRule ? `z-index ${diceTargetRule.style.zIndex}; cursor ${diceTargetRule.style.cursor}` : "未找到教学高亮规则"
+                );
                 check(
                     "独立本地键",
                     keys.story === "flight_adventure_story_guide_v1"
