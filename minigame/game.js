@@ -12,7 +12,7 @@ ctx.scale(dpr, dpr);
 
 const W = systemInfo.windowWidth;
 const H = systemInfo.windowHeight;
-const GAME_VERSION = '2.22.1';
+const GAME_VERSION = '2.23.0';
 const safeTop = systemInfo.safeArea ? systemInfo.safeArea.top : (systemInfo.statusBarHeight || 0);
 const safeBottom = systemInfo.safeArea ? Math.max(0, H - systemInfo.safeArea.bottom) : 0;
 const safeLeft = systemInfo.safeArea ? Math.max(0, systemInfo.safeArea.left || 0) : 0;
@@ -49,6 +49,11 @@ const ASSETS = {
   dicePanel: 'packages/game-assets/assets/images/ui/dice_panel.webp',
   taskCard: 'packages/game-assets/assets/minigame/ui/modal_task_card.png',
   kingCard: 'packages/game-assets/assets/minigame/ui/modal_king_card.png',
+  settlementFrameLandscape: 'packages/game-assets/assets/images/ui/settlement_frame_landscape.png',
+  settlementFramePortrait: 'packages/game-assets/assets/images/ui/settlement_frame_portrait.png',
+  settlementPlanesFinish: 'packages/game-assets/assets/images/ui/settlement_planes_finish.png',
+  settlementRescueCrest: 'packages/game-assets/assets/images/ui/settlement_rescue_crest.png',
+  settlementPlayAgain: 'packages/game-assets/assets/images/ui/button_play_again.png',
   guidePrincess: 'packages/game-assets/assets/minigame/ui/story-guide/guide_princess_candy.webp',
   guideCloudCastle: 'packages/game-assets/assets/minigame/ui/story-guide/guide_cloud_castle.webp',
   guideHeroR: 'packages/game-assets/assets/minigame/ui/story-guide/guide_hero_red.webp',
@@ -77,6 +82,9 @@ let modal = null;
 let modalQueue = [];
 let modalOpenedAt = 0;
 let modalCompletingAt = 0;
+let settlement = null;
+let pendingSettlement = null;
+let settlementOpenedAt = 0;
 let nicknameReviewPending = false;
 let settingsPage = 0;
 let settingsCategory = 'players';
@@ -99,7 +107,10 @@ let deferModals = false;
 let backgroundMusic = null;
 let backgroundMusicRequested = false;
 let backgroundMusicEnabled = wx.getStorageSync('ludo_minigame_bgm_enabled_v1') !== false;
+let soundEffectsEnabled = wx.getStorageSync('ludo_minigame_sfx_enabled_v1') !== false;
+let vibrationEnabled = wx.getStorageSync('ludo_minigame_vibration_enabled_v1') !== false;
 let reducedMotionEnabled = wx.getStorageSync('ludo_minigame_reduced_motion_v1') === true;
+const shortAudioCache = {};
 let visualAnimationLoopStarted = false;
 const STORY_GUIDE_STORAGE_KEY = 'ludo_story_guide_v1';
 const RESCUE_BADGE_STORAGE_KEY = 'ludo_rescue_badge_v1';
@@ -767,14 +778,29 @@ function showTask(title, body, actor = '', type = 'auto') {
 function startModalAnimation() {
   modalOpenedAt = Date.now();
   modalCompletingAt = 0;
+  if (modal?.type === 'king') {
+    playShortSfx('king');
+    vibrateFeedback('medium');
+  } else if (modal?.type === 'task') {
+    playShortSfx('task');
+    vibrateFeedback('light');
+  }
   [0, 50, 100, 160, 220, 340, 520].forEach(delay => setTimeout(() => { if (modal) render(); }, delay));
 }
-function clearModals() { modal = null; modalQueue = []; modalOpenedAt = 0; modalCompletingAt = 0; }
+function clearModals() {
+  modal = null;
+  modalQueue = [];
+  modalOpenedAt = 0;
+  modalCompletingAt = 0;
+}
 function closeCurrentModal() {
   if (modalCompletingAt) return;
   modal = modalQueue.shift() || null;
   if (modal) startModalAnimation();
-  else modalOpenedAt = 0;
+  else {
+    modalOpenedAt = 0;
+    maybeOpenSettlement();
+  }
 }
 function completeCurrentModal() {
   if (!modal || modalCompletingAt) return;
@@ -800,6 +826,7 @@ function flushDeferredModal() {
   if (!modal) {
     modal = modalQueue.shift() || null;
     if (modal) startModalAnimation();
+    else maybeOpenSettlement();
   }
 }
 function triggerBaseRollTask(piece, value) {
@@ -996,6 +1023,61 @@ function setBackgroundMusicEnabled(enabled) {
     backgroundMusicRequested = false;
     pauseBackgroundMusic();
   }
+}
+
+const SHORT_SFX = Object.freeze({
+  dice: ['packages/game-assets/assets/audio/dice_roll.mp3', 0.5],
+  flyBoost: ['packages/game-assets/assets/audio/fly_boost.mp3', 0.62],
+  pieceMove: ['packages/game-assets/assets/audio/sfx_piece_move.wav', 0.42],
+  pieceLand: ['packages/game-assets/assets/audio/sfx_piece_land.wav', 0.5],
+  task: ['packages/game-assets/assets/audio/sfx_task_card_draw.mp3', 0.55],
+  king: ['packages/game-assets/assets/audio/sfx_king_card_reveal.mp3', 0.58],
+  victory: ['packages/game-assets/assets/audio/sfx_victory_fanfare.mp3', 0.66]
+});
+
+function playShortSfx(name) {
+  if (!soundEffectsEnabled || typeof wx.createInnerAudioContext !== 'function') return;
+  const spec = SHORT_SFX[name];
+  if (!spec) return;
+  let audio = shortAudioCache[name];
+  if (!audio) {
+    audio = wx.createInnerAudioContext();
+    audio.src = spec[0];
+    audio.volume = spec[1];
+    audio.obeyMuteSwitch = true;
+    audio.onError((error) => console.warn('short sfx failed', name, error));
+    shortAudioCache[name] = audio;
+  }
+  try {
+    if (typeof audio.stop === 'function') audio.stop();
+    if ('startTime' in audio) audio.startTime = 0;
+    audio.play();
+  } catch (error) {
+    console.warn('short sfx play failed', name, error);
+  }
+}
+
+function setSoundEffectsEnabled(enabled) {
+  soundEffectsEnabled = !!enabled;
+  wx.setStorageSync('ludo_minigame_sfx_enabled_v1', soundEffectsEnabled);
+  if (soundEffectsEnabled) playShortSfx('pieceLand');
+  render();
+}
+
+function vibrateFeedback(type = 'light') {
+  if (!vibrationEnabled || typeof wx.vibrateShort !== 'function') return;
+  try {
+    wx.vibrateShort({ type });
+  } catch (error) {
+    console.warn('vibration failed', error);
+  }
+}
+
+function setVibrationEnabled(enabled) {
+  vibrationEnabled = !!enabled;
+  wx.setStorageSync('ludo_minigame_vibration_enabled_v1', vibrationEnabled);
+  if (vibrationEnabled) vibrateFeedback('light');
+  render();
 }
 
 function setReducedMotionEnabled(enabled) {
@@ -1994,6 +2076,176 @@ function drawModal() {
   }
 }
 
+function settlementRankingSnapshot() {
+  return (state.finishOrder || []).map((id, index) => {
+    const player = state.players.find((item) => item.id === id);
+    return {
+      place: index + 1,
+      id,
+      name: player?.name || `玩家${index + 1}`,
+      color: player?.color || 'R'
+    };
+  });
+}
+
+function queueSettlement(type = 'victory') {
+  pendingSettlement = {
+    type: type === 'rescue' ? 'rescue' : 'victory',
+    ranking: settlementRankingSnapshot()
+  };
+  maybeOpenSettlement();
+}
+
+function maybeOpenSettlement() {
+  if (!pendingSettlement || settlement || modal || modalQueue.length || deferModals || pieceAnimation || rolling) return false;
+  settlement = pendingSettlement;
+  pendingSettlement = null;
+  settlementOpenedAt = Date.now();
+  playShortSfx('victory');
+  vibrateFeedback('heavy');
+  render();
+  return true;
+}
+
+function clearSettlement() {
+  settlement = null;
+  pendingSettlement = null;
+  settlementOpenedAt = 0;
+}
+
+function drawSettlementStar(x, y, outer, inner, rotation = 0) {
+  ctx.beginPath();
+  for (let index = 0; index < 10; index += 1) {
+    const radius = index % 2 === 0 ? outer : inner;
+    const angle = rotation - Math.PI / 2 + index * Math.PI / 5;
+    const px = x + Math.cos(angle) * radius;
+    const py = y + Math.sin(angle) * radius;
+    if (index === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawSettlement() {
+  if (!settlement) return;
+  buttons.push({ x: 0, y: 0, w: W, h: H, action: 'settlementBackdrop' });
+  const portrait = H >= W;
+  const now = Date.now();
+  const progress = reducedMotionEnabled ? 1 : Math.min(1, (now - settlementOpenedAt) / 420);
+  const eased = 1 - Math.pow(1 - progress, 3);
+  const rescue = settlement.type === 'rescue';
+  const marginX = portrait ? 10 : 18;
+  const marginTop = Math.max(capsuleBottom + 8, portrait ? 62 : 50);
+  const bottomMargin = Math.max(safeBottom + 10, 14);
+  const maxW = portrait ? 440 : 720;
+  const panelW = Math.min(W - marginX * 2, maxW);
+  const panelH = Math.min(H - marginTop - bottomMargin, portrait ? 620 : 500);
+  const panelX = (W - panelW) / 2;
+  const panelY = marginTop + (1 - eased) * 24;
+  const frame = portrait ? images.settlementFramePortrait : images.settlementFrameLandscape;
+
+  ctx.save();
+  ctx.fillStyle = `rgba(20,10,35,${0.48 + eased * .28})`;
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalAlpha = eased;
+  ctx.translate(W / 2, panelY + panelH / 2);
+  ctx.scale(.9 + eased * .1, .9 + eased * .1);
+  ctx.translate(-W / 2, -(panelY + panelH / 2));
+  if (frame) drawImageContain(frame, panelX, panelY, panelW, panelH);
+  else {
+    fillRoundGradient(panelX, panelY, panelW, panelH, 24, [[0, '#fff8d9'], [1, '#ffc967']], true);
+    strokeRoundRect(panelX, panelY, panelW, panelH, 24, '#fff5b8', 3);
+  }
+
+  const contentLeft = panelX + panelW * (portrait ? .12 : .10);
+  const contentW = panelW * (portrait ? .76 : .80);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = rescue ? '#7b3d94' : '#a46b24';
+  ctx.font = `900 ${portrait ? 12 : 11}px sans-serif`;
+  ctx.fillText(rescue ? '第一章 · 救援完成' : '本局冒险结算', W / 2, panelY + panelH * (portrait ? .17 : .19));
+  ctx.fillStyle = rescue ? '#713789' : '#7b3e18';
+  ctx.font = `1000 ${Math.round(Math.min(portrait ? 34 : 38, panelW * .075))}px sans-serif`;
+  ctx.fillText(rescue ? '糖果公主获救！' : '飞行勇士凯旋！', W / 2, panelY + panelH * (portrait ? .235 : .27));
+
+  const heroX = contentLeft;
+  const heroY = panelY + panelH * (portrait ? .26 : .29);
+  const heroW = contentW;
+  const heroH = panelH * (portrait ? .25 : .27);
+  const hero = rescue ? images.settlementRescueCrest : images.settlementPlanesFinish;
+  if (hero) drawImageContain(hero, heroX, heroY, heroW, heroH);
+
+  const animationPhase = reducedMotionEnabled ? 0 : now / 420;
+  const colors = ['#ef4b3e', '#ffd33d', '#2db3e8', '#42c962', '#a568d4'];
+  for (let index = 0; index < (reducedMotionEnabled ? 7 : 14); index += 1) {
+    const x = panelX + panelW * (.12 + ((index * 29) % 77) / 100);
+    const y = panelY + panelH * (.14 + ((index * 37) % 54) / 100);
+    const pulse = reducedMotionEnabled ? 1 : .78 + Math.sin(animationPhase + index) * .22;
+    ctx.fillStyle = '#ffd64e';
+    drawSettlementStar(x, y, (4 + index % 4) * pulse, (2 + index % 3) * pulse, animationPhase * .08);
+  }
+  if (!reducedMotionEnabled) {
+    for (let index = 0; index < 22; index += 1) {
+      const x = panelX + panelW * (.08 + ((index * 23) % 84) / 100);
+      const fall = ((now - settlementOpenedAt) * (.035 + (index % 5) * .005) + index * 31) % (panelH * .72);
+      const y = panelY + panelH * .08 + fall;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(animationPhase * .15 + index);
+      ctx.fillStyle = colors[index % colors.length];
+      ctx.fillRect(-3, -7, 6, 14);
+      ctx.restore();
+    }
+  }
+
+  const ranking = Array.isArray(settlement.ranking) ? settlement.ranking : [];
+  const visible = ranking.length > 4 ? [...ranking.slice(0, 3), ranking[ranking.length - 1]] : ranking;
+  const rankY = panelY + panelH * (portrait ? .56 : .59);
+  const rankGap = Math.max(4, panelW * .012);
+  const rankW = Math.min(112, (contentW - rankGap * Math.max(0, visible.length - 1)) / Math.max(1, visible.length));
+  const heights = portrait ? [74, 62, 55, 50] : [82, 68, 60, 54];
+  const colorMap = { R: '#ef4b3e', Y: '#d9a900', B: '#259fd5', G: '#35af50' };
+  visible.forEach((player, index) => {
+    const rankH = heights[Math.min(index, heights.length - 1)];
+    const x = W / 2 - (visible.length * rankW + (visible.length - 1) * rankGap) / 2 + index * (rankW + rankGap);
+    const y = rankY + heights[0] - rankH;
+    fillRoundGradient(x, y, rankW, rankH, 11, [[0, 'rgba(255,255,246,.96)'], [1, 'rgba(255,220,145,.94)']], true);
+    fillRoundRect(x, y + rankH - 6, rankW, 6, 3, colorMap[player.color] || colorMap.R);
+    ctx.fillStyle = '#7b4312';
+    ctx.font = `1000 ${rankW < 72 ? 11 : 14}px sans-serif`;
+    ctx.fillText(player.place === 1 ? '冠军' : `第${player.place}名`, x + rankW / 2, y + 24);
+    ctx.fillStyle = '#56371e';
+    ctx.font = `900 ${rankW < 72 ? 9 : 11}px sans-serif`;
+    ctx.fillText(truncateTextToWidth(player.name, rankW - 10), x + rankW / 2, y + 44);
+  });
+
+  const actionY = panelY + panelH * (portrait ? .79 : .80);
+  const replayW = Math.min(190, contentW * .56);
+  const replayH = portrait ? 52 : 48;
+  const homeW = Math.min(112, contentW * .32);
+  const gap = 8;
+  const totalW = homeW + replayW + gap;
+  const actionX = W / 2 - totalW / 2;
+  drawPanelButton(actionX, actionY, homeW, replayH, '返回大厅', 'settlementHome', false);
+  if (images.settlementPlayAgain) drawImageContain(images.settlementPlayAgain, actionX + homeW + gap, actionY, replayW, replayH);
+  else fillRoundGradient(actionX + homeW + gap, actionY, replayW, replayH, replayH / 2, [[0, '#ffe476'], [1, '#f29a2d']], true);
+  ctx.fillStyle = '#632b08';
+  ctx.font = `1000 ${portrait ? 15 : 16}px sans-serif`;
+  ctx.fillText('再来一局', actionX + homeW + gap + replayW / 2, actionY + replayH / 2 + 1);
+  buttons.push({ x: actionX + homeW + gap, y: actionY, w: replayW, h: replayH, action: 'settlementReplay' });
+
+  const closeSize = 36;
+  const closeX = panelX + panelW * .82;
+  const closeY = panelY + panelH * .09;
+  fillRoundGradient(closeX, closeY, closeSize, closeSize, closeSize / 2, [[0, '#fffdf4'], [1, '#f4c879']], true);
+  ctx.fillStyle = '#6b3e1a';
+  ctx.font = '1000 23px sans-serif';
+  ctx.fillText('×', closeX + closeSize / 2, closeY + closeSize / 2 + 1);
+  buttons.push({ x: closeX, y: closeY, w: closeSize, h: closeSize, action: 'settlementClose' });
+  ctx.restore();
+  ctx.textAlign = 'left';
+}
+
 function normalizeDiceValue(value) {
   const number = Number(value);
   return Number.isInteger(number) && number >= 1 && number <= 6 ? number : 1;
@@ -2370,6 +2622,7 @@ function startPieceAnimation(piece, track, onDone) {
       arc: reducedMotionEnabled ? 0 : (current.kind === 'fly' ? 7 : 1.3)
     });
   }
+  playShortSfx('pieceMove');
   pieceAnimation = { pieceId: piece.id, segments, startedAt: Date.now() };
   const duration = segments.reduce((sum, segment) => sum + segment.duration, 0);
   const tick = () => {
@@ -2391,6 +2644,8 @@ function scheduleFrame(callback) {
 }
 
 function startPieceLandingFeedback(pieceId) {
+  playShortSfx('pieceLand');
+  vibrateFeedback('light');
   if (!pieceId || reducedMotionEnabled) {
     pieceLandingFeedback = null;
     return;
@@ -2737,6 +2992,7 @@ function render() {
   if (scene === 'home') drawStoryGuide();
   if (scene === 'game') drawTeachingGuide();
   drawModal();
+  drawSettlement();
 }
 
 function hitTest(x, y) {
@@ -2958,19 +3214,23 @@ function drawSettingsPlayerCard(x, y, w, h, player, index) {
 }
 
 function drawSettingsVisualSection(x, y, w, h, landscape) {
-  const gap = landscape ? 10 : 12;
-  const cardW = landscape ? (w - gap) / 2 : w;
-  const cardH = landscape ? Math.min(82, h - 8) : Math.min(92, (h - gap - 26) / 2);
-  drawSettingsPreferenceCard(x, y + 4, cardW, cardH, '背景音乐',
-    backgroundMusicEnabled ? '已开启 · 循环播放大厅音乐' : '已关闭 · 保留骰子音效',
-    backgroundMusicEnabled, 'toggleMusic');
-  drawSettingsPreferenceCard(landscape ? x + cardW + gap : x, landscape ? y + 4 : y + cardH + gap + 4,
-    cardW, cardH, '低动态模式',
-    reducedMotionEnabled ? '已开启 · 减少大厅与加载装饰' : '已关闭 · 展示完整轻量动画',
-    reducedMotionEnabled, 'toggleMotion');
+  const gap = landscape ? 8 : 10;
+  const cardW = (w - gap) / 2;
+  const cardH = Math.max(64, Math.min(84, (h - gap - 24) / 2));
+  const rows = [
+    ['背景音乐', backgroundMusicEnabled ? '已开启 · 循环播放大厅音乐' : '已关闭 · 不影响游戏音效', backgroundMusicEnabled, 'toggleMusic'],
+    ['游戏音效', soundEffectsEnabled ? '已开启 · 移动、抽卡与胜利反馈' : '已关闭 · 背景音乐不受影响', soundEffectsEnabled, 'toggleSfx'],
+    ['震动反馈', vibrationEnabled ? '已开启 · 关键落地与结算轻震' : '已关闭 · 不影响视觉和声音', vibrationEnabled, 'toggleVibration'],
+    ['低动态模式', reducedMotionEnabled ? '已开启 · 减少装饰动画' : '已关闭 · 展示完整轻量动画', reducedMotionEnabled, 'toggleMotion']
+  ];
+  rows.forEach((item, index) => {
+    const col = index % 2;
+    const row = Math.floor(index / 2);
+    drawSettingsPreferenceCard(x + col * (cardW + gap), y + 4 + row * (cardH + gap), cardW, cardH, ...item);
+  });
   ctx.fillStyle = '#806344';
   ctx.font = `800 ${landscape ? 9 : 10}px sans-serif`;
-  ctx.fillText('低动态不会改变骰子结果、棋子位置、任务触发或回合推进。', x + 2, y + h - 7);
+  ctx.fillText('声音、震动和低动态设置不会改变骰子结果、任务或回合。', x + 2, y + h - 5);
 }
 
 function drawSettingsPreferenceCard(x, y, w, h, title, detail, enabled, action) {
@@ -3714,13 +3974,15 @@ function confirmClearAllData() {
     confirmColor: '#d94b3d',
     success(res) {
       if (!res.confirm) return;
-      ['ludo_minigame_state_v3', 'ludo_minigame_setup_v1', 'ludo_minigame_tasks_v1', 'ludo_minigame_bgm_enabled_v1', 'ludo_minigame_reduced_motion_v1', 'ludo_minigame_task_packs_v1', RESCUE_BADGE_STORAGE_KEY, TEACHING_GUIDE_STORAGE_KEY]
+      ['ludo_minigame_state_v3', 'ludo_minigame_setup_v1', 'ludo_minigame_tasks_v1', 'ludo_minigame_bgm_enabled_v1', 'ludo_minigame_sfx_enabled_v1', 'ludo_minigame_vibration_enabled_v1', 'ludo_minigame_reduced_motion_v1', 'ludo_minigame_task_packs_v1', RESCUE_BADGE_STORAGE_KEY, TEACHING_GUIDE_STORAGE_KEY]
         .forEach(key => wx.removeStorageSync(key));
       cancelQueuedCloudSaveWrites();
       CLOUD_SAVE_KEYS.forEach(key => deleteCloudSave(key));
       setupPlayers = defaultSetupPlayers();
       tasks = clone(DEFAULT_TASKS);
       backgroundMusicEnabled = true;
+      soundEffectsEnabled = true;
+      vibrationEnabled = true;
       reducedMotionEnabled = false;
       taskPackSettings = loadTaskPackSettings();
       playBackgroundMusic();
@@ -3732,6 +3994,7 @@ function confirmClearAllData() {
       progressPage = 0;
       recordsPage = 0;
       clearModals();
+      clearSettlement();
       scene = 'home';
       showTask('数据已清空', '存档、玩家设置和自定义任务已恢复为初始状态。');
       render();
@@ -3746,17 +4009,19 @@ function confirmClearAllData() {
 function restoreDefaultPreferences() {
   wx.showModal({
     title: '恢复默认设置？',
-    content: '只重置玩家配置、背景音乐和低动态偏好；游戏存档、任务内容与任务模式都会保留。',
+    content: '只重置玩家配置、背景音乐、游戏音效、震动和低动态偏好；游戏存档、任务内容与任务模式都会保留。',
     confirmText: '恢复默认',
     success(res) {
       if (!res.confirm) return;
       setupPlayers = defaultSetupPlayers();
       saveSetupPlayers();
       setBackgroundMusicEnabled(true);
+      setSoundEffectsEnabled(true);
+      setVibrationEnabled(true);
       setReducedMotionEnabled(false);
       settingsPage = 0;
       settingsCategory = 'players';
-      showTask('设置已恢复', '玩家、背景音乐和动态偏好已恢复默认；存档与任务数据未改变。');
+      showTask('设置已恢复', '玩家、声音、震动和动态偏好已恢复默认；存档与任务数据未改变。');
       render();
     },
     fail(err) {
@@ -3989,6 +4254,7 @@ function finishPiece(piece) {
     if (receivedRescueBadge) {
       showTask('糖果公主获救！', '四色飞行小勇士穿过糖果云海，带糖果公主回到了棉花糖云堡。\n\n获得：糖果云国救援徽章', '第一章 · 救援完成', 'reward');
     }
+    queueSettlement(receivedRescueBadge ? 'rescue' : 'victory');
   }
 }
 
@@ -4004,13 +4270,7 @@ function applyFlyJump(piece) {
 }
 
 function playFlyBoostSound() {
-  if (typeof wx.createInnerAudioContext !== 'function') return;
-  const audio = wx.createInnerAudioContext();
-  audio.src = 'packages/game-assets/assets/audio/fly_boost.mp3';
-  audio.volume = 0.65;
-  audio.onEnded(() => audio.destroy());
-  audio.onError(() => audio.destroy());
-  audio.play();
+  playShortSfx('flyBoost');
 }
 
 function moveOuter(piece, steps) {
@@ -4072,6 +4332,7 @@ function finishAnimatedMove(piece) {
     deferModals = false;
     pendingMoveTrack = [];
     flushDeferredModal();
+    maybeOpenSettlement();
     if (teachingGuide.open && teachingGuide.step === 'moving') {
       teachingGuide.step = modal ? 'waitingTask' : 'result';
     }
@@ -4132,13 +4393,7 @@ function rollDice() {
   activeDiceRoll = { ...transaction, duration };
   rolling = true;
   rollingDiceValue = diceAnimationFrameValue(transaction.value, 0);
-  try {
-    const audio = wx.createInnerAudioContext();
-    audio.src = 'packages/game-assets/assets/audio/dice_roll.mp3';
-    audio.onEnded(() => audio.destroy());
-    audio.onError(() => audio.destroy());
-    audio.play();
-  } catch {}
+  playShortSfx('dice');
   const tick = () => {
     if (!activeDiceRoll || activeDiceRoll.id !== transaction.id) return;
     const elapsed = Date.now() - transaction.startedAt;
@@ -4160,6 +4415,7 @@ function rollDice() {
 }
 
 function startFreshGame(message) {
+  clearSettlement();
   state = newGameState();
   lastRoll = '-';
   logText = message || '掷出 6 才能起飞';
@@ -4203,6 +4459,7 @@ function continueSavedGame() {
   lastRoll = state.lastRoll || '-';
   logText = logEntryText((state.logs || []).slice(-1)[0]) || '已读取本地存档';
   clearModals();
+  clearSettlement();
   scene = 'game';
   announceCurrentPlayerHud();
 }
@@ -4244,7 +4501,10 @@ function handleAction(action) {
   }
   if (action === 'continue') continueSavedGame();
   if (action === 'noSavedContinue') showTask('暂无存档', '请先设置玩家并开始新游戏，或从大厅选择快速开始。');
-  if (action === 'home') scene = 'home';
+  if (action === 'home') {
+    clearSettlement();
+    scene = 'home';
+  }
   if (action === 'settings') scene = 'settings';
   if (action === 'tasks') { scene = 'tasks'; taskView = 'modes'; }
   if (action === 'progress') { scene = 'progress'; progressPage = 0; }
@@ -4253,6 +4513,8 @@ function handleAction(action) {
   if (action === 'game') scene = 'game';
   if (action === 'boardDebug') boardDebug = !boardDebug;
   if (action === 'toggleMusic') setBackgroundMusicEnabled(!backgroundMusicEnabled);
+  if (action === 'toggleSfx') setSoundEffectsEnabled(!soundEffectsEnabled);
+  if (action === 'toggleVibration') setVibrationEnabled(!vibrationEnabled);
   if (action === 'toggleMotion') setReducedMotionEnabled(!reducedMotionEnabled);
   if (action === 'restoreSettingsDefaults') restoreDefaultPreferences();
   if (action === 'saveSetupPreferences') saveSetupPreferences();
@@ -4267,6 +4529,17 @@ function handleAction(action) {
   if (action === 'saveManualTasks') { setTaskPackPreset('manual'); saveTasks(); showTask('任务已保存', '手动任务已保存到本机。'); }
   if (action === 'saveManualStart') { setTaskPackPreset('manual'); saveTasks(); confirmStartFreshGame('手动任务已保存，新局开始'); }
   if (action === 'restart') confirmStartFreshGame('游戏已重开：掷出 6 才能起飞');
+  if (action === 'settlementClose' || action === 'settlementBackdrop') {
+    settlement = null;
+    settlementOpenedAt = 0;
+  }
+  if (action === 'settlementHome') {
+    clearSettlement();
+    scene = 'home';
+  }
+  if (action === 'settlementReplay') {
+    startFreshGame('再来一局：掷出 6 才能起飞');
+  }
   if (action === 'setupAdd') {
     if (setupPlayers.length >= 16) showTask('人数已满', '最多支持 16 位玩家。');
     else {

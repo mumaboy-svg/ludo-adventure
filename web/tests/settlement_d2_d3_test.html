@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>D2/D3 结算与音效测试</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; padding: 24px; color: #352518; background: #fff3d0;
+            font: 15px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        h1 { margin: 0 0 8px; font-size: 24px; }
+        #summary { margin-bottom: 18px; font-weight: 800; }
+        .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .case {
+            min-height: 88px; padding: 14px; border: 2px solid #e4bd68; border-radius: 8px;
+            background: #fff; box-shadow: 0 8px 18px #7848111a;
+        }
+        .case.pass { border-color: #4db768; }
+        .case.fail { border-color: #e65345; background: #fff0ed; }
+        @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <h1>网页版 D2/D3 确定性测试</h1>
+    <div id="summary">正在读取正式游戏代码和素材...</div>
+    <div class="grid" id="results"></div>
+    <script>
+        function addResult(label, passed, detail) {
+            const card = document.createElement("section");
+            card.className = `case ${passed ? "pass" : "fail"}`;
+            card.innerHTML = `<strong>${passed ? "PASS" : "FAIL"} · ${label}</strong><div>${detail}</div>`;
+            document.getElementById("results").appendChild(card);
+            return passed;
+        }
+
+        function extractFunction(source, name) {
+            const start = source.indexOf(`function ${name}(`);
+            if (start < 0) return "";
+            const paramsStart = source.indexOf("(", start);
+            let paramsDepth = 0;
+            let paramsEnd = -1;
+            for (let index = paramsStart; index < source.length; index += 1) {
+                if (source[index] === "(") paramsDepth += 1;
+                if (source[index] === ")") {
+                    paramsDepth -= 1;
+                    if (paramsDepth === 0) {
+                        paramsEnd = index;
+                        break;
+                    }
+                }
+            }
+            if (paramsEnd < 0) return "";
+            const braceStart = source.indexOf("{", paramsEnd);
+            let depth = 0;
+            for (let index = braceStart; index < source.length; index += 1) {
+                if (source[index] === "{") depth += 1;
+                if (source[index] === "}") {
+                    depth -= 1;
+                    if (depth === 0) return source.slice(start, index + 1);
+                }
+            }
+            return "";
+        }
+
+        Promise.all([
+            fetch("../index.html", { cache: "no-store" }).then(response => response.text()),
+            ...[
+                "../assets/images/ui/settlement_frame_landscape.webp",
+                "../assets/images/ui/settlement_frame_portrait.webp",
+                "../assets/images/ui/settlement_planes_finish.webp",
+                "../assets/images/ui/settlement_rescue_crest.webp",
+                "../assets/images/ui/button_play_again.webp",
+                "../assets/audio/sfx_piece_move.wav",
+                "../assets/audio/sfx_piece_land.wav",
+                "../assets/audio/sfx_task_card_draw.mp3",
+                "../assets/audio/sfx_king_card_reveal.mp3",
+                "../assets/audio/sfx_victory_fanfare.mp3"
+            ].map(url => fetch(url, { cache: "no-store" }).then(response => ({ url, ok: response.ok })))
+        ]).then(([source, ...assets]) => {
+            let passed = 0;
+            let total = 0;
+            const check = (label, ok, detail) => {
+                total += 1;
+                if (addResult(label, ok, detail)) passed += 1;
+            };
+
+            const queueSource = extractFunction(source, "queueSettlement");
+            const maybeSource = extractFunction(source, "maybeOpenSettlement");
+            const renderSource = extractFunction(source, "renderSettlementRanking");
+            const openSource = extractFunction(source, "openSettlement");
+            const closeSource = extractFunction(source, "closeSettlement");
+            const finishSource = extractFunction(source, "queuePostMoveFinish");
+            const sfxSource = extractFunction(source, "playShortSfx");
+            const taskModalSource = extractFunction(source, "showNextModal");
+
+            check("版本同步", source.includes('const APP_VERSION = "2.23.0";'), "网页版应为 v2.23.0");
+            check(
+                "结算结构",
+                source.includes('id="settlementOverlay"') && source.includes('id="settlementReplayBtn"') && source.includes('id="settlementRanking"'),
+                "结算浮层、排名和再来一局入口齐全"
+            );
+            check(
+                "横竖屏结算框",
+                source.includes("settlement_frame_landscape.webp") && source.includes("settlement_frame_portrait.webp"),
+                "桌面和手机使用独立结算框"
+            );
+            check(
+                "终局队列保护",
+                maybeSource.includes("modalOpen") && maybeSource.includes("modalQueue.length") && maybeSource.includes("postMoveQueue.length"),
+                "任务、救援和移动后弹窗清空前不打开结算"
+            );
+            check(
+                "胜利与救援双模式",
+                queueSource.includes('type === "rescue"') && openSource.includes("settlement_rescue_crest.webp") && openSource.includes("settlement_planes_finish.webp"),
+                "救援徽章与飞机冲线主视觉分离"
+            );
+            check(
+                "四人以上排名",
+                renderSource.includes("ranking.length > 4") && renderSource.includes("ranking[ranking.length - 1]"),
+                "显示前三名并保留末位玩家"
+            );
+            check(
+                "终局顺序",
+                finishSource.indexOf("postMoveQueue.push") >= 0
+                    && finishSource.indexOf("queueSettlement") > finishSource.indexOf("postMoveQueue.push"),
+                "终局任务和救援说明先入队，结算随后排队"
+            );
+            check(
+                "再来一局清场",
+                closeSource.includes("localStorage.removeItem(STATE_KEY)") && closeSource.includes("state = null") && closeSource.includes("startGame();"),
+                "重玩不沿用上局排名、回合或棋子状态"
+            );
+            check(
+                "星星和彩带降级",
+                source.includes("html.reduced-motion .settlement-confetti") && source.includes("confettiCount = motionEnabled ? 28 : 0"),
+                "低动态模式关闭持续彩带"
+            );
+            check(
+                "独立音效设置",
+                source.includes('const SFX_SETTINGS_KEY = "flight_adventure_sfx_v1"')
+                    && source.includes("已关闭短音效，不影响背景音乐"),
+                "游戏音效与背景音乐分开控制和持久化"
+            );
+            check(
+                "短音效重播",
+                sfxSource.includes("audio.currentTime = 0") && sfxSource.includes("audio.play().catch"),
+                "同类短音效重复触发时从头播放且错误不阻塞游戏"
+            );
+            check(
+                "关键反馈接入",
+                source.includes('playShortSfx("pieceMove")')
+                    && source.includes('playShortSfx("pieceLand")')
+                    && taskModalSource.includes('playShortSfx("king")')
+                    && taskModalSource.includes('playShortSfx("task")')
+                    && openSource.includes('playShortSfx("victory")'),
+                "移动、落地、任务、国王卡和结算均接入音效"
+            );
+            check(
+                "素材可访问",
+                assets.every(asset => asset.ok),
+                assets.filter(asset => !asset.ok).map(asset => asset.url).join(" / ") || "10 个 D2/D3 素材均可读取"
+            );
+
+            const summary = document.getElementById("summary");
+            summary.textContent = `${passed}/${total} 项通过；覆盖结算队列、双模式、排名、重玩、低动态、音效设置和素材路径。`;
+            summary.style.color = passed === total ? "#24703a" : "#a52c22";
+            document.title = passed === total ? "PASS · D2/D3 结算与音效测试" : "FAIL · D2/D3 结算与音效测试";
+        }).catch(error => {
+            document.getElementById("summary").textContent = `读取失败：${error.message}`;
+            document.title = "FAIL · D2/D3 结算与音效测试";
+        });
+    </script>
+</body>
+</html>

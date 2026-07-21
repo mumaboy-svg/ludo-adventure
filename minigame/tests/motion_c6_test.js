@@ -20,7 +20,7 @@ function extractFunction(name) {
   throw new Error(`函数 ${name} 未闭合`);
 }
 
-assert(source.includes("const GAME_VERSION = '2.22.1';"), '小游戏版本应为 2.22.1');
+assert(source.includes("const GAME_VERSION = '2.23.0';"), '小游戏版本应为 2.23.0');
 assert(source.includes("let pressedButtonFeedback = { action: '', startedAt: 0 };"), '必须保留按钮按压反馈状态');
 
 const pressStateSource = extractFunction('isButtonPressed');

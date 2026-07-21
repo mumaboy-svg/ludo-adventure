@@ -50,12 +50,12 @@
             };
 
             const available = hooks
-                && hooks.version === "2.22.1"
+                && hooks.version === "2.23.0"
                 && typeof hooks.show === "function"
                 && typeof hooks.complete === "function"
                 && typeof hooks.getState === "function";
 
-            check("测试 hooks 与版本", available, available ? "v2.22.1 抽卡 hooks 已载入" : "缺少 hooks 或版本不符");
+            check("测试 hooks 与版本", available, available ? "v2.23.0 抽卡 hooks 已载入" : "缺少 hooks 或版本不符");
 
             if (available) {
                 let state = hooks.show("task");
@@ -122,7 +122,7 @@
                 state = hooks.getState();
                 check("低动态完成路径", !state.open && !state.completing, `open=${state.open}; completing=${state.completing}`);
 
-                check("加载页版本", state.loaderVersion === "v2.22.1", state.loaderVersion);
+                check("加载页版本", state.loaderVersion === "v2.23.0", state.loaderVersion);
                 hooks.setMotionEnabled(true);
                 hooks.reset();
             }
