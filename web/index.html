@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>飞行棋 · 大冒险</title>
+    <title>冒险小飞行家</title>
     <style>
         :root {
             --bg: #f7f1e8; --ink: #25211d; --muted: #776f65; --panel: #fffdf8ee; --line: #ddd0bf;
@@ -37,13 +37,27 @@
         body.home-mode .app { max-width: none; padding: 0; }
         body.home-mode .top { display: none; }
         .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
-        .brand { display: flex; gap: 12px; align-items: center; }
+        .brand { display: flex; gap: 10px; align-items: center; min-width: 0; }
         .logo {
-            width: 48px; height: 48px; border-radius: 18px; display: grid; place-items: center;
-            font-size: 26px; background: conic-gradient(var(--Y), var(--B), var(--R), var(--G), var(--Y));
-            border: 4px solid white; box-shadow: 0 12px 30px #0002;
+            width: 68px; height: 56px; display: grid; place-items: center; flex: 0 0 auto;
+            border-radius: 18px; background: linear-gradient(180deg, #fffef6, #fff1bf);
+            border: 2px solid #ffffffd9; box-shadow: 0 10px 24px #5a3a1826, inset 0 1px 0 #fff;
+            overflow: hidden;
         }
-        h1 { margin: 0; font-size: clamp(22px, 4vw, 34px); }
+        .logo img {
+            width: 66px; height: 66px; object-fit: contain;
+            filter: drop-shadow(0 4px 7px #5a351829);
+        }
+        .brand-copy { min-width: 0; display: grid; gap: 3px; }
+        .brand-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; min-height: 21px; }
+        .app-version-badge {
+            display: inline-flex; align-items: center; min-height: 21px; padding: 2px 8px;
+            border: 1px solid #ffffffc7; border-radius: 999px;
+            background: #fff8; color: #7a5a36; box-shadow: inset 0 1px 0 #fff;
+            font-size: 11px; line-height: 1; font-weight: 900;
+        }
+        h1 { margin: 0; font-size: clamp(19px, 2.3vw, 26px); line-height: 1; }
+        .brand-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         small, .hint { color: var(--muted); font-size: 13px; }
         .card {
             background: var(--panel); border: 1px solid #e3d7c8; border-radius: 24px;
@@ -546,7 +560,7 @@
         .stat b { display: block; font-size: 20px; }
         .stat span { color: var(--muted); font-size: 12px; font-weight: 800; }
         .page-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
-        .game-grid { display: grid; grid-template-columns: minmax(360px, 780px) minmax(300px, 390px); gap: 18px; align-items: start; }
+        .game-grid { display: grid; grid-template-columns: minmax(360px, 780px) minmax(330px, 430px); gap: 18px; align-items: start; }
         .game.active .card {
             background: linear-gradient(180deg, #fffdf8d9, #fff3d0cc);
             border: 2px solid #ffffffd0; box-shadow: 0 18px 36px #5a3a1826, inset 0 1px 0 #fff;
@@ -1078,6 +1092,145 @@
         .game-nav-card:hover { transform: translateY(-2px); filter: brightness(1.03); }
         .game-nav-card.progress-link { background: linear-gradient(135deg, #eafff0e8, #fff1a8dc); }
         .game-nav-card.records-link { background: linear-gradient(135deg, #eaf5ffe8, #ffe1c4dc); }
+        .commercial-hud {
+            display: grid; gap: 10px; margin-top: 12px;
+        }
+        .adventure-objective, .race-panel, .recent-panel {
+            position: relative; overflow: hidden;
+            border-radius: 22px; border: 2px solid #fff9;
+            background:
+                linear-gradient(135deg, #fffdf0eb, #ffe4a7dc 62%, #f9c86fd0),
+                radial-gradient(circle at 92% 0%, #8bdcff42, transparent 38%);
+            box-shadow: inset 0 2px 0 #fff9, 0 10px 18px #6b44161c;
+        }
+        .adventure-objective::after, .race-panel::after, .recent-panel::after {
+            content: ""; position: absolute; right: -28px; top: -44px; width: 116px; height: 116px;
+            border-radius: 50%; background: radial-gradient(circle, #ffffff80, transparent 68%);
+            pointer-events: none;
+        }
+        .hud-panel-head {
+            position: relative; z-index: 1;
+            display: grid; grid-template-columns: 38px minmax(0, 1fr); align-items: center; gap: 9px;
+            padding: 11px 12px 8px;
+        }
+        .hud-panel-head.compact { padding-bottom: 6px; }
+        .hud-panel-icon {
+            width: 36px; height: 36px; display: grid; place-items: center; border-radius: 14px;
+            background: radial-gradient(circle at 34% 24%, #fff, #ffe47b 62%, #ed9e2e);
+            box-shadow: inset 0 1px 0 #fff, 0 5px 10px #7a4a151f;
+            font-size: 19px;
+        }
+        .hud-panel-head b {
+            display: block; color: #3d2712; font-size: 15px; line-height: 1.05; font-weight: 1000;
+        }
+        .hud-panel-head small {
+            display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            margin-top: 3px; color: #76593b; font-size: 10px; line-height: 1.2; font-weight: 900;
+        }
+        .objective-grid {
+            position: relative; z-index: 1;
+            display: grid; grid-template-columns: minmax(0, 1fr) 76px; gap: 10px;
+            padding: 0 12px 10px;
+        }
+        .objective-main {
+            min-width: 0; padding: 10px 11px; border-radius: 16px;
+            background: linear-gradient(180deg, #fffef4df, #fff2bad8);
+            border: 1px solid #fff; box-shadow: inset 0 1px 0 #fff, 0 5px 10px #7a4a1514;
+        }
+        .objective-main span, .reward-preview span, .objective-meta span {
+            display: block; color: #806344; font-size: 9px; line-height: 1.15; font-weight: 1000;
+        }
+        .objective-main strong {
+            display: block; margin-top: 4px; color: #3f2914; font-size: 13px; line-height: 1.25; font-weight: 1000;
+        }
+        .reward-preview {
+            display: grid; place-items: center; align-content: center; gap: 3px;
+            min-width: 0; padding: 6px; border-radius: 16px;
+            background: linear-gradient(180deg, #f1f8ff, #fff2bf);
+            border: 1px solid #fff; box-shadow: inset 0 1px 0 #fff, 0 5px 10px #7a4a1514;
+        }
+        .reward-preview img {
+            width: 44px; height: 44px; object-fit: contain;
+            filter: drop-shadow(0 4px 5px #5b35142e);
+        }
+        .objective-meta {
+            position: relative; z-index: 1;
+            display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px;
+            padding: 0 12px 12px;
+        }
+        .objective-meta span {
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            padding: 6px 8px; border-radius: 999px;
+            background: #fff8; border: 1px solid #fff; color: #65421f;
+            box-shadow: inset 0 1px 0 #fff;
+        }
+        .mini-race-list, .mini-event-list {
+            position: relative; z-index: 1;
+            display: grid; gap: 6px; padding: 0 12px 12px;
+        }
+        .mini-race-row {
+            --player-color: #ffcf4a; --progress: 0%;
+            display: grid; grid-template-columns: 26px 30px minmax(0, 1fr) 34px; align-items: center; gap: 7px;
+            min-height: 42px; padding: 6px 8px; border-radius: 15px;
+            background: linear-gradient(135deg, #ffffffeb, #fff1cce0);
+            border: 1px solid #fff; box-shadow: 0 5px 10px #7a4a1512;
+        }
+        .mini-race-row.current {
+            border-color: color-mix(in srgb, var(--player-color) 72%, #fff);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--player-color) 24%, transparent), 0 7px 13px #7a4a151b;
+        }
+        .mini-race-rank {
+            display: grid; place-items: center; height: 24px; border-radius: 999px;
+            background: var(--player-color); color: #fff; font-size: 10px; font-weight: 1000;
+            text-shadow: 0 1px 2px #0005;
+        }
+        .mini-race-plane {
+            width: 28px; height: 28px; display: grid; place-items: center; border-radius: 11px;
+            background: color-mix(in srgb, var(--player-color) 32%, #fff);
+            border: 1px solid #fff; box-shadow: inset 0 1px 0 #fff, 0 4px 8px #0001;
+        }
+        .mini-race-plane img { width: 24px; height: 24px; object-fit: contain; filter: drop-shadow(0 3px 3px #0002); }
+        .mini-race-info { min-width: 0; }
+        .mini-race-name {
+            display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            color: #3f2914; font-size: 11px; line-height: 1.15; font-weight: 1000;
+        }
+        .mini-race-bar {
+            position: relative; height: 6px; margin-top: 5px; overflow: hidden; border-radius: 999px;
+            background: #9a6d321f; box-shadow: inset 0 1px 3px #0002, 0 1px 0 #fff;
+        }
+        .mini-race-bar i {
+            display: block; width: var(--progress); height: 100%; border-radius: inherit;
+            background: linear-gradient(90deg, var(--player-color), color-mix(in srgb, var(--player-color) 45%, #fff));
+            box-shadow: 0 0 9px var(--player-color);
+        }
+        .mini-race-percent {
+            color: #68491f; font-size: 10px; line-height: 1; font-weight: 1000; text-align: right;
+        }
+        .mini-event-row {
+            --event-color: #d19a36; --event-ink: #684827;
+            display: grid; grid-template-columns: 26px minmax(0, 1fr); align-items: center; gap: 7px;
+            min-height: 36px; padding: 6px 8px; border-radius: 14px;
+            background: #fffdf0e6; border: 1px solid #fff; box-shadow: 0 5px 10px #7a4a1512;
+            color: var(--event-ink);
+        }
+        .mini-event-icon {
+            width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%;
+            background: color-mix(in srgb, var(--event-color) 26%, #fff);
+            box-shadow: 0 0 0 2px #fff, 0 3px 6px #0001; font-size: 12px;
+        }
+        .mini-event-copy { min-width: 0; }
+        .mini-event-copy b {
+            display: block; color: var(--event-ink); font-size: 10px; line-height: 1.1; font-weight: 1000;
+        }
+        .mini-event-copy span {
+            display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            margin-top: 2px; color: #76593b; font-size: 10px; line-height: 1.2; font-weight: 800;
+        }
+        .mini-empty {
+            padding: 9px 10px; border-radius: 14px; background: #fff8; border: 1px solid #fff;
+            color: #76593b; font-size: 10px; font-weight: 900; text-align: center;
+        }
         .players-panel { overflow: hidden; }
         .players-panel .panel-title { margin-bottom: 12px; }
         .players-panel .panel-title-meta {
@@ -1699,6 +1852,25 @@
             .game-nav-card { min-height: 68px; border-radius: 18px; padding: 10px 12px; }
             .game-nav-card strong { font-size: 15px; }
             .game-nav-card span { font-size: 10px; line-height: 1.25; }
+            .commercial-hud { gap: 8px; margin-top: 8px; }
+            .adventure-objective, .race-panel, .recent-panel { border-radius: 18px; }
+            .hud-panel-head { grid-template-columns: 32px minmax(0, 1fr); gap: 7px; padding: 9px 10px 6px; }
+            .hud-panel-icon { width: 30px; height: 30px; border-radius: 11px; font-size: 16px; }
+            .hud-panel-head b { font-size: 13px; }
+            .hud-panel-head small { font-size: 9px; }
+            .objective-grid { grid-template-columns: minmax(0, 1fr) 64px; gap: 7px; padding: 0 10px 8px; }
+            .objective-main { padding: 8px 9px; border-radius: 13px; }
+            .objective-main strong { font-size: 11px; }
+            .reward-preview { border-radius: 13px; }
+            .reward-preview img { width: 36px; height: 36px; }
+            .objective-meta { gap: 6px; padding: 0 10px 10px; }
+            .mini-race-list, .mini-event-list { gap: 5px; padding: 0 10px 10px; }
+            .mini-race-row { grid-template-columns: 24px 28px minmax(0, 1fr) 31px; min-height: 38px; gap: 6px; border-radius: 13px; }
+            .mini-race-rank { height: 22px; font-size: 9px; }
+            .mini-race-plane { width: 26px; height: 26px; border-radius: 10px; }
+            .mini-race-plane img { width: 22px; height: 22px; }
+            .mini-race-name, .mini-event-copy span { font-size: 10px; }
+            .mini-event-row { min-height: 34px; border-radius: 13px; }
             .players { max-height: 202px; gap: 7px; padding: 2px 3px 5px 2px; }
             .game-subpage .players, .game-subpage .log {
                 flex: 1 1 auto; min-height: 0; max-height: none; height: auto;
@@ -1922,6 +2094,36 @@
                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
                 font-size: 8px; line-height: 1.1;
             }
+            .commercial-hud {
+                grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+                gap: 5px; margin-top: 5px;
+            }
+            .adventure-objective, .race-panel, .recent-panel { border-radius: 13px; }
+            .adventure-objective { grid-row: span 2; }
+            .recent-panel { display: none; }
+            .hud-panel-head { grid-template-columns: 26px minmax(0, 1fr); gap: 5px; padding: 6px 7px 4px; }
+            .hud-panel-icon { width: 24px; height: 24px; border-radius: 9px; font-size: 13px; }
+            .hud-panel-head b { font-size: 11px; }
+            .hud-panel-head small { font-size: 8px; margin-top: 1px; }
+            .objective-grid { grid-template-columns: minmax(0, 1fr) 48px; gap: 5px; padding: 0 7px 6px; }
+            .objective-main { padding: 6px 7px; border-radius: 10px; }
+            .objective-main span, .reward-preview span, .objective-meta span { font-size: 7px; }
+            .objective-main strong { margin-top: 2px; font-size: 9px; line-height: 1.18; }
+            .reward-preview { padding: 4px; border-radius: 10px; }
+            .reward-preview img { width: 28px; height: 28px; }
+            .objective-meta { grid-template-columns: 1fr; gap: 4px; padding: 0 7px 7px; }
+            .objective-meta span { padding: 4px 6px; }
+            .mini-race-list { gap: 4px; padding: 0 7px 7px; }
+            .mini-race-row {
+                grid-template-columns: 22px 24px minmax(0, 1fr) 29px;
+                min-height: 31px; gap: 5px; padding: 4px 6px; border-radius: 10px;
+            }
+            .mini-race-rank { height: 20px; font-size: 8px; }
+            .mini-race-plane { width: 22px; height: 22px; border-radius: 8px; }
+            .mini-race-plane img { width: 19px; height: 19px; }
+            .mini-race-name { font-size: 9px; }
+            .mini-race-bar { height: 5px; margin-top: 3px; }
+            .mini-race-percent { font-size: 8px; }
         }
 
         /* 基础隐藏规则位于桌面动效定义之后，因此在层叠末尾重新开启。 */
@@ -1929,6 +2131,49 @@
             .home-effects, .home-flyby { display: block; }
             .home-titlebar, .home-stats, .home-meta, .primary-menu, .home-bottom { z-index: 3; }
             .dashboard-grid { background: transparent; border: 0; box-shadow: none; backdrop-filter: none; }
+            .commercial-hud {
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                gap: 8px;
+            }
+            .recent-panel { grid-column: 1 / -1; }
+            .hud-panel-head { grid-template-columns: 32px minmax(0, 1fr); gap: 7px; padding: 9px 10px 6px; }
+            .hud-panel-icon { width: 30px; height: 30px; border-radius: 11px; font-size: 16px; }
+            .hud-panel-head b { font-size: 13px; }
+            .hud-panel-head small { font-size: 9px; }
+            .objective-grid {
+                grid-template-columns: minmax(0, 1fr) 54px;
+                gap: 6px; padding: 0 10px 8px;
+            }
+            .objective-main { padding: 8px 9px; border-radius: 13px; }
+            .objective-main strong { font-size: 11px; line-height: 1.2; }
+            .reward-preview { padding: 5px; border-radius: 13px; }
+            .reward-preview img { width: 34px; height: 34px; }
+            .objective-meta { grid-template-columns: 1fr; gap: 5px; padding: 0 10px 10px; }
+            .objective-meta span { padding: 5px 7px; font-size: 8px; }
+            .mini-race-list {
+                gap: 5px; padding: 0 10px 10px;
+            }
+            .mini-race-row {
+                grid-template-columns: 23px 26px minmax(0, 1fr) 31px;
+                min-height: 35px; gap: 6px; padding: 5px 7px; border-radius: 12px;
+            }
+            .mini-race-rank { height: 21px; font-size: 8px; }
+            .mini-race-plane { width: 24px; height: 24px; border-radius: 9px; }
+            .mini-race-plane img { width: 20px; height: 20px; }
+            .mini-race-name { font-size: 9px; }
+            .mini-race-bar { height: 5px; margin-top: 4px; }
+            .mini-race-percent { font-size: 8px; }
+            .mini-event-list {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 6px; padding: 0 10px 10px;
+            }
+            .mini-event-row {
+                grid-template-columns: 24px minmax(0, 1fr);
+                min-height: 34px; gap: 6px; padding: 5px 7px; border-radius: 12px;
+            }
+            .mini-event-icon { width: 22px; height: 22px; font-size: 11px; }
+            .mini-event-copy b { font-size: 9px; }
+            .mini-event-copy span { font-size: 9px; }
         }
         @media (orientation: landscape) and (max-height: 500px) {
             .home-titlebar, .home-stats, .home-meta, .primary-menu, .home-bottom { z-index: 3; }
@@ -2594,7 +2839,7 @@
 
 <div class="web-loader" id="webLoader" role="status" aria-live="polite" aria-label="游戏资源加载中">
     <div class="web-loader-content">
-        <img class="web-loader-logo" src="./assets/images/ui/title_logo.webp" alt="飞行棋 大冒险">
+        <img class="web-loader-logo" src="./assets/images/ui/title_logo.webp" alt="冒险小飞行家">
         <p class="web-loader-status" id="webLoaderStatus">正在准备冒险</p>
         <div class="web-loader-track" aria-hidden="true">
             <div class="web-loader-fill" id="webLoaderFill"></div>
@@ -2610,9 +2855,14 @@
 <div class="app">
     <div class="top">
         <div class="brand">
-            <div class="logo">✈️</div>
-            <div>
-                <h1 id="appTitle">飞行棋 · 大冒险</h1>
+            <div class="logo" aria-hidden="true">
+                <img src="./assets/images/ui/title_logo.webp" alt="">
+            </div>
+            <div class="brand-copy">
+                <div class="brand-title-row">
+                    <h1 class="sr-only" id="appTitle">冒险小飞行家</h1>
+                    <span class="app-version-badge" id="appVersionBadge">v2.23.0</span>
+                </div>
                 <small>游戏大厅｜任务中心｜基地掷骰任务｜导入导出</small>
             </div>
         </div>
@@ -2630,8 +2880,8 @@
                 <div class="version-pill"><span id="homeVersion">版本</span></div>
             </div>
             <div class="home-titlebar">
-                <h2 class="hero-title sr-only">飞行棋 大冒险</h2>
-                <img class="title-logo" src="./assets/images/ui/title_logo.webp" alt="飞行棋 大冒险">
+                <h2 class="hero-title sr-only">冒险小飞行家</h2>
+                <img class="title-logo" src="./assets/images/ui/title_logo.webp" alt="冒险小飞行家">
                 <p class="hero-copy">多人飞行棋 + 随机任务挑战</p>
             </div>
             <div class="primary-menu">
@@ -2958,6 +3208,42 @@
                             <strong>游戏记录</strong>
                             <span id="gameRecordsSummary">查看掷骰、移动和任务日志</span>
                         </button>
+                    </div>
+                    <div class="commercial-hud" aria-label="本局冒险状态">
+                        <section class="adventure-objective">
+                            <div class="hud-panel-head">
+                                <span class="hud-panel-icon" aria-hidden="true">🏰</span>
+                                <div><b>本局冒险</b><small id="hudChapterLabel">糖果云国救援</small></div>
+                            </div>
+                            <div class="objective-grid">
+                                <div class="objective-main">
+                                    <span>当前目标</span>
+                                    <strong id="hudObjectiveText">抵达云堡并完成终局任务</strong>
+                                </div>
+                                <div class="reward-preview" aria-label="本局奖励">
+                                    <img src="./assets/images/ui/settlement_rescue_crest.webp" alt="">
+                                    <span>救援徽章</span>
+                                </div>
+                            </div>
+                            <div class="objective-meta">
+                                <span id="hudTaskMode">任务：手动</span>
+                                <span id="hudRoundInfo">第 1 轮</span>
+                            </div>
+                        </section>
+                        <section class="race-panel">
+                            <div class="hud-panel-head compact">
+                                <span class="hud-panel-icon" aria-hidden="true">🏁</span>
+                                <div><b>玩家竞速榜</b><small id="hudRaceSummary">等待开局</small></div>
+                            </div>
+                            <div class="mini-race-list" id="miniRaceList"></div>
+                        </section>
+                        <section class="recent-panel">
+                            <div class="hud-panel-head compact">
+                                <span class="hud-panel-icon" aria-hidden="true">📡</span>
+                                <div><b>最新事件</b><small>只显示最近 3 条</small></div>
+                            </div>
+                            <div class="mini-event-list" id="miniEventList"></div>
+                        </section>
                     </div>
                 </div>
             </div>
@@ -3635,6 +3921,8 @@
         fillDemoBtn: el("fillDemoBtn"), clearBtn: el("clearBtn"),
         currentPlayerHud: el("currentPlayerHud"), currentPlane: el("currentPlane"), currentTurnState: el("currentTurnState"), currentPosition: el("currentPosition"),
         currentName: el("currentName"), roundBadge: el("roundBadge"), gameProgressSummary: el("gameProgressSummary"), gameRecordsSummary: el("gameRecordsSummary"),
+        hudChapterLabel: el("hudChapterLabel"), hudObjectiveText: el("hudObjectiveText"), hudTaskMode: el("hudTaskMode"), hudRoundInfo: el("hudRoundInfo"),
+        hudRaceSummary: el("hudRaceSummary"), miniRaceList: el("miniRaceList"), miniEventList: el("miniEventList"),
         lastRoll: el("lastRoll"), rollBtn: el("rollBtn"), diceContainer: el("diceContainer"),
         playersList: el("playersList"), playerProgressMeta: el("playerProgressMeta"), log: el("log"), coordTip: el("coordTip"),
         modalBg: el("modalBg"), modal: document.querySelector("#modalBg .modal"), modalClose: el("modalClose"), modalSub: el("modalSub"), modalTitle: el("modalTitle"),
@@ -3710,8 +3998,9 @@
     }
 
     function init() {
-        document.title = `飞行棋 · 大冒险 v${APP_VERSION}`;
-        el("appTitle").textContent = `飞行棋 · 大冒险 v${APP_VERSION}`;
+        document.title = `冒险小飞行家 v${APP_VERSION}`;
+        el("appTitle").textContent = "冒险小飞行家";
+        el("appVersionBadge").textContent = `v${APP_VERSION}`;
         el("homeVersion").textContent = `v${APP_VERSION}`;
         el("webLoaderVersion").textContent = `v${APP_VERSION}`;
         applyMotionPreference();
@@ -5013,7 +5302,7 @@ ${finalTask?.content || tasks.final}`, sub: `${activeModeName()} · 终极任务
 
         els.rollBtn.disabled = rolling || modalOpen || state.gameOver;
         if (debugCoords) renderBoardDebugLabels();
-        renderPieces(); renderPlayersList(); renderLog(); renderGameInfoSummaries();
+        renderPieces(); renderPlayersList(); renderLog(); renderGameInfoSummaries(); renderCommercialHud();
     }
 
     function renderGameInfoSummaries() {
@@ -5029,6 +5318,71 @@ ${finalTask?.content || tasks.final}`, sub: `${activeModeName()} · 终极任务
             const text = typeof latest === "string" ? latest : latest?.text;
             els.gameRecordsSummary.textContent = text ? `最新：${text}` : "暂无记录，开始掷骰后生成";
         }
+    }
+
+    function renderCommercialHud() {
+        if (!state) return;
+        const finished = state.players.filter(p => p.status === "finished").length;
+        const remaining = state.players.length - finished;
+        if (els.hudChapterLabel) els.hudChapterLabel.textContent = state.gameOver ? "本章结算完成" : "糖果云国救援";
+        if (els.hudObjectiveText) {
+            els.hudObjectiveText.textContent = state.gameOver
+                ? "本局冒险已完成，查看排名或再来一局"
+                : (finished ? `${finished} 位已抵达终点，继续完成救援` : "抵达云堡并完成终局任务");
+        }
+        if (els.hudTaskMode) els.hudTaskMode.textContent = `任务：${activeModeName()}`;
+        if (els.hudRoundInfo) els.hudRoundInfo.textContent = state.gameOver ? "结算完成" : `第 ${state.round || 1} 轮 · ${remaining} 位竞速中`;
+        if (els.hudRaceSummary) {
+            els.hudRaceSummary.textContent = finished
+                ? `${finished}/${state.players.length} 已到终点`
+                : `${state.players.length} 位玩家同步竞速`;
+        }
+        renderMiniRaceList();
+        renderMiniEventList();
+    }
+
+    function renderMiniRaceList() {
+        if (!els.miniRaceList || !state) return;
+        const cur = currentPlayer();
+        const rows = [...state.players]
+            .sort((a, b) => {
+                if (a.status === "finished" || b.status === "finished") {
+                    if (a.status === "finished" && b.status === "finished") return (a.finishPlace || 99) - (b.finishPlace || 99);
+                    return a.status === "finished" ? -1 : 1;
+                }
+                return playerProgressPercent(b) - playerProgressPercent(a);
+            })
+            .slice(0, 4);
+        els.miniRaceList.innerHTML = rows.map((p, index) => {
+            const progress = playerProgressPercent(p);
+            const isCurrent = cur?.id === p.id && p.status !== "finished" && !state.gameOver;
+            const rank = p.finishPlace ? `#${p.finishPlace}` : `#${index + 1}`;
+            return `
+                <div class="mini-race-row ${isCurrent ? "current" : ""}" style="--player-color: var(--${p.color}); --progress: ${progress}%;" aria-label="${escapeHtml(p.name)}，进度 ${progress}%">
+                    <span class="mini-race-rank">${rank}</span>
+                    <span class="mini-race-plane"><img src="./assets/images/plane_${p.color}.webp" alt=""></span>
+                    <span class="mini-race-info"><b class="mini-race-name">${escapeHtml(p.name)}</b><span class="mini-race-bar"><i></i></span></span>
+                    <span class="mini-race-percent">${progress}%</span>
+                </div>`;
+        }).join("");
+    }
+
+    function renderMiniEventList() {
+        if (!els.miniEventList || !state) return;
+        const logs = (state.log || []).slice(-3).reverse();
+        if (!logs.length) {
+            els.miniEventList.innerHTML = '<div class="mini-empty">开始掷骰后会显示关键事件</div>';
+            return;
+        }
+        els.miniEventList.innerHTML = logs.map(entry => {
+            const meta = logVisualMeta(entry);
+            const text = typeof entry === "string" ? entry : String(entry?.text || "");
+            return `
+                <div class="mini-event-row event-${meta.key}">
+                    <span class="mini-event-icon" aria-hidden="true">${meta.icon}</span>
+                    <span class="mini-event-copy"><b>${escapeHtml(meta.label)} · ${escapeHtml(logTimeLabel(entry))}</b><span>${escapeHtml(text)}</span></span>
+                </div>`;
+        }).join("");
     }
 
     function setPiecePosition(piece, pos, flying=false) {
