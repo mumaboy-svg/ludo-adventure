@@ -1834,7 +1834,15 @@
             .board-wrap::after { bottom: -14px; height: 18px; filter: blur(6px); }
             .board.preview-board { border-radius: 12px; box-shadow: 0 7px 14px #2f170b42, 0 0 0 2px #fff7, 0 0 0 4px #4f2c1966; }
             .side { min-height: 0; height: 100%; gap: 10px; align-self: stretch; }
-            .side .card { height: 100%; min-height: 0; border-radius: 20px; overflow: hidden; }
+            .side .card {
+                display: grid;
+                grid-template-rows: 84px 98px 30px 75px 28px;
+                align-content: space-between;
+                height: 100%;
+                min-height: 0;
+                border-radius: 20px;
+                overflow: hidden;
+            }
             .status {
                 grid-template-columns: 54px minmax(0, 1fr) 82px;
                 min-height: 84px; padding: 9px 4.6%; gap: 8px; align-items: center;
@@ -1859,14 +1867,20 @@
             .dice-container { width: 76px; height: 76px; min-width: 76px; min-height: 76px; border-radius: 22px; }
             .dice-stage { --dice-size: 54px; --dice-half: 27px; }
             .roll-btn { height: 54px; font-size: 18px; margin-left: 3%; }
-            .game-tools { justify-content: center; }
+            .game-tools {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                justify-content: center;
+                margin-top: 0;
+            }
             .game-tools button { min-height: 30px; font-size: 11px; padding: .34rem .5rem; }
-            .game-nav-grid { gap: 8px; }
+            .game-nav-grid { gap: 8px; margin-top: 0; }
             .game-nav-card { min-height: 68px; border-radius: 18px; padding: 10px 12px; }
             .game-nav-card strong { font-size: 15px; }
             .game-nav-card span { font-size: 10px; line-height: 1.25; }
-            .commercial-hud { gap: 8px; margin-top: 8px; }
+            .commercial-hud { height: 28px; gap: 8px; margin-top: 0; }
             .adventure-objective, .race-panel, .recent-panel { border-radius: 18px; }
+            .adventure-objective { height: 28px; }
             .hud-panel-head { grid-template-columns: 32px minmax(0, 1fr); gap: 7px; padding: 9px 10px 6px; }
             .hud-panel-icon { width: 30px; height: 30px; border-radius: 11px; font-size: 16px; }
             .hud-panel-head b { font-size: 13px; }
@@ -2210,7 +2224,7 @@
             .board-wrap::before { top: -3px; height: 4px; }
             .board-wrap::after { bottom: -9px; height: 12px; filter: blur(5px); }
             .side { min-width: 0; height: 100%; gap: 0; align-content: center; }
-            .side .card { min-width: 0; padding: 6px 8px; border-radius: 16px; }
+            .side .card { display: block; min-width: 0; height: auto; padding: 6px 8px; border-radius: 16px; }
             .status {
                 grid-template-columns: 46px minmax(0, 1fr) 72px;
                 min-height: 64px; padding: 6px 3.8%; gap: 6px;
@@ -2256,11 +2270,12 @@
                 font-size: 8px; line-height: 1.1;
             }
             .commercial-hud {
+                height: auto;
                 grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
                 gap: 5px; margin-top: 5px;
             }
             .adventure-objective, .race-panel, .recent-panel { border-radius: 13px; }
-            .adventure-objective { grid-row: span 2; }
+            .adventure-objective { grid-row: span 2; height: auto; }
             .recent-panel { display: none; }
             .hud-panel-head { grid-template-columns: 26px minmax(0, 1fr); gap: 5px; padding: 6px 7px 4px; }
             .hud-panel-icon { width: 24px; height: 24px; border-radius: 9px; font-size: 13px; }
