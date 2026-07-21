@@ -95,7 +95,7 @@
             const sfxSource = extractFunction(source, "playShortSfx");
             const taskModalSource = extractFunction(source, "showNextModal");
 
-            check("版本同步", source.includes('const APP_VERSION = "2.23.0";'), "网页版应为 v2.23.0");
+            check("版本同步", source.includes('const APP_VERSION = "2.23.1";'), "网页版应为 v2.23.1");
             check(
                 "结算结构",
                 source.includes('id="settlementOverlay"') && source.includes('id="settlementReplayBtn"') && source.includes('id="settlementRanking"'),

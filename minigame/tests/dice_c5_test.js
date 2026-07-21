@@ -60,7 +60,7 @@ const {
   diceSideValues
 } = sandbox.module.exports;
 
-assert(source.includes("const GAME_VERSION = '2.23.0';"), '小游戏版本应为 2.23.0');
+assert(source.includes("const GAME_VERSION = '2.23.1';"), '小游戏版本应为 2.23.1');
 assert.strictEqual(normalizeDiceValue(2), 2);
 assert.strictEqual(normalizeDiceValue(5), 5);
 assert.strictEqual(normalizeDiceValue('bad'), 1);

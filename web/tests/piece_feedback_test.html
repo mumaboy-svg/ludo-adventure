@@ -46,7 +46,7 @@
                 if (addResult(label, ok, detail)) passed += 1;
             };
 
-            check("版本同步", source.includes('const APP_VERSION = "2.23.0";'), "网页版应为 v2.23.0");
+            check("版本同步", source.includes('const APP_VERSION = "2.23.1";'), "网页版应为 v2.23.1");
             check("当前棋子玩家色光环", source.includes(".piece.current::before") && source.includes("drop-shadow(0 0 7px currentColor)"), "当前态保留细光环，不覆盖棋盘格");
             check("移动阴影", source.includes(".piece.flying::after") && source.includes("@keyframes pieceFlightShadow"), "移动时绘制脚下椭圆阴影");
             check("落地扩散环", source.includes(".piece.landed::after") && source.includes("@keyframes pieceLandingRing"), "落地时显示短促扩散环");

@@ -22,7 +22,7 @@ function extractFunction(name) {
   throw new Error(`函数 ${name} 未闭合`);
 }
 
-assert(source.includes("const GAME_VERSION = '2.23.0';"), '小游戏版本应为 2.23.0');
+assert(source.includes("const GAME_VERSION = '2.23.1';"), '小游戏版本应为 2.23.1');
 
 [
   'settlement_frame_landscape.png',
@@ -134,4 +134,4 @@ const panelHeight = Math.min(shortPortrait.height - marginTop - bottomMargin, 62
 const actionBottom = marginTop + panelHeight * 0.79 + 52;
 assert(actionBottom <= shortPortrait.height - shortPortrait.safeBottomInset, '375×600 竖屏结算按钮必须留在底部安全区内');
 
-console.log('PASS: v2.23.0 小游戏 D2 结算、救援队列、排名、短屏安全区、D3 音效与震动契约检查通过。');
+console.log('PASS: v2.23.1 小游戏 D2 结算、救援队列、排名、短屏安全区、D3 音效与震动契约检查通过。');
